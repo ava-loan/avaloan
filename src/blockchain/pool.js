@@ -34,17 +34,22 @@ export async function getMyDeposits() {
     fromBlock: 0,
     toBlock: 'latest',
     address: pool.address});
-  let events = logs.map(log => {
-    console.log(log);
+  state.pool.history.length = 0;
+  let events = logs.forEach(log => {
+    //console.log(log);
     let parsed = pool.iface.parseLog(log);
+    console.log(parsed);
+    if (parsed.name != 'Deposit' && parsed.name != 'Withdrawal') return;
     let event = {
       type: parsed.name,
-      time: new Date(parseInt(parsed.values.time.toString())*1000),
+      time: new Date(parseInt(parsed.values.timestamp.toString())*1000),
       value: parseFloat(ethers.utils.formatEther(parsed.values.value)),
       tx: log.transactionHash
     };
     if (event.type === 'Deposit') totalDeposited += event.value;
     if (event.type === 'Withdrawal') totalWithdrawn += event.value;
+    console.log(event);
+    state.pool.history.unshift(event);
     return event;
   });
 
@@ -55,10 +60,10 @@ export async function getMyDeposits() {
   console.log("Interests: " + state.pool.depositInterests);
 
 
-  events = Array.sort(events, (a,b) => b.time - a.time);
-  console.log(events);
-  state.pool.history.length = 0;
-  state.pool.history = state.pool.history.concat(events);
+  //events = Array.sort(events, (a,b) => b.time - a.time);
+  //console.log(events);
+
+  //state.pool.history = .concat(events);
 
 
 }
