@@ -3,6 +3,7 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
 import "./IAssetExchange.sol";
+import "./Pool.sol";
 
 
 /**
@@ -24,12 +25,14 @@ contract SmartLoan is Ownable {
 
   IPriceProvider public priceProvider;
   IAssetExchange public exchange;
+  Pool pool;
 
-  uint256 public minSolvencyRatio;
+  uint256 public minSolvencyRatio = 1200;
 
-  constructor(IPriceProvider _priceProvider, IAssetExchange _assetsExchange) public {
+  constructor(IPriceProvider _priceProvider, IAssetExchange _assetsExchange, Pool _pool) public {
     priceProvider = _priceProvider;
     exchange = _assetsExchange;
+    pool = _pool;
   }
 
 
@@ -81,23 +84,31 @@ contract SmartLoan is Ownable {
   }
 
 
-  function borrow(uint256 _amount) external onlyOwner {
-//    creditManager.borrow(_asset, _amount);
-//
-//    emit Borrowed(msg.sender, _asset, _amount, now);
+  /**
+   * Borrows funds from the pool
+   * @param _amount of funds to borrow
+  **/
+  function borrow(uint256 _amount) external onlyOwner remainsSolvent {
+    pool.borrow(_amount);
+
+    emit Borrowed(msg.sender, _amount, now);
   }
 
 
+  /**
+   * Repays funds to the pool
+   * @param _amount of funds to repay
+  **/
   function repay(uint256 _amount) public {
-//    if (isSolvent()) {
-//      require(msg.sender == owner());
-//    }
-//    require(this.getAssetBalance(address(_asset)) >= _amount, "There is not enough of a given asset in the account");
-//
-//    _asset.approve(address(creditManager), _amount);
-//    creditManager.repay(address(_asset), _amount);
-//
-//    emit Repaid(msg.sender, address(_asset), _amount, now);
+    if (isSolvent()) {
+      require(msg.sender == owner());
+    }
+
+    require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
+
+    pool.repay.value(_amount)();
+
+    emit Repaid(msg.sender, _amount, now);
   }
 
 
@@ -137,7 +148,7 @@ contract SmartLoan is Ownable {
     * Returns the current debt associated with the loan
   **/
   function getDebt() public view returns(uint256) {
-    return 0;
+    return pool.getBorrowed(address(this));
   }
 
 
@@ -252,8 +263,21 @@ contract SmartLoan is Ownable {
   event Redeemed(address indexed investor, bytes32 indexed asset, uint amount, uint time);
 
 
+  /**
+  * @dev emitted when funds are borrowed from the pool
+  * @param borrower the address of borrower
+  * @param amount of the borrowed funds
+  * @param time of the borrowing
+  **/
   event Borrowed(address indexed borrower, uint amount, uint time);
 
+
+  /**
+  * @dev emitted when funds are repaid to the pool
+  * @param borrower the address initiating repayment
+  * @param amount of repaid funds
+  * @param time of the repayment
+  **/
   event Repaid(address indexed borrower, uint amount, uint time);
 
 

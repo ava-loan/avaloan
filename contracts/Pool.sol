@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
+import "./IBorrowersRegistry.sol";
 
 /**
  * @title Pool
@@ -22,6 +23,7 @@ contract Pool is Ownable {
     uint256 public totalBorrowed;
 
     IRatesCalculator ratesCalculator;
+    IBorrowersRegistry borrowersRegistry;
 
     CompoundingIndex depositIndex = new CompoundingIndex();
     CompoundingIndex borrowIndex = new CompoundingIndex();
@@ -40,6 +42,18 @@ contract Pool is Ownable {
 
         ratesCalculator = _ratesCalculator;
         updateRates();
+    }
+
+
+    /**
+     * Sets the new rate calculator
+     * The borrowers registry decides if an account can borrow funds
+     * @dev _borrowersRegistry the address of borrowers registry
+    **/
+    function setBorrowersRegistry(IBorrowersRegistry _borrowersRegistry) public {
+      require(address(_borrowersRegistry) != address(0), "The borrowers registry cannot set to a null address");
+
+      borrowersRegistry = _borrowersRegistry;
     }
 
 
@@ -87,7 +101,7 @@ contract Pool is Ownable {
      * It updates user borrowed balance, total borrowed amount and rates
      * @dev _amount the amount to be borrowed
     **/
-    function borrow(uint256 _amount) payable external {
+    function borrow(uint256 _amount) payable external canBorrow {
         require(address(this).balance >= _amount, "There is no enough funds in the pool to fund the loan.");
         //require(borrowingAuthoriser.canBorrow(msg.sender, amount), "The borrower is not authorised.");
 
@@ -182,6 +196,15 @@ contract Pool is Ownable {
         borrowed[user] = borrowedWithInterests;
         totalBorrowed = totalBorrowed.add(interests);
         borrowIndex.updateUser(user);
+    }
+
+
+    /* ========== MODIFIERS ========== */
+
+    modifier canBorrow() {
+      require(address(borrowersRegistry) != address(0), "Borrowers registry is not configured");
+      require(borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow");
+      _;
     }
 
 

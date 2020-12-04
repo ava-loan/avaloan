@@ -3,6 +3,7 @@ const {BN, time} = require('@openzeppelin/test-helpers');
 
 const Pool = artifacts.require('Pool');
 const UtilisationRatesCalculator = artifacts.require('UtilisationRatesCalculator');
+const OpenBorrowersRegistry = artifacts.require('OpenBorrowersRegistry');
 
 const toWei = web3.utils.toWei;
 const fromWei = (val) => parseFloat(web3.utils.fromWei(val));
@@ -16,6 +17,8 @@ contract('Pool with fixed interests rates', function ([borrower, depositor]) {
     before("Deploy Pool contract", async function () {
       pool = await Pool.new();
       calculator = await UtilisationRatesCalculator.new(toWei("0.5"), toWei("0.05"));
+      let borrowersRegistry = await OpenBorrowersRegistry.new();
+      await pool.setBorrowersRegistry(borrowersRegistry.address);
       await pool.setRatesCalculator(calculator.address);
     });
 
