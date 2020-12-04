@@ -17,10 +17,10 @@ import "./Pool.sol";
 contract SmartLoan is Ownable {
   using SafeMath for uint;
 
-  uint256 private constant SOLVENCY_PRECISION = 1000;
+  uint256 private constant PERCENTAGE_PRECISION = 1000;
   uint256 private constant MAX_SOLVENCY_RATIO = 10000;
 
-  uint256 private constant LIQUIDATION_BONUS = 10;
+  uint256 private constant LIQUIDATION_BONUS = 100;
   uint256 private constant LIQUIDATION_CAP = 200;
 
   IPriceProvider public priceProvider;
@@ -115,14 +115,12 @@ contract SmartLoan is Ownable {
 
 
   function liquidate(uint256 _amount) public remainsSolvent {
-//    require(!isSolvent(), "Cannot liquidate a solvent account");
-//    repay(_asset, _amount);
-//
-//    //Liquidator reward
-//    uint256 bonus = _amount.mul(LIQUIDATION_BONUS).div(100);
-//    require(_asset.transfer(msg.sender, bonus));
-//
-//    require(getSolvencyRatio() <= minSolvencyRatio.add(LIQUIDATION_CAP));
+    require(!isSolvent(), "Cannot liquidate a solvent account");
+    repay(_amount);
+
+    //Liquidator reward
+    uint256 bonus = _amount.mul(LIQUIDATION_BONUS).div(PERCENTAGE_PRECISION);
+    msg.sender.transfer(bonus);
   }
 
   receive() external payable {}
@@ -157,7 +155,7 @@ contract SmartLoan is Ownable {
     if (debt == 0) {
       return MAX_SOLVENCY_RATIO;
     } else {
-      return getTotalValue().mul(SOLVENCY_PRECISION).div(debt);
+      return getTotalValue().mul(PERCENTAGE_PRECISION).div(debt);
     }
   }
 
