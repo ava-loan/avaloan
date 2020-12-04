@@ -3,13 +3,14 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
+import "./IAssetExchange.sol";
 
 /**
  * @title SimpleAssetExchange
  * @dev Contract allows user to invest into an asset
  * It is a simple implementation that could be replace by a DEX or synthetic asset provider
  */
-contract SimpleAssetExchange is Ownable {
+contract SimpleAssetExchange is Ownable, IAssetExchange {
   using SafeMath for uint256;
 
   mapping(address => mapping(bytes32 =>uint256)) balance;
@@ -42,7 +43,7 @@ contract SimpleAssetExchange is Ownable {
    * @dev _asset asset code
    * @dev _amount amount to be bought
   **/
-  function buyAsset(bytes32 _asset, uint256 _amount) payable external {
+  function buyAsset(bytes32 _asset, uint256 _amount) payable override external {
     uint256 amountIn = _amount.mul(priceProvider.getPrice(_asset)).div(1 ether);
     require(amountIn > 0, "Incorrect input amount");
     require(msg.value >= amountIn, "Not enough funds provided");
@@ -59,7 +60,7 @@ contract SimpleAssetExchange is Ownable {
    * @dev _asset asset code
    * @dev _amount amount to be bought
   **/
-  function sellAsset(bytes32 _asset, uint256 _amount) payable external {
+  function sellAsset(bytes32 _asset, uint256 _amount) payable override external {
     require(balance[msg.sender][_asset] >= _amount, "Not enough assets to sell");
 
     uint256 amountOut = _amount.mul(priceProvider.getPrice(_asset)).div(1 ether);
@@ -80,7 +81,7 @@ contract SimpleAssetExchange is Ownable {
    * @dev _asset the code of an asset
    * @dev _user the address of queried user
   **/
-  function getBalance(address _user, bytes32 _asset) public view returns(uint256) {
+  function getBalance(address _user, bytes32 _asset) external override view returns(uint256) {
     return balance[_user][_asset];
   }
 

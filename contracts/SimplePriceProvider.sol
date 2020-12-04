@@ -71,6 +71,17 @@ contract SimplePriceProvider is Ownable, IPriceProvider {
   }
 
 
+  /**
+   * Returns all the supported assets
+  **/
+  function getAllAssets() external view override returns(bytes32[] memory result) {
+    result = new bytes32[] (ASSETS.length);
+    for(uint i = 0; i< ASSETS.length; i++) {
+      result[i] = ASSETS[i];
+    }
+  }
+
+
   /* ========== MODIFIERS ========== */
 
 

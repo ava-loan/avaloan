@@ -17,4 +17,10 @@ interface IPriceProvider {
   **/
   function getPrice(bytes32 _asset) external view returns(uint256);
 
+
+  /**
+   * Returns all the supported assets
+  **/
+  function getAllAssets() external view returns(bytes32[] memory);
+
 }
