@@ -3,7 +3,7 @@ pragma solidity 0.6.0;
 import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./IPriceProvider.sol";
-import "./IAssetExchange.sol";
+import "./IAssetsExchange.sol";
 
 /**
  * @title SmartLoansFactory
@@ -18,25 +18,27 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
   Pool private pool;
   IPriceProvider private priceProvider;
-  IAssetExchange assetExchange;
+  IAssetsExchange assetsExchange;
 
   uint256 private constant MAX_VAL = 2**256-1 ether;
 
   mapping(address => SmartLoan) public creatorsToAccounts;
   mapping(address => address) public accountsToCreators;
 
+  SmartLoan[] loans;
+
   constructor(
     Pool _pool,
     IPriceProvider _priceProvider,
-    IAssetExchange _assetExchange
+    IAssetsExchange _assetsExchange
   ) public {
     pool = _pool;
     priceProvider = _priceProvider;
-    assetExchange = _assetExchange;
+    assetsExchange = _assetsExchange;
   }
 
   function createLoan() public returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan(priceProvider, assetExchange, pool);
+    SmartLoan newAccount = new SmartLoan(priceProvider, assetsExchange, pool);
 
     //Update registry and emit event
     updateRegistry(newAccount);
@@ -46,7 +48,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createAndFundLoan(uint256 _initialDebt) external payable returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan(priceProvider, assetExchange, pool);
+    SmartLoan newAccount = new SmartLoan(priceProvider, assetsExchange, pool);
 
     //Fund account with own funds and credit
     newAccount.fund.value(msg.value)();
@@ -64,6 +66,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   function updateRegistry(SmartLoan _newAccount) internal {
     creatorsToAccounts[msg.sender] = _newAccount;
     accountsToCreators[address(_newAccount)] = msg.sender;
+    loans.push(_newAccount);
 
     emit SmartLoanCreated(address(_newAccount), msg.sender);
   }
@@ -78,6 +81,10 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
   function getOwnerOfLoan(address _loan) external view override returns(address) {
     return accountsToCreators[_loan];
+  }
+
+  function getAllLoans() public view returns(SmartLoan[] memory) {
+    return loans;
   }
 
 }

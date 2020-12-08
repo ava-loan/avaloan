@@ -2,7 +2,7 @@ const {expect} = require('chai');
 const {expectRevert} = require('@openzeppelin/test-helpers');
 
 const SimplePriceProvider = artifacts.require('SimplePriceProvider');
-const SimpleAssetExchange = artifacts.require('SimpleAssetExchange');
+const SimpleAssetExchange = artifacts.require('SimpleAssetsExchange');
 const SmartLoan = artifacts.require('SmartLoan');
 
 const Pool = artifacts.require('Pool');
@@ -239,12 +239,6 @@ contract('Smart loan', function ([owner, oracle, depositor, liquidator]) {
       expect(await loan.isSolvent()).to.be.true;
 
     });
-
-
-
-
-
-
 
   });
 

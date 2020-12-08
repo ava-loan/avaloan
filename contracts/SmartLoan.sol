@@ -2,7 +2,7 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
-import "./IAssetExchange.sol";
+import "./IAssetsExchange.sol";
 import "./Pool.sol";
 
 
@@ -20,16 +20,16 @@ contract SmartLoan is Ownable {
   uint256 private constant PERCENTAGE_PRECISION = 1000;
   uint256 private constant MAX_SOLVENCY_RATIO = 10000;
 
-  uint256 private constant LIQUIDATION_BONUS = 100;
+  uint256 public constant LIQUIDATION_BONUS = 100;
   uint256 private constant LIQUIDATION_CAP = 200;
 
   IPriceProvider public priceProvider;
-  IAssetExchange public exchange;
+  IAssetsExchange public exchange;
   Pool pool;
 
   uint256 public minSolvencyRatio = 1200;
 
-  constructor(IPriceProvider _priceProvider, IAssetExchange _assetsExchange, Pool _pool) public {
+  constructor(IPriceProvider _priceProvider, IAssetsExchange _assetsExchange, Pool _pool) public {
     priceProvider = _priceProvider;
     exchange = _assetsExchange;
     pool = _pool;
@@ -157,6 +157,16 @@ contract SmartLoan is Ownable {
     } else {
       return getTotalValue().mul(PERCENTAGE_PRECISION).div(debt);
     }
+  }
+
+
+  function getFullLoanStatus() public view returns(uint256[4] memory) {
+    return [
+      getTotalValue(),
+      getDebt(),
+      getSolvencyRatio(),
+      isSolvent() ? uint256(1) : uint256(0)
+    ];
   }
 
 

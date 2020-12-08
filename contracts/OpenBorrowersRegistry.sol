@@ -1,9 +1,7 @@
 pragma solidity 0.6.0;
 
 import "./SmartLoan.sol";
-import "./Pool.sol";
-import "./IPriceProvider.sol";
-import "./IAssetExchange.sol";
+
 
 /**
  * @title OpenBorrowersRegistry

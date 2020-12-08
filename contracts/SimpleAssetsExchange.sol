@@ -3,14 +3,14 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
-import "./IAssetExchange.sol";
+import "./IAssetsExchange.sol";
 
 /**
  * @title SimpleAssetExchange
  * @dev Contract allows user to invest into an asset
  * It is a simple implementation that could be replace by a DEX or synthetic asset provider
  */
-contract SimpleAssetExchange is Ownable, IAssetExchange {
+contract SimpleAssetsExchange is Ownable, IAssetsExchange {
   using SafeMath for uint256;
 
   mapping(address => mapping(bytes32 =>uint256)) balance;

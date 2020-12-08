@@ -1,31 +1,57 @@
+const config = require('./network/config-local.json');
 const fs = require('fs');
 const ethers = require('ethers');
-const utils = ethers.utils;
 const FACTORY = require('../build/contracts/SmartLoansFactory.json');
-const SMART_LOAN = require('../build/contracts/SmartLoan.json');
+const LOAN = require('../build/contracts/SmartLoan.json');
 
 
-const mnemonic = fs.readFileSync("../.secret").toString().trim();
-
+const mnemonic = fs.readFileSync("./.secret2").toString().trim();
 let mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
-let provider = ethers.getDefaultProvider('kovan');
+
+var provider;
+if (config['provider-url'] === "localhost") {
+  provider = new ethers.providers.JsonRpcProvider();
+} else  {
+  provider = new ethers.providers.JsonRpcProvider(config['provider-url'], "unspecified");
+}
+
+
+
 let wallet = mnemonicWallet.connect(provider);
+let factory = new ethers.Contract(FACTORY.networks[config["network-id"]].address, FACTORY.abi, wallet);
+
+const fromWei = val => parseFloat(ethers.utils.formatEther(val));
+const toWei = ethers.utils.parseEther;
 
 
-let factory = new ethers.Contract(FACTORY.networks["42"].address, FACTORY.abi, wallet);
-
-
-async function liquidate(owner, amount) {
-  console.log("Liquidating loan owned by: " + owner + " trying to repay: " + amount + " usd");
-  let loanAddress = await factory.creatorsToAccounts(owner);
-  console.log("Smart loan address: " + loanAddress);
-  let loan = new ethers.Contract(loanAddress, SMART_LOAN.abi, wallet);
-  let tx = await loan.liquidate(utils.parseEther(amount), {gasLimit: 2000000});
-  console.log("Liquidation tx: " + tx.hash);
+async function liquidate(loanAddress, amount) {
+  console.log(`Liquidating loan ${loanAddress} with amount: ${amount}`);
+  let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
+  let tx = await loan.liquidate(toWei(amount.toString()), {gasLimit: 3000000});
+  console.log("Waiting for tx: " + tx.hash);
+  let receipt = await provider.waitForTransaction(tx.hash);
+  console.log("Liquidation processed with " + receipt.status == 1 ? "success" : "failure");
 }
 
-async function execute() {
-  await liquidate(process.argv[2], process.argv[3]);
+
+async function calculateLiquidationAmount(loanAddress) {
+  let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
+  let rawStatus = await loan.getFullLoanStatus();
+  let rawSolvency = await loan.minSolvencyRatio();
+  //let rawBonus = await loan.LIQUIDATION_BONUS();
+
+  let total = fromWei(rawStatus[0]);
+  let debt = fromWei(rawStatus[1]);
+  let solvency = parseFloat(rawSolvency)/1000;
+  let bonus = 0.1;
+
+  let liqudation = (total - solvency * debt) / (1 + bonus -solvency) * 1.01;
+  console.log("Optimal liquidation: " + liqudation);
+  return liqudation;
 }
 
-execute();
+
+module.exports = {
+  liquidate,
+  calculateLiquidationAmount
+};

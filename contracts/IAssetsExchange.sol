@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Basic interface for investing into assets
  * It could be linked either to DEX or to a synthetic assets platform
  */
-interface IAssetExchange {
+interface IAssetsExchange {
 
   /**
    * Buys selected asset with AVAX

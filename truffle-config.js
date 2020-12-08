@@ -66,7 +66,7 @@ module.exports = {
       gasPrice: 2000000000 // 2 gwei
     },
     fuji: {
-      provider: () => new HDWalletProvider(mnemonic, "https://testapi.avax.network/ext/bc/C/rpc"),
+      provider: () => new HDWalletProvider(mnemonic, "https://api.avax-test.network/ext/bc/C/rpc"),
       network_id: 1,
       gas: 4000000,
       gasPrice: 470000000000
