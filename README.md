@@ -31,6 +31,11 @@ There are two mechanisms to enforce the solvency:
 
 * Active - if a loan becomes insolvent due to external factors, like assets price movement, anyone is allowed to liquidate a part of the loan by calling the (liquidate) method and forcing loan repayment. To incentivise liquidators to monitor loans and cover gas costs there is a liquidation bonus paid for every successful liquidation calculated as a percentage of the liquidation amount and paid from the smart loan balance. 
 
+## Loan adjustment
+
+A user can manage the current solvency ratio by changing the debt or the margin level. The loan margin could be increased by calling the [fund](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L42) method and passing the AVAX tokens along with the message. Similarly, a user may call the [withdraw](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L54) to remove funds from the smart loans. This method allows investors to cash-out profits in the assets valuation increses. 
+
+
 ## Additional tools and scripts
 
 Loan monitoring and liquidation could be automated to enable 24/7 screening and ensure effortless execution. The project contains additional scripts & tools located in the [tools folder](https://github.com/jakub-wojciechowski/avaloan/tree/master/tools) which could be invoked from a command line.
