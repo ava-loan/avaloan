@@ -27,9 +27,20 @@ Every loan provides a real-time solvency score accessible by the [getSolvencyRat
 
 There are two mechanisms to enforce the solvency:
 
-* Reactive - every method that changes loan structure satisfy the (remainsSolvent)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L228] modifier with ensures that the loan is always left in a solvent state
+* Reactive - every method that changes loan structure satisfy the [remainsSolvent](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L228) modifier with ensures that the loan is always left in a solvent state
 
 * Active - if a loan becomes insolvent due to external factors, like assets price movement, anyone is allowed to liquidate a part of the loan by calling the (liquidate) method and forcing loan repayment. To incentivise liquidators to monitor loans and cover gas costs there is a liquidation bonus paid for every successful liquidation calculated as a percentage of the liquidation amount and paid from the smart loan balance. 
+
+## Additional tools and scripts
+
+Loan monitoring and liquidation could be automated to enable 24/7 screening and ensure effortless execution. The project contains additional scripts & tools located in the [tools folder](https://github.com/jakub-wojciechowski/avaloan/tree/master/tools) which could be invoked from a command line.
+
+The liquidation logic is provided in the [liquidate](https://github.com/jakub-wojciechowski/avaloan/blob/master/tools/liquidate.js) nodejs module. A user may invoke the [calculateLiquidationAmount](https://github.com/jakub-wojciechowski/avaloan/blob/master/tools/liquidate.js#L37) method to compute the maximum amount that could be safely liquidated based on the current loan state. The liquidation is executed by calling the [liquidate](https://github.com/jakub-wojciechowski/avaloan/blob/master/tools/liquidate.js#L27) method.
+
+The monitoring scripts are located in the [monitoring](https://github.com/jakub-wojciechowski/avaloan/tree/master/tools/monitor) subfolder. The [monitor-with-logs](https://github.com/jakub-wojciechowski/avaloan/blob/master/tools/monitor/monitor-with-logs.js) one fetches all the active loans and print their current status that shows: total value, current debt, solvency ratio and solvency status. The [monitor-with-liquidation](https://github.com/jakub-wojciechowski/avaloan/blob/master/tools/monitor/monitor-with-liquidation.js) one automatically liquidates the loans which are insolvent. 
+
+The monitoring scripts could be invoked from the command line and the user may pass an additional `--interval` parameter to specify the refresh period. 
+
 
 # User interface
 
