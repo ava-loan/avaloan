@@ -1,6 +1,10 @@
 # Overview
 
-Avaloan - Smart Loans on the AVAX blockchain
+Avaloan - Smart Loans on the Avalanche blockchain.
+
+Lending is by far the most popular use case in the currently booming Decentralised Finance sector. The second-generation lending protocols like Aave and Compound allows users to deposit and borrow from a lending pool automatically setting the interests rates to balance capital supply and demand. However, both of them suffer from liquidity crunch as borrowers need to provide collateral that significantly exceeds their loan size. It causes the collateral funds to remain idle in the pool. From the macroeconomic perspective, it means that approximately **70% of the funds stay unproductive** and is not used for assets investment, trading or staking activity. 
+
+Smart Loans is the next generation lending platform on AVA that will allow low-collateral borrowing from pooled deposits. The core innovation is lending funds not to a personal account but a special purpose smart-contract. The contract automatically guards solvency and every activity needs to undergo a series of checks. This mechanism blocks transactions which could cause the smart-loan valuation to drop below a safe threshold. The insolvency risk is further mitigated by a decentralised liquidation mechanism allowing anyone to forcibly repay part of the loan due to assets price movements caused by external factors. Wrapping loans with smart contracts reduces the collateral need, improving the money supply in the entire Avalanche ecosystem. Patient capital holders will earn interests on the funds provided, while borrowers could use extra capital for investment in high-grow assets. 
 
 # Features
 
