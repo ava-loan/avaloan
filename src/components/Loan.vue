@@ -250,9 +250,9 @@
           </div>
 
           <md-card-actions class="actions-card">
-            <md-button class="md-raised md-primary" style="float:left" @click="showFundPanel=true">Add funds</md-button>
+            <md-button class="md-raised md-primary" style="float:left; width: 320px;" @click="showFundPanel=true">Add funds</md-button>
             <div style="width:100%"></div>
-            <md-button class="md-raised md-accent" @click="showWithdrawPanel=true">Withdraw</md-button>
+            <md-button class="md-raised md-accent" style="width: 320px;" @click="showWithdrawPanel=true">Withdraw</md-button>
           </md-card-actions>
         </div>
       </div>
