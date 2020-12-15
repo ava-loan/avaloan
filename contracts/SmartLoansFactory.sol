@@ -50,15 +50,15 @@ contract SmartLoansFactory is IBorrowersRegistry {
   function createAndFundLoan(uint256 _initialDebt) external payable returns(SmartLoan) {
     SmartLoan newAccount = new SmartLoan(priceProvider, assetsExchange, pool);
 
+    //Update registry and emit event
+    updateRegistry(newAccount);
+
     //Fund account with own funds and credit
     newAccount.fund.value(msg.value)();
     newAccount.borrow(_initialDebt);
     require(newAccount.isSolvent());
 
     newAccount.transferOwnership(msg.sender);
-
-    //Update registry and emit event
-    updateRegistry(newAccount);
 
     return newAccount;
   }

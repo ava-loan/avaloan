@@ -16,13 +16,12 @@ contract SimplePriceProvider is Ownable, IPriceProvider {
   mapping(bytes32 => uint256) prices;
 
   bytes32 public USD = 'USD';
-  bytes32 public GBP = 'GBP';
-  bytes32 public EUR = 'EUR';
   bytes32 public BTC = 'BTC';
   bytes32 public ETH = 'ETH';
-  bytes32 public XAU = 'XAU';
+  bytes32 public XRP = 'XRP';
+  bytes32 public LNK = 'LNK';
 
-  bytes32[6] public ASSETS = [USD, GBP, EUR, BTC, ETH, XAU];
+  bytes32[5] public ASSETS = [USD, BTC, ETH, XRP, LNK];
 
   address public oracle;
 

@@ -6,12 +6,14 @@ import state from "@/state";
 const ethers = require('ethers');
 const utils = ethers.utils;
 
+const NETWORK_ID = 2;
+
 var cachedPool;
 
 async function getPool() {
   if (!cachedPool) {
     let provider = await getProvider();
-    cachedPool = new ethers.Contract(POOL.networks["42"].address, POOL.abi, provider.getSigner());
+    cachedPool = new ethers.Contract(POOL.networks[NETWORK_ID].address, POOL.abi, provider.getSigner());
     cachedPool.iface = new ethers.utils.Interface(POOL.abi);
     console.log("Connected to the pool: " + cachedPool.address);
   }

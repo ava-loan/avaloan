@@ -18,6 +18,7 @@
     "@growthbunker/vuetimeline": "^0.1.17",
     "bn.js": "^5.1.1",
     "chart.js": "^2.9.3",
+    "coingecko-api": "^1.0.10",
     "countup.js": "^2.0.7",
     "erc-1155": "git+https://github.com/enjin/erc-1155.git",
     "ethers": "^4.0.47",

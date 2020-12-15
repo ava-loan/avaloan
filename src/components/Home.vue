@@ -10,7 +10,7 @@
 
     <div style="text-align: center">
       <md-button  id="pool-button" class="md-raised md-accent rounded-button" @click="$router.push({path: '/pool'})">Deposit & Earn</md-button>
-      <md-button id="trade-button" class="md-raised md-accent rounded-button" @click="$router.push({path: '/trade'})">Borrow & Trade</md-button>
+      <md-button id="trade-button" class="md-raised md-accent rounded-button" @click="$router.push({path: '/loan'})">Borrow & Invest</md-button>
     </div>
 
   </div>
@@ -67,6 +67,8 @@
   .rounded-button .md-ripple {
     background-color: #8A48DB !important;
   }
+
+  //https://gfycat.com/pl/darkwellmadecony
 
 
 </style>

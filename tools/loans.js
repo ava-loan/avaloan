@@ -61,7 +61,7 @@ async function borrowFromPool(loanAddress, amount) {
 
 
 async function invest(loanAddress, asset, amount) {
-  console.log("Inesting: " + amount);
+  console.log("Investing: " + amount);
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
   let tx = await loan.invest(ethers.utils.formatBytes32String(asset), toWei(amount.toString()), {gasLimit: 3000000});
   console.log("Waiting for tx: " + tx.hash);
