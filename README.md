@@ -67,6 +67,37 @@ In the middle of the screen, there are two widgets showing data for the connecte
 
 ![Pool UI](https://raw.githubusercontent.com/jakub-wojciechowski/avaloan/master/static/pool-ui.png)
 
+# Smart-contracts architecture
+
+### Lending
+
+* **Pool.sol** - a contract that aggregates deposits and borrowings.
+It keeps track of the balance and liabilities of every user.
+It accumulated the interests in the real-time based on the rates model connected by the [setRatesCalculator](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L40).
+The borrowers are verified by the linked [BorrowersRegistry](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L53) contract.
+
+* **CompoundingIndex.sol** - a helper contract that facilitates the calculation of deposits and loans interests rates. It uses a global index, that is snapshotted on every user interaction to achieve a O(1) complexity balance updates. 
+
+* **FixedRatesCalculator.sol** - a basic rates calculation model that returns a rate which could be set up by an admin using off-chain calculations. 
+
+* **UtilisationRatesCalculator.sol** - an interest rates calculation model that automatically adjust the rates based on the current pool utilisation defined as a ratio between borrowed and deposited funds. The mechanism helps to balance the capital supply and demand because a higher need for loans means that the users will need to pay higher interests rates which should reduce the borrowers' appetite.
+
+* **IBorrowersRegistry.sol** - an interface that keeps track of borrowers and their loans by maintaining a bidirectional mapping. It also answers if an account is allowed to borrow funds by calling the (canBorrow)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/IBorrowersRegistry.sol#L11] method.
+
+### Investment
+
+
+* **SmartLoan.sol** - a core loan contract that manages borrowings, investments and guards solvency.
+Borrowing activity is performed by the (borrow)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L91] and the (repay)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L102] methods which interact with the (Pool)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L28] contract.
+Investment activity is implemented in the (invest)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L68] and the (redeem)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L80] methods which interact with the (Assets Exchange)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L27] contract.
+All of the methods mentioned are wrapped by the (remainsSolvent)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L228] modifier which doesn't allow the solvency to drop below the specified (minimum solvency ratio)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L30].
+
+The solvency level is calculated as the ratio between the current loan value and the amount of borrowed funds (debt) in the real-time using the (getSolvencyRatio)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L153] function.
+
+If the solvency ratio falls below a safe level anyone could liquidate the loan calling the (liquidate)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L117] function. This pays back part of the debt and a percentage of the liquidated amount is transferred to the caller as a reward for monitoring the loan status. 
+
+A user can reduce the liquidation risk adjusting amount of personal funds deposited to the loan (margin) by calling the (fund)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L42] method. If the solvency ratio is considerably high, a user may withdraw part of the funds calling the (withdraw)[https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L54] function. 
+
 # Building
 
 To build the application please install first all of the dependencies by running:
