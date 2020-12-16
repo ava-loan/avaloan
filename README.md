@@ -69,6 +69,10 @@ In the middle of the screen, there are two widgets showing data for the connecte
 
 # Smart-contracts architecture
 
+![Pool UI](https://github.com/jakub-wojciechowski/avaloan/blob/master/static/smart-contracts-diagram.png)
+
+The smart contracts could be divided into two main groups:
+
 ### Lending
 
 * **Pool.sol** - a contract that aggregates deposits and borrowings.
@@ -85,7 +89,6 @@ The borrowers are verified by the linked [BorrowersRegistry](https://github.com/
 * **IBorrowersRegistry.sol** - an interface that keeps track of borrowers and their loans by maintaining a bidirectional mapping. It also answers if an account is allowed to borrow funds by calling the [canBorrow](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/IBorrowersRegistry.sol#L11) method.
 
 ### Investment
-
 
 * **SmartLoan.sol** - a core loan contract that manages borrowings, investments and guards solvency.
 Borrowing activity is performed by the [borrow](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L91) and the [repay](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L102) methods which interact with the [Pool](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/SmartLoan.sol#L28) contract.
