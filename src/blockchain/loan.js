@@ -1,13 +1,11 @@
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import LOAN from '@contracts/SmartLoan.json'
-
-
 import { getProvider, getMainAccount } from "./network.js"
 import state from "@/state";
-import {getMyDeposits} from "./pool";
 
 const ethers = require('ethers');
-const utils = ethers.utils;
+const CoinGecko = require('coingecko-api');
+const CoinGeckoClient = new CoinGecko();
 
 const NETWORK_ID = 2;
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -68,7 +66,6 @@ export async function getAssets() {
   }
 
 }
-
 
 
 export async function createNewLoan(amount) {
@@ -145,6 +142,11 @@ export async function invest(asset, amount) {
   console.log(receipt);
   await getLoanStats();
   await getAssets();
+}
+
+export async function getAssetPriceHistory(asset) {
+  let historyResponse = await CoinGeckoClient.coins.fetchMarketChart(asset, {days: 7});
+  return historyResponse.data.prices
 }
 
 

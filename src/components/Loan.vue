@@ -276,17 +276,26 @@
               <md-table-head></md-table-head>
             </md-table-row>
 
-            <md-table-row v-for="a in loan.assets" v-bind:key="a.symbol">
-              <md-table-cell>{{a.name}}</md-table-cell>
-              <md-table-cell>{{a.price | usd}}</md-table-cell>
-              <md-table-cell>{{a.balance | units}}</md-table-cell>
-              <md-table-cell>{{a.value | usd}}</md-table-cell>
-              <md-table-cell>{{a.share | percent}}</md-table-cell>
-              <md-table-cell v-if="a.symbol!='AVX'">
+            <div></div>
+            <md-table-row v-for="a in assetRows" v-bind:key="a.symbol" v-show="!a.empty || 'CH_'+chartAsset == a.symbol">
+              <md-table-cell v-if="!a.empty">{{a.name}}</md-table-cell>
+              <md-table-cell v-if="!a.empty">{{a.price | usd}}</md-table-cell>
+              <md-table-cell v-if="!a.empty">{{a.balance | units}}</md-table-cell>
+              <md-table-cell v-if="!a.empty">{{a.value | usd}}</md-table-cell>
+              <md-table-cell v-if="!a.empty">{{a.share | percent}}</md-table-cell>
+              <md-table-cell v-if="!a.empty && a.symbol!='AVX'">
                 <md-button class="md-raised md-primary" style="float:left" @click="startInvesting(a.symbol)">Invest</md-button>
                 <md-button class="md-raised md-accent" @click="showWithdrawPanel=true">Redeem</md-button>
+                <md-button class="md-icon-button" @click="toggleChart(a)">
+                  <md-icon>keyboard_arrow_down</md-icon>
+                </md-button>
               </md-table-cell>
+              <md-table-cell colspan="7" v-if="a.empty">
+                <price-chart :data="chartData"></price-chart>
+              </md-table-cell>
+
             </md-table-row>
+
           </md-table>
         </md-card-content>
 
@@ -305,21 +314,20 @@
 
 <script>
   import {getPoolStats} from '@/blockchain/pool'
-  import {getLoan, createNewLoan, calculateCollateral, borrow, repay, fund, withdraw, invest} from '@/blockchain/loan'
+  import {getLoan, createNewLoan, calculateCollateral, borrow, repay, fund, withdraw, invest, getAssetPriceHistory} from '@/blockchain/loan'
   import State from '@/state'
   import RangeSlider from 'vue-range-slider'
   import 'vue-range-slider/dist/vue-range-slider.css'
   import 'vue-select/dist/vue-select.css';
   import vSelect from 'vue-select'
-  import DepositPanel from "./DepositPanel";
-  import BorrowPanel from "./BorrowPanel";
+  import PriceChart from './PriceChart'
 
 
 
   export default {
     name: 'Loan',
     components: {
-      RangeSlider, vSelect, DepositPanel, BorrowPanel
+      RangeSlider, vSelect, PriceChart
     },
     data() {
       return {
@@ -339,6 +347,9 @@
         showInvestPanel: false,
         currencies: State.currencies,
         processing: false,
+        showChart: false,
+        chartData: null,
+        chartAsset: null
       }
     },
     asyncComputed: {
@@ -355,6 +366,14 @@
           , 0);
           return this.investAmount ? this.investAmount * assetPrice : null;
         }
+      },
+      assetRows: function() {
+        let assetRows = [];
+        this.loan.assets.forEach(item => {
+          assetRows.push(item);
+          assetRows.push({symbol: "CH_" + item.symbol, empty: true});
+        });
+        return assetRows
       }
     },
     beforeCreate: async function () {
@@ -362,6 +381,24 @@
       await getLoan();
     },
     methods: {
+      toggleChart: async function(asset) {
+        if (this.chartAsset == asset.symbol) {
+          this.chartAsset = null;
+        } else {
+          this.chartAsset = asset.symbol;
+
+          let prices = await getAssetPriceHistory(asset.code);
+
+          this.chartData = {};
+          this.chartData.labels = [];
+          this.chartData.values = [];
+          prices.forEach(point => {
+            this.chartData.labels.push(point[0]);
+            this.chartData.values.push(point[1]);
+          });
+        }
+
+      },
       toast: function(message) {
         this.$toasted.show(message, {
             theme: "bubble",

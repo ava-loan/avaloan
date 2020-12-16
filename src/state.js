@@ -19,11 +19,11 @@ let state = {
     solvencyRatio: 0,
     collateral: 0,
     assets: [
-      {name: "AVAX", symbol: "AVX", price: 0, balance: 0, value: 0 , share: 0},
-      {name: "Bitcoin", symbol: "BTC", price: 0, balance: 0, value: 0 , share: 0},
-      {name: "Ether", symbol: "ETH", price: 0, balance: 0, value: 0 , share: 0},
-      {name: "XRP", symbol: "XRP", price: 0, balance: 0, value: 0 , share: 0},
-      {name: "Link", symbol: "LNK", price: 0, balance: 0, value: 0 , share: 0},
+      {name: "AVAX", symbol: "AVX", code: "avalanche-2", price: 0, balance: 0, value: 0 , share: 0},
+      {name: "Bitcoin", symbol: "BTC", code: "bitcoin", price: 0, balance: 0, value: 0 , share: 0},
+      {name: "Ether", symbol: "ETH", code: "ethereum", price: 0, balance: 0, value: 0 , share: 0},
+      {name: "XRP", symbol: "XRP", code: "ripple", price: 0, balance: 0, value: 0 , share: 0},
+      {name: "Link", symbol: "LNK", code: "link", price: 0, balance: 0, value: 0 , share: 0},
     ]
   }
 };
