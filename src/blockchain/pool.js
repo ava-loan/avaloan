@@ -6,13 +6,16 @@ import state from "@/state";
 const ethers = require('ethers');
 const utils = ethers.utils;
 
-const NETWORK_ID = 2;
+const NETWORK_ID = 1;
 
-var cachedPool;
+var cachedPool, deploymentBlock;
 
 async function getPool() {
   if (!cachedPool) {
     let provider = await getProvider();
+    let deploymentTx = POOL.networks[NETWORK_ID].transactionHash;
+    let deploymentReceipt = await provider.getTransactionReceipt(deploymentTx);
+    deploymentBlock = deploymentReceipt.blockNumber;
     cachedPool = new ethers.Contract(POOL.networks[NETWORK_ID].address, POOL.abi, provider.getSigner());
     cachedPool.iface = new ethers.utils.Interface(POOL.abi);
     console.log("Connected to the pool: " + cachedPool.address);
@@ -30,12 +33,12 @@ export async function getMyDeposits() {
 
   let totalDeposited = 0;
   let totalWithdrawn = 0;
-
   let provider = await getProvider();
   let logs = await provider.getLogs({
-    fromBlock: 0,
-    toBlock: 'latest',
-    address: pool.address});
+    fromBlock: deploymentBlock,
+    //address: pool.address
+  });
+  logs = logs.filter(item => item.address === pool.address);
   state.pool.history.length = 0;
   logs.forEach(log => {
     console.log(log);

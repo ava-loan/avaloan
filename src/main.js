@@ -56,7 +56,7 @@ async function setupFilters() {
   });
 
   Vue.filter('avax', function (value) {
-    if (!value) return 'some AVAX'
+    if (!value) return '0'
     return value.toFixed(2) + ' AVAX';
   });
 
