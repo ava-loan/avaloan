@@ -37,11 +37,15 @@ export async function getMyDeposits() {
     toBlock: 'latest',
     address: pool.address});
   state.pool.history.length = 0;
-  let events = logs.forEach(log => {
-    //console.log(log);
+  logs.forEach(log => {
+    console.log(log);
     let parsed = pool.iface.parseLog(log);
     console.log(parsed);
-    if (parsed.name != 'Deposit' && parsed.name != 'Withdrawal') return;
+    if (parsed.name !== 'Deposit' && parsed.name !== 'Withdrawal') return;
+    console.log("User: " + parsed.values.user);
+    console.log("Main: " + main);
+    if (parsed.values.user.toLocaleLowerCase() !== main.toLocaleLowerCase()) return;
+
     let event = {
       type: parsed.name,
       time: new Date(parseInt(parsed.values.timestamp.toString())*1000),
@@ -60,13 +64,6 @@ export async function getMyDeposits() {
   console.log("T deposited: " + totalDeposited);
   console.log("T withdrawn: " + totalWithdrawn);
   console.log("Interests: " + state.pool.depositInterests);
-
-
-  //events = Array.sort(events, (a,b) => b.time - a.time);
-  //console.log(events);
-
-  //state.pool.history = .concat(events);
-
 
 }
 

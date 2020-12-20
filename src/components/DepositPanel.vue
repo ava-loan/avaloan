@@ -25,12 +25,14 @@
                 <ICountUp :endVal="pool.myDeposits"
                           :options="counterOptions" />
               </b>
+              ({{pool.myDeposits | usd}})
             </div>
             <div class="md-subhead">
               Interests earned:
               <b>
                 <ICountUp :endVal="pool.depositInterests"
                           :options="counterOptions" />
+                ({{pool.depositInterests | usd}})
               </b>
             </div>
 
@@ -66,7 +68,7 @@
               <vue-timeline-update v-for="h in depositsHistory"
                 theme="light"
                 :date=h.time
-                :title=$options.filters.usd(h.value)
+                :title= $options.filters.full(h.value)
                 :description="'<a target=_blank href=https://kovan.etherscan.io/tx/' + h.tx + '>' + h.tx.substr(0,10) + '...' + h.tx.substr(-10) + '</a>'"
                 :category=h.type
                 :icon="(h.type === 'Deposit' ? 'call_received' : 'call_made')"
@@ -93,7 +95,7 @@
       <form novalidate>
         <div class="form-container">
           <md-field>
-            <label for="depositAmount">Amount in ETH</label>
+            <label for="depositAmount">Amount in AVAX</label>
             <md-input name="depositAmount" id="depositAmount" v-model="depositAmount"
                       :disabled="processing"/>
           </md-field>
@@ -117,8 +119,8 @@
         <div class="form-container">
           <md-field>
             <label for="withdrawAmount">
-              Amount in USD
-              (max: <a @click="withdrawAmount = pool.myDeposits" class="link-button">{{pool.myDeposits | usd}}</a> )
+              Amount in AVAX
+              (max: <a @click="withdrawAmount = pool.myDeposits" class="link-button">{{pool.myDeposits | avax}}</a> )
             </label>
             <md-input name="withdrawAmount" id="withdrawAmount" v-model="withdrawAmount"
                       :disabled="processing"/>
@@ -158,8 +160,8 @@
         processing: false,
         counterOptions: {
           separator: '',
-          prefix: '$',
-          decimalPlaces: 12
+          suffix: ' AVAX',
+          decimalPlaces: 6
         }
       }
     },

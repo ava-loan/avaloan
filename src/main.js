@@ -60,6 +60,12 @@ async function setupFilters() {
     return value.toFixed(2) + ' AVAX';
   });
 
+  Vue.filter('full', function (value) {
+    if (!value) return '';
+    let usd = value*avaxPrice;
+    return value.toFixed(2) + ' AVAX ($' + usd.toFixed(2) +')';
+  });
+
   Vue.filter('units', function (value) {
     if (!value) return '0';
     return value.toFixed(3);

@@ -32,7 +32,8 @@
                 </div>
                 <div class="category">
                   Total deposited
-                  <div class="cat-value">{{ pool.totalDeposited | usd}}</div>
+                  <div class="cat-value">{{ pool.totalDeposited | avax}}</div>
+                  <div class="card-subheader"><b>{{ pool.totalDeposited | usd}}</b> </div>
                 </div>
               </div>
 
