@@ -19,6 +19,8 @@
 
     <div class="md-layout">
 
+        <div class="md-layout-item md-medium-size-25 md-size-25 widget"></div>
+
 
           <div class="md-layout-item md-medium-size-25 md-size-25 widget">
             <div class="md-card md-card-stats md-theme-default">
@@ -65,51 +67,55 @@
             </div>
           </div>
 
-          <div class="md-layout-item md-medium-size-25 md-size-25 widget">
-            <div class="md-card md-card-stats md-theme-default">
-              <div class="md-card-header md-card-header-icon md-card-header-blue" style="height: 90px;">
-                <div class="card-icon">
-                  <img class="card-image" src="/static/loan.png">
-                </div>
-                <div class="category">
-                  Total borrowed
-                  <div class="cat-value">{{ pool.totalBorrowed | usd}}</div>
-                </div>
-              </div>
+          <!--<div class="md-layout-item md-medium-size-25 md-size-25 widget">-->
+            <!--<div class="md-card md-card-stats md-theme-default">-->
+              <!--<div class="md-card-header md-card-header-icon md-card-header-blue" style="height: 90px;">-->
+                <!--<div class="card-icon">-->
+                  <!--<img class="card-image" src="/static/loan.png">-->
+                <!--</div>-->
+                <!--<div class="category">-->
+                  <!--Total borrowed-->
+                  <!--<div class="cat-value">{{ pool.totalBorrowed | usd}}</div>-->
+                <!--</div>-->
+              <!--</div>-->
 
-              <md-card-content>
-                <div class="actions-card solvency-warning" style="padding-top:10px;">
-                  Earning <b>{{pool.effectiveRate | percent}}</b> effective rate
-                </div>
-              </md-card-content>
-            </div>
-          </div>
+              <!--<md-card-content>-->
+                <!--<div class="actions-card solvency-warning" style="padding-top:10px;">-->
+                  <!--Earning <b>{{pool.effectiveRate | percent}}</b> effective rate-->
+                <!--</div>-->
+              <!--</md-card-content>-->
+            <!--</div>-->
+          <!--</div>-->
 
-          <div class="md-layout-item md-medium-size-25 md-size-25 widget">
-            <div class="md-card md-card-stats md-theme-default">
-              <div class="md-card-header md-card-header-icon md-card-header-blue" style="height: 90px;">
-                <div class="card-icon">
-                  <div class="card-icon">
-                    <img class="card-image" src="/static/interests.png">
-                  </div>
-                </div>
-                <div class="category">
-                  Borrowing rate
-                  <div class="cat-value">{{ pool.borrowingRate | percent }}</div>
-                </div>
-              </div>
+          <!--<div class="md-layout-item md-medium-size-25 md-size-25 widget">-->
+            <!--<div class="md-card md-card-stats md-theme-default">-->
+              <!--<div class="md-card-header md-card-header-icon md-card-header-blue" style="height: 90px;">-->
+                <!--<div class="card-icon">-->
+                  <!--<div class="card-icon">-->
+                    <!--<img class="card-image" src="/static/interests.png">-->
+                  <!--</div>-->
+                <!--</div>-->
+                <!--<div class="category">-->
+                  <!--Borrowing rate-->
+                  <!--<div class="cat-value">{{ pool.borrowingRate | percent }}</div>-->
+                <!--</div>-->
+              <!--</div>-->
 
-              <md-card-content>
-                <div class="actions-card solvency-warning" style="padding-top:10px;">
-                  <b>APR</b> compounding every second
-                </div>
-              </md-card-content>
+              <!--<md-card-content>-->
+                <!--<div class="actions-card solvency-warning" style="padding-top:10px;">-->
+                  <!--<b>APR</b> compounding every second-->
+                <!--</div>-->
+              <!--</md-card-content>-->
 
-            </div>
-          </div>
+            <!--</div>-->
+          <!--</div>-->
+
+        <div class="md-layout-item md-medium-size-25 md-size-25 widget"></div>
+        <div class="md-layout-item md-medium-size-25 md-size-25 widget"></div>
 
         <deposit-panel class="md-layout-item md-medium-size-50 md-size-50 widget"></deposit-panel>
-        <borrow-panel class="md-layout-item md-medium-size-50 md-size-50 widget"></borrow-panel>
+
+        <!--<borrow-panel class="md-layout-item md-medium-size-50 md-size-50 widget"></borrow-panel>-->
 
         </div>
 
