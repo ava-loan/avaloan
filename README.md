@@ -1,6 +1,6 @@
-# Overview
+# Avaloan - Smart Loans on the Avalanche blockchain
 
-Avaloan - Smart Loans on the Avalanche blockchain.
+[LIVE DEMO](https://avaloan.xyz/#/) on the Fuji testnet
 
 Lending is by far the most popular use case in the currently booming Decentralised Finance sector. The second-generation lending protocols like Aave and Compound allows users to deposit and borrow from a lending pool automatically setting the interests rates to balance capital supply and demand. However, both of them suffer from liquidity crunch as borrowers need to provide collateral that significantly exceeds their loan size. It causes the collateral funds to remain idle in the pool. From the macroeconomic perspective, it means that approximately **70% of the funds stay unproductive** and is not used for assets investment, trading or staking activity. 
 
