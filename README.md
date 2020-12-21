@@ -55,7 +55,9 @@ The monitoring scripts could be invoked from the command line and the user may p
 
 ## Pool dashboard
 
-In the top section the dashboard contains 4 widget showing **global state** of the pool:
+![Pool UI](https://raw.githubusercontent.com/jakub-wojciechowski/avaloan/master/static/pool-ui.png)
+
+In the top section the dashboard contains 4 widgets showing **global state** of the pool:
 * Total deposited - sum of all deposits
 * Total borrowed - sum of all loans
 * Deposit rate - yearly interest rate earned currently by depositors
@@ -65,7 +67,19 @@ In the middle of the screen, there are two widgets showing data for the connecte
 * Deposits - sum of deposits with earned interests and the history of deposits and withdrawals
 * Loans - sum of loans with paid interests and the history of borrowings and repayments
 
-![Pool UI](https://raw.githubusercontent.com/jakub-wojciechowski/avaloan/master/static/pool-ui.png)
+## Smart loan view
+
+![smart-loan-ui](https://raw.githubusercontent.com/jakub-wojciechowski/avaloan/master/static/smart-loan-ui.png)
+
+In the top section there are 3 widgets:
+* Total borrowed - the amount of funds borrowed by this loan from the pool denominated in AVAX / USD and the current borrowing costs (APR)
+* Solvency ratio - shows a ratio between the total loan value and the debt plus a threshold value below which the loan could be liquidated
+* Total value - the total value of the loan including user margin
+
+In the bottom section, there is a table showing the current allocation of the borrowed funds.
+It lists assets available for investment, their price and current holdings displayed in absolute values and as portfolio percentage. 
+Every investable asset could be bought and sold by clicking on "Invest" and "Redeem" buttons. 
+There is also an option to see the asset's historical performance by clicking on the details ("v") button. 
 
 # Smart-contracts architecture
 
