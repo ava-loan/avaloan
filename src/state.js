@@ -1,5 +1,6 @@
 /* eslint-disable */
 let state = {
+  NETWORK_ID: 1,
   pool: {
     myDeposits: 0,
     myBorrowed: 0,

@@ -7,7 +7,6 @@ const ethers = require('ethers');
 const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko();
 
-const NETWORK_ID = 2;
 const ZERO = "0x0000000000000000000000000000000000000000";
 const DEFAULT_COLLATERAL_RATIO = 1.25;
 
@@ -21,7 +20,7 @@ export async function getLoan() {
     let provider = await getProvider();
     let main = await getMainAccount();
 
-    let loanFactory = new ethers.Contract(LOAN_FACTORY.networks[NETWORK_ID].address, LOAN_FACTORY.abi, provider.getSigner());
+    let loanFactory = new ethers.Contract(LOAN_FACTORY.networks[state.NETWORK_ID].address, LOAN_FACTORY.abi, provider.getSigner());
     let myLoan = await loanFactory.getAccountForUser(main);
 
     state.loan.isCreated = myLoan != ZERO;
@@ -72,7 +71,7 @@ export async function createNewLoan(amount) {
     let provider = await getProvider();
 
     let collateral = calculateCollateral(amount);
-    let loanFactory = new ethers.Contract(LOAN_FACTORY.networks[NETWORK_ID].address, LOAN_FACTORY.abi, provider.getSigner());
+    let loanFactory = new ethers.Contract(LOAN_FACTORY.networks[state.NETWORK_ID].address, LOAN_FACTORY.abi, provider.getSigner());
     let tx = await loanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 3000000});
 
     console.log("Loan created: " + tx.hash);

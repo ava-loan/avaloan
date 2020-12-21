@@ -6,17 +6,15 @@ import state from "@/state";
 const ethers = require('ethers');
 const utils = ethers.utils;
 
-const NETWORK_ID = 1;
-
 var cachedPool, deploymentBlock;
 
 async function getPool() {
   if (!cachedPool) {
     let provider = await getProvider();
-    let deploymentTx = POOL.networks[NETWORK_ID].transactionHash;
+    let deploymentTx = POOL.networks[state.NETWORK_ID].transactionHash;
     let deploymentReceipt = await provider.getTransactionReceipt(deploymentTx);
     deploymentBlock = deploymentReceipt.blockNumber;
-    cachedPool = new ethers.Contract(POOL.networks[NETWORK_ID].address, POOL.abi, provider.getSigner());
+    cachedPool = new ethers.Contract(POOL.networks[state.NETWORK_ID].address, POOL.abi, provider.getSigner());
     cachedPool.iface = new ethers.utils.Interface(POOL.abi);
     console.log("Connected to the pool: " + cachedPool.address);
   }
