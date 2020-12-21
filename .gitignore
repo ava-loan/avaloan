@@ -7,3 +7,5 @@ cache
 .idea
 /.secret
 /.secret2
+
+.vercel
