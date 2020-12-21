@@ -157,7 +157,7 @@
             <form novalidate>
               <div class="form-container">
                 <md-field>
-                  <label for="borrowAmount">Initial balance (amount to borrow)</label>
+                  <label for="borrowAmount">Initial balance (amount to borrow in AVAX)</label>
                   <md-input name="borrowAmount" id="borrowAmount" v-model="borrowAmount"
                             :disabled="processing"/>
                 </md-field>
@@ -291,7 +291,7 @@
                 </md-button>
               </md-table-cell>
               <md-table-cell colspan="7" v-if="a.empty">
-                <price-chart :data="chartData"></price-chart>
+                <price-chart :data="chartData" :height="200"></price-chart>
               </md-table-cell>
 
             </md-table-row>
