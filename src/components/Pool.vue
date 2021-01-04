@@ -39,7 +39,7 @@
 
               <md-card-content>
                 <div class="actions-card solvency-warning" style="padding-top:10px;">
-                  Earning <b>{{pool.effectiveRate | percent}}</b> effective rate
+                  Earning <b>{{pool.depositRate | percent}}</b> APY
                 </div>
               </md-card-content>
             </div>
@@ -50,21 +50,21 @@
               <div class="md-card-header md-card-header-icon md-card-header-blue" style="height: 90px;">
                 <div class="card-icon">
                   <div class="card-icon">
-                    <img class="card-image" src="/static/interests.png">
+                    <img class="card-image" src="/static/deposit.png">
                   </div>
                 </div>
                 <div class="category">
-                  Deposit rate
-                  <div class="cat-value">{{pool.depositRate | percent}}</div>
+                  Total borrowed
+                  <div class="cat-value">{{ pool.totalBorrowed | avax}}</div>
+                  <div class="card-subheader"><b>{{ pool.totalBorrowed | usd}}</b> </div>
                 </div>
               </div>
 
               <md-card-content>
                 <div class="actions-card solvency-warning" style="padding-top:10px;">
-                  <b>APY</b> compounding every second
+                  Paying <b>{{pool.borrowingRate | percent}}</b> APR
                 </div>
               </md-card-content>
-
             </div>
           </div>
 
