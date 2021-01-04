@@ -157,7 +157,7 @@
             <form novalidate>
               <div class="form-container">
                 <md-field>
-                  <label for="borrowAmount">Initial balance (amount to borrow in AVAX)</label>
+                  <label for="borrowAmount">Initial balance (amount to borrow in AVAX, max: {{pool.available | avax}})</label>
                   <md-input name="borrowAmount" id="borrowAmount" v-model="borrowAmount"
                             :disabled="processing"/>
                 </md-field>
@@ -399,21 +399,25 @@
         }
 
       },
-      toast: function(message) {
+      toast: function(message, error) {
         this.$toasted.show(message, {
             theme: "bubble",
             position: "top-center",
             duration: 5000,
-            icon: 'sentiment_satisfied_alt'
+            icon: error ? 'error' : 'sentiment_satisfied_alt'
         });
       },
       createLoan: async function() {
-        this.processing = true;
-        try {
-          await createNewLoan(this.borrowAmount);
-          this.toast("A new Smart Loan has been created!");
-        } finally {
-          this.processing = false;
+        if (this.borrowAmount > this.pool.available) {
+          this.toast("Not enough funds available in the pool!", true);
+        } else {
+          this.processing = true;
+          try {
+            await createNewLoan(this.borrowAmount);
+            this.toast("A new Smart Loan has been created!");
+          } finally {
+            this.processing = false;
+          }
         }
       },
       borrow: async function() {

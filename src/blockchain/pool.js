@@ -89,6 +89,7 @@ export async function getPoolStats() {
   state.pool.totalBorrowed = parseFloat(ethers.utils.formatEther(await pool.totalBorrowed()));
   state.pool.depositRate = parseFloat(ethers.utils.formatEther(await pool.getDepositRate()));
   state.pool.borrowingRate = parseFloat(ethers.utils.formatEther(await pool.getBorrowingRate()));
+  state.pool.available = state.pool.totalDeposited - state.pool.totalBorrowed;
 
   console.log("Pool total deposited: " + state.pool.myDeposits);
 
