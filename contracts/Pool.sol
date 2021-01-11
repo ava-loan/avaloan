@@ -103,7 +103,8 @@ contract Pool is Ownable {
     **/
     function borrow(uint256 _amount) payable external canBorrow {
         require(address(this).balance >= _amount, "There is no enough funds in the pool to fund the loan.");
-        //require(borrowingAuthoriser.canBorrow(msg.sender, amount), "The borrower is not authorised.");
+
+        accumulateBorrowingInterests(msg.sender);
 
         borrowed[msg.sender] = borrowed[msg.sender].add(_amount);
         totalBorrowed = totalBorrowed.add(_amount);
