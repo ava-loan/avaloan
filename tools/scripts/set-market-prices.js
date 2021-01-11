@@ -19,6 +19,7 @@ async function setMarketPrice() {
   await PriceOracle.setPrice('ETH', prices['ethereum'].usd/prices['avalanche-2'].usd);
   await PriceOracle.setPrice('XRP', prices['ripple'].usd/prices['avalanche-2'].usd);
   await PriceOracle.setPrice('LNK', prices['chainlink'].usd/prices['avalanche-2'].usd);
+  setTimeout(setMarketPrice, 600000);
 }
 
 setMarketPrice();
