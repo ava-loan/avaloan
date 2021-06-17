@@ -2,20 +2,20 @@ const {expect} = require('chai');
 const {expectRevert} = require('@openzeppelin/test-helpers');
 
 const SimplePriceProvider = artifacts.require('SimplePriceProvider');
-const SimpleAssetExchange = artifacts.require('SimpleAssetExchange');
+const SimpleAssetsExchange = artifacts.require('SimpleAssetsExchange');
 
 const toWei = web3.utils.toWei;
 const fromWei = (val) => parseFloat(web3.utils.fromWei(val));
 const toBytes32 = web3.utils.fromAscii;
 
-contract('SimpleAssetExchange', function ([owner, oracle]) {
+contract('SimpleAssetsExchange', function ([owner, oracle]) {
 
   describe('Buy and sell asset', function () {
 
     var provider, exchange;
 
     before("deploy the Exchange", async function () {
-      exchange = await SimpleAssetExchange.new();
+      exchange = await SimpleAssetsExchange.new();
     });
 
     it("should set the price provider", async function () {

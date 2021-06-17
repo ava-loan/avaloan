@@ -6,7 +6,7 @@ import "../WadRayMath.sol";
 import "@nomiclabs/buidler/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CompoundingIndex is Ownable {
+contract CompoundingIndexDebug is Ownable {
   using SafeMath for uint256;
   using WadRayMath for uint256;
 
