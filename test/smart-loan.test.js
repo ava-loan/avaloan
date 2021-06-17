@@ -2,7 +2,7 @@ const {expect} = require('chai');
 const {expectRevert} = require('@openzeppelin/test-helpers');
 
 const SimplePriceProvider = artifacts.require('SimplePriceProvider');
-const SimpleAssetExchange = artifacts.require('SimpleAssetsExchange');
+const SimpleAssetsExchange = artifacts.require('SimpleAssetsExchange');
 const SmartLoan = artifacts.require('SmartLoan');
 
 const Pool = artifacts.require('Pool');
@@ -23,7 +23,7 @@ contract('Smart loan', function ([owner, oracle, depositor, liquidator]) {
       provider = await SimplePriceProvider.new();
       await provider.setOracle(oracle);
 
-      exchange = await SimpleAssetExchange.new();
+      exchange = await SimpleAssetsExchange.new();
       await exchange.setPriceProvider(provider.address);
     });
 
@@ -110,7 +110,7 @@ contract('Smart loan', function ([owner, oracle, depositor, liquidator]) {
       provider = await SimplePriceProvider.new();
       await provider.setOracle(oracle);
 
-      exchange = await SimpleAssetExchange.new();
+      exchange = await SimpleAssetsExchange.new();
       await exchange.setPriceProvider(provider.address);
 
 
@@ -147,7 +147,7 @@ contract('Smart loan', function ([owner, oracle, depositor, liquidator]) {
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(300);
       expect(fromWei(await loan.getDebt())).to.be.closeTo(200, 0.1);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1499");
+      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1500");
     });
 
 
@@ -177,7 +177,7 @@ contract('Smart loan', function ([owner, oracle, depositor, liquidator]) {
       provider = await SimplePriceProvider.new();
       await provider.setOracle(oracle);
 
-      exchange = await SimpleAssetExchange.new();
+      exchange = await SimpleAssetsExchange.new();
       await exchange.setPriceProvider(provider.address);
 
 
@@ -206,7 +206,7 @@ contract('Smart loan', function ([owner, oracle, depositor, liquidator]) {
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(500);
       expect(fromWei(await loan.getDebt())).to.be.closeTo(400, 0.1);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1249");
+      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1250");
     });
 
 

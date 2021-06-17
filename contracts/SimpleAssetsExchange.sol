@@ -6,7 +6,7 @@ import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
 
 /**
- * @title SimpleAssetExchange
+ * @title SimpleAssetsExchange
  * @dev Contract allows user to invest into an asset
  * It is a simple implementation that could be replace by a DEX or synthetic asset provider
  */
