@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: AGPL3
 pragma solidity ^0.8.2;
 
 /******************
 @title WadRayMath library
 @author Aave
 @dev Provides mul and div function for wads (decimal numbers with 18 digits precision) and rays (decimals with 27 digits)
+@dev https://github.com/aave/aave-protocol/blob/master/contracts/libraries/WadRayMath.sol
  */
 
 library WadRayMath {
