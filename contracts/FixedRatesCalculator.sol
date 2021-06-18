@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRatesCalculator.sol";
@@ -12,7 +12,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
     uint256 depositRate;
     uint256 borrowingRate;
 
-    constructor(uint256 _depositRate, uint256 _borrowingRate) public {
+    constructor(uint256 _depositRate, uint256 _borrowingRate) {
         setRates(_depositRate, _borrowingRate);
     }
 

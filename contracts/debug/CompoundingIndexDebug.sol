@@ -1,19 +1,17 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../WadRayMath.sol";
 
-import "@nomiclabs/buidler/console.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CompoundingIndexDebug is Ownable {
-  using SafeMath for uint256;
   using WadRayMath for uint256;
 
   uint256 private constant SECONDS_IN_YEAR = 31536000;
   uint256 private constant BASE_RATE = 1 ether;
 
-  uint256 public start = now;
+  uint256 public start = block.timestamp;
 
   uint256 public index = BASE_RATE;
   uint256 public indexUpdateTime = start;
@@ -31,8 +29,8 @@ contract CompoundingIndexDebug is Ownable {
 
 
   function updateUser(address user) public onlyOwner {
-    userUpdateTime[user] = now;
-    prevIndex[now] = getIndex();
+    userUpdateTime[user] = block.timestamp;
+    prevIndex[block.timestamp] = getIndex();
 
     //console.log("Updated at: ", now);
     //console.log("Updated index to: ", prevIndex[now]);
@@ -60,7 +58,7 @@ contract CompoundingIndexDebug is Ownable {
 
 
     index = getIndex();
-    indexUpdateTime = now;
+    indexUpdateTime = block.timestamp;
   }
 
 
@@ -70,13 +68,12 @@ contract CompoundingIndexDebug is Ownable {
 
 
   function getCompoundedFactor(uint256 period) internal view returns(uint256) {
-    return rate.wadToRay().div(SECONDS_IN_YEAR)
-    .add(WadRayMath.ray()).rayPow(period);
+    return ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
   }
 
 
   function getIndex() public view returns(uint256) {
-    uint256 period = now.sub(indexUpdateTime);
+    uint256 period = block.timestamp - indexUpdateTime;
     if (period > 0) {
       return index.wadToRay().rayMul(getCompoundedFactor(period)).rayToWad();
     } else {

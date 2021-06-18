@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRatesCalculator.sol";
@@ -13,13 +13,12 @@ import "./WadRayMath.sol";
  * shifted by an offset parameter.
  */
 contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
-    using SafeMath for uint256;
     using WadRayMath for uint256;
 
     uint256 utilisationFactor;
     uint256 offset;
 
-    constructor(uint256 _utilisationFactor, uint256 _offset) public {
+    constructor(uint256 _utilisationFactor, uint256 _offset) {
         setParameters(_utilisationFactor, _offset);
     }
 
@@ -88,7 +87,7 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
     function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns(uint256) {
         return getPoolUtilisation(totalLoans, totalDeposits).wadToRay()
                 .rayMul(utilisationFactor.wadToRay()).rayToWad()
-                .add(offset);
+                + offset;
     }
 
 

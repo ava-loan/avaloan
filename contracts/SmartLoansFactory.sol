@@ -1,4 +1,4 @@
-pragma solidity 0.6.0;
+pragma solidity ^0.8.2;
 
 import "./SmartLoan.sol";
 import "./Pool.sol";
@@ -31,7 +31,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
     Pool _pool,
     IPriceProvider _priceProvider,
     IAssetsExchange _assetsExchange
-  ) public {
+  ) {
     pool = _pool;
     priceProvider = _priceProvider;
     assetsExchange = _assetsExchange;
@@ -54,7 +54,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
     updateRegistry(newAccount);
 
     //Fund account with own funds and credit
-    newAccount.fund.value(msg.value)();
+    newAccount.fund{value:msg.value}();
     newAccount.borrow(_initialDebt);
     require(newAccount.isSolvent());
 
@@ -75,8 +75,8 @@ contract SmartLoansFactory is IBorrowersRegistry {
     return accountsToCreators[_account] != address(0);
   }
 
-  function getAccountForUser(address _user) external view override returns(SmartLoan) {
-    return creatorsToAccounts[_user];
+  function getAccountForUser(address _user) external view override returns(address) {
+    return address(creatorsToAccounts[_user]);
   }
 
   function getOwnerOfLoan(address _loan) external view override returns(address) {

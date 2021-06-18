@@ -1,6 +1,5 @@
-pragma solidity 0.6.0;
+pragma solidity ^0.8.2;
 
-import "./SmartLoan.sol";
 
 /**
  * @title IBorrowersRegistry
@@ -10,7 +9,7 @@ interface IBorrowersRegistry {
 
   function canBorrow(address _account) external view returns(bool);
 
-  function getAccountForUser(address _user) external view returns(SmartLoan);
+  function getAccountForUser(address _user) external view returns(address);
 
   function getOwnerOfLoan(address _loan) external view returns(address);
 

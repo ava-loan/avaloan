@@ -1,6 +1,5 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
 
@@ -11,7 +10,6 @@ import "./IPriceProvider.sol";
  * The price is later available to query by other contracts
  */
 contract SimplePriceProvider is Ownable, IPriceProvider {
-  using SafeMath for uint256;
 
   mapping(bytes32 => uint256) prices;
 

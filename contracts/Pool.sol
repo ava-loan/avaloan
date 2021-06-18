@@ -1,6 +1,5 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
@@ -14,7 +13,6 @@ import "./IBorrowersRegistry.sol";
  * The interest rates calculation is delegated to the external calculator contract.
  */
 contract Pool is Ownable {
-    using SafeMath for uint256;
 
     mapping(address => uint256) public deposits;
     uint256 public totalDeposited;
@@ -67,12 +65,12 @@ contract Pool is Ownable {
     function deposit() payable external {
         accumulateDepositInterests(msg.sender);
 
-        deposits[msg.sender] = deposits[msg.sender].add(msg.value);
-        totalDeposited = totalDeposited.add(msg.value);
+        deposits[msg.sender] = deposits[msg.sender] + msg.value;
+        totalDeposited = totalDeposited + msg.value;
 
         updateRates();
 
-        emit Deposit(msg.sender, msg.value, now);
+        emit Deposit(msg.sender, msg.value, block.timestamp);
     }
 
 
@@ -85,14 +83,14 @@ contract Pool is Ownable {
 
         require(deposits[msg.sender] >= _amount, "You are trying to withdraw more that was deposited.");
 
-        deposits[msg.sender] = deposits[msg.sender].sub(_amount);
-        totalDeposited = totalDeposited.sub(_amount);
+        deposits[msg.sender] = deposits[msg.sender] - _amount;
+        totalDeposited = totalDeposited - _amount;
 
-        msg.sender.transfer(_amount);
+        payable(msg.sender).transfer(_amount);
 
         updateRates();
 
-        emit Withdrawal(msg.sender, _amount, now);
+        emit Withdrawal(msg.sender, _amount, block.timestamp);
     }
 
 
@@ -106,14 +104,14 @@ contract Pool is Ownable {
 
         accumulateBorrowingInterests(msg.sender);
 
-        borrowed[msg.sender] = borrowed[msg.sender].add(_amount);
-        totalBorrowed = totalBorrowed.add(_amount);
+        borrowed[msg.sender] = borrowed[msg.sender] + _amount;
+        totalBorrowed = totalBorrowed + _amount;
 
-        msg.sender.transfer(_amount);
+        payable(msg.sender).transfer(_amount);
 
         updateRates();
 
-        emit Borrowing(msg.sender, _amount, now);
+        emit Borrowing(msg.sender, _amount, block.timestamp);
     }
 
     /**
@@ -125,12 +123,12 @@ contract Pool is Ownable {
 
         require(getBorrowed(msg.sender) >= msg.value, "You are trying to repay more that was borrowed.");
 
-        borrowed[msg.sender] = borrowed[msg.sender].sub(msg.value);
-        totalBorrowed = totalBorrowed.sub(msg.value);
+        borrowed[msg.sender] = borrowed[msg.sender] - msg.value;
+        totalBorrowed = totalBorrowed - msg.value;
 
         updateRates();
 
-        emit Repayment(msg.sender, msg.value, now);
+        emit Repayment(msg.sender, msg.value, block.timestamp);
     }
 
 
@@ -184,18 +182,18 @@ contract Pool is Ownable {
 
     function accumulateDepositInterests(address user) internal {
         uint256 depositedWithInterests = getDeposits(user);
-        uint256 interests = depositedWithInterests.sub(deposits[user]);
+        uint256 interests = depositedWithInterests - deposits[user];
         deposits[user] = depositedWithInterests;
-        totalDeposited = totalDeposited.add(interests);
+        totalDeposited = totalDeposited + interests;
         depositIndex.updateUser(user);
     }
 
 
     function accumulateBorrowingInterests(address user) internal {
         uint256 borrowedWithInterests = getBorrowed(user);
-        uint256 interests = borrowedWithInterests.sub(borrowed[user]);
+        uint256 interests = borrowedWithInterests - borrowed[user];
         borrowed[user] = borrowedWithInterests;
-        totalBorrowed = totalBorrowed.add(interests);
+        totalBorrowed = totalBorrowed + interests;
         borrowIndex.updateUser(user);
     }
 

@@ -1,6 +1,5 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
@@ -11,7 +10,6 @@ import "./IAssetsExchange.sol";
  * It is a simple implementation that could be replace by a DEX or synthetic asset provider
  */
 contract SimpleAssetsExchange is Ownable, IAssetsExchange {
-  using SafeMath for uint256;
 
   mapping(address => mapping(bytes32 =>uint256)) balance;
 
@@ -44,14 +42,14 @@ contract SimpleAssetsExchange is Ownable, IAssetsExchange {
    * @dev _amount amount to be bought
   **/
   function buyAsset(bytes32 _asset, uint256 _amount) payable override external {
-    uint256 amountIn = _amount.mul(priceProvider.getPrice(_asset)).div(1 ether);
+    uint256 amountIn = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountIn > 0, "Incorrect input amount");
     require(msg.value >= amountIn, "Not enough funds provided");
 
-    balance[msg.sender][_asset] = balance[msg.sender][_asset].add(_amount);
+    balance[msg.sender][_asset] = balance[msg.sender][_asset] + _amount;
 
-    uint256 remainder = msg.value.sub(amountIn);
-    msg.sender.transfer(remainder);
+    uint256 remainder = msg.value - amountIn;
+    payable(msg.sender).transfer(remainder);
   }
 
 
@@ -63,12 +61,12 @@ contract SimpleAssetsExchange is Ownable, IAssetsExchange {
   function sellAsset(bytes32 _asset, uint256 _amount) payable override external {
     require(balance[msg.sender][_asset] >= _amount, "Not enough assets to sell");
 
-    uint256 amountOut = _amount.mul(priceProvider.getPrice(_asset)).div(1 ether);
+    uint256 amountOut = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountOut > 0, "Incorrect output amount");
 
-    balance[msg.sender][_asset] = balance[msg.sender][_asset].sub(_amount);
+    balance[msg.sender][_asset] = balance[msg.sender][_asset] - _amount;
 
-    msg.sender.transfer(amountOut);
+    payable(msg.sender).transfer(amountOut);
   }
 
 

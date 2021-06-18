@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
@@ -15,7 +15,6 @@ import "./Pool.sol";
  *
  */
 contract SmartLoan is Ownable {
-  using SafeMath for uint;
 
   uint256 private constant PERCENTAGE_PRECISION = 1000;
   uint256 private constant MAX_SOLVENCY_RATIO = 10000;
@@ -29,7 +28,7 @@ contract SmartLoan is Ownable {
 
   uint256 public minSolvencyRatio = 1200;
 
-  constructor(IPriceProvider _priceProvider, IAssetsExchange _assetsExchange, Pool _pool) public {
+  constructor(IPriceProvider _priceProvider, IAssetsExchange _assetsExchange, Pool _pool) {
     priceProvider = _priceProvider;
     exchange = _assetsExchange;
     pool = _pool;
@@ -41,7 +40,7 @@ contract SmartLoan is Ownable {
   **/
   function fund() external payable {
 
-    emit Funded(msg.sender, msg.value, now);
+    emit Funded(msg.sender, msg.value, block.timestamp);
   }
 
 
@@ -54,9 +53,9 @@ contract SmartLoan is Ownable {
   function withdraw(uint256 _amount) external remainsSolvent onlyOwner {
     require(address(this).balance >= _amount, "There is not enough funds to withdraw");
 
-    msg.sender.transfer(_amount);
+    payable(msg.sender).transfer(_amount);
 
-    emit Withdrawn(msg.sender, _amount, now);
+    emit Withdrawn(msg.sender, _amount, block.timestamp);
   }
 
 
@@ -66,9 +65,9 @@ contract SmartLoan is Ownable {
    * @param _amount to be bought
   **/
   function invest(bytes32 _asset, uint256 _amount) external onlyOwner {
-    exchange.buyAsset.value(address(this).balance)(_asset, _amount);
+    exchange.buyAsset{value: address(this).balance}(_asset, _amount);
 
-    emit Invested(msg.sender, _asset, _amount, now);
+    emit Invested(msg.sender, _asset, _amount, block.timestamp);
   }
 
 
@@ -80,7 +79,7 @@ contract SmartLoan is Ownable {
   function redeem(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
     exchange.sellAsset(_asset, _amount);
 
-    emit Redeemed(msg.sender, _asset, _amount, now);
+    emit Redeemed(msg.sender, _asset, _amount, block.timestamp);
   }
 
 
@@ -91,7 +90,7 @@ contract SmartLoan is Ownable {
   function borrow(uint256 _amount) external onlyOwner remainsSolvent {
     pool.borrow(_amount);
 
-    emit Borrowed(msg.sender, _amount, now);
+    emit Borrowed(msg.sender, _amount, block.timestamp);
   }
 
 
@@ -106,9 +105,9 @@ contract SmartLoan is Ownable {
 
     require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
 
-    pool.repay.value(_amount)();
+    pool.repay{value:_amount}();
 
-    emit Repaid(msg.sender, _amount, now);
+    emit Repaid(msg.sender, _amount, block.timestamp);
   }
 
 
@@ -119,8 +118,8 @@ contract SmartLoan is Ownable {
     repay(_amount);
 
     //Liquidator reward
-    uint256 bonus = _amount.mul(LIQUIDATION_BONUS).div(PERCENTAGE_PRECISION);
-    msg.sender.transfer(bonus);
+    uint256 bonus = _amount * LIQUIDATION_BONUS / PERCENTAGE_PRECISION;
+    payable(msg.sender).transfer(bonus);
   }
 
   receive() external payable {}
@@ -136,7 +135,7 @@ contract SmartLoan is Ownable {
 
     bytes32[] memory assets = priceProvider.getAllAssets();
     for(uint i = 0; i< assets.length; i++) {
-      total = total.add(getAssetValue(assets[i]));
+      total = total + getAssetValue(assets[i]);
     }
     return total;
   }
@@ -155,7 +154,7 @@ contract SmartLoan is Ownable {
     if (debt == 0) {
       return MAX_SOLVENCY_RATIO;
     } else {
-      return getTotalValue().mul(PERCENTAGE_PRECISION).div(debt);
+      return getTotalValue() * PERCENTAGE_PRECISION / debt;
     }
   }
 
@@ -185,7 +184,7 @@ contract SmartLoan is Ownable {
     * @param _asset the code of the given asset
   **/
   function getAssetValue(bytes32 _asset) public view returns(uint256) {
-    return priceProvider.getPrice(_asset).mul(exchange.getBalance(address(this), _asset)).div(1 ether);
+    return priceProvider.getPrice(_asset) * exchange.getBalance(address(this), _asset) / 1 ether;
   }
 
 

@@ -1,13 +1,8 @@
-pragma solidity ^0.6.0;
-
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./CompoundingIndex.sol";
-import "./IRatesCalculator.sol";
+pragma solidity ^0.8.2;
 
 /**
  * @title IPriceProvider
- * @dev Interface that provides current price in AVAX for given asset
+ * @dev Interface that provides current price in AVAX for a given asset
  */
 interface IPriceProvider {
 
