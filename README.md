@@ -91,7 +91,7 @@ The smart contracts could be divided into two main groups:
 
 * **Pool.sol** - a contract that aggregates deposits and borrowings.
 It keeps track of the balance and liabilities of every user.
-It accumulated the interests in the real-time based on the rates model connected by the [setRatesCalculator](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L40).
+It accumulates the interests in the real-time based on the rates model connected by the [setRatesCalculator](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L40).
 The borrowers are verified by the linked [BorrowersRegistry](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L53) contract.
 
 * **CompoundingIndex.sol** - a helper contract that facilitates the calculation of deposits and loans interests rates. It uses a global index, that is snapshotted on every user interaction to achieve a O(1) complexity balance updates.

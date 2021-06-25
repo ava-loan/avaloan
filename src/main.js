@@ -7,13 +7,11 @@ import VueMaterial from 'vue-material'
 import Vue2Filters from 'vue2-filters'
 import Toasted from 'vue-toasted';
 import AsyncComputed from 'vue-async-computed'
-import {getSynthRate} from "./blockchain/pool"
 import VueTimeline from "@growthbunker/vuetimeline";
 
 const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko();
 
-Vue.use(require('vue-countup'));
 Vue.use(Vue2Filters)
 Vue.config.productionTip = false
 Vue.use(VueMaterial)
@@ -28,7 +26,7 @@ window.addEventListener('load', function () {
     el: '#app',
     router,
     template: '<App/>',
-    components: { App}
+    components: {App}
   })
 })
 
@@ -46,7 +44,7 @@ async function setupFilters() {
 
   Vue.filter('usd', function (value) {
     if (!value) return '$0';
-    let usd = value*avaxPrice;
+    let usd = value * avaxPrice;
     return "$" + usd.toFixed(2);
   });
 
@@ -62,8 +60,8 @@ async function setupFilters() {
 
   Vue.filter('full', function (value) {
     if (!value) return '';
-    let usd = value*avaxPrice;
-    return value.toFixed(2) + ' AVAX ($' + usd.toFixed(2) +')';
+    let usd = value * avaxPrice;
+    return value.toFixed(2) + ' AVAX ($' + usd.toFixed(2) + ')';
   });
 
   Vue.filter('units', function (value) {
@@ -73,12 +71,12 @@ async function setupFilters() {
 
   Vue.filter('percent', function (value) {
     if (!value) return '0%';
-    return (value*100).toFixed(2) + "%";
+    return (value * 100).toFixed(2) + "%";
   });
 
   Vue.filter('tx', function (value) {
     if (!value) return '';
-    return value.substr(0,6) + "..." + value.substr(value.length - 4);
+    return value.substr(0, 6) + "..." + value.substr(value.length - 4);
   })
 
 };
