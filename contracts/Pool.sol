@@ -32,12 +32,12 @@ contract Pool is Ownable {
 
 
     /**
-     * Sets the new rate calculator
+     * Sets the new rate calculator.
      * The calculator is an external contract that contains the logic for calculating deposit and borrowing rates.
-     * Only the owner of the Contract can execute this funciton
+     * Only the owner of the Contract can execute this function.
      * @dev _ratesCalculator the address of rates calculator
     **/
-    function setRatesCalculator(IRatesCalculator _ratesCalculator) public onlyOwner {
+    function setRatesCalculator(IRatesCalculator _ratesCalculator) external onlyOwner {
         require(address(_ratesCalculator) != address(0), "The rates calculator cannot set to a null address");
 
         ratesCalculator = _ratesCalculator;
@@ -46,12 +46,12 @@ contract Pool is Ownable {
 
 
     /**
-     * Sets the new rate calculator
-     * The borrowers registry decides if an account can borrow funds. Only the owner of the Contract can
-     * execute this funciton
+     * Sets the new borrowers registry contract.
+     * The borrowers registry decides if an account can borrow funds.
+     * Only the owner of the Contract can execute this function.
      * @dev _borrowersRegistry the address of borrowers registry
     **/
-    function setBorrowersRegistry(IBorrowersRegistry _borrowersRegistry) public onlyOwner {
+    function setBorrowersRegistry(IBorrowersRegistry _borrowersRegistry) external onlyOwner {
       require(address(_borrowersRegistry) != address(0), "The borrowers registry cannot set to a null address");
 
       borrowersRegistry = _borrowersRegistry;
@@ -204,8 +204,8 @@ contract Pool is Ownable {
     /* ========== MODIFIERS ========== */
 
     modifier canBorrow() {
-      require(address(borrowersRegistry) != address(0), "Borrowers registry is not configured");
-      require(borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow");
+      require(address(borrowersRegistry) != address(0), "Borrowers registry is not configured.");
+      require(borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow.");
       _;
     }
 
