@@ -28,7 +28,7 @@ export default {
     },
     test: {
       tasks: [{command: 'test', params: {noCompile: true, testFiles: ['{path}']}}],
-      files: ['./test/ts/**/*'],
+      files: ['./test/*.ts'],
       verbose: true
     }
   },

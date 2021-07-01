@@ -31,14 +31,14 @@ describe('Pool with variable interests rates', () => {
       await pool.deposit({value: toWei("1.0")});
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1", "ether"));
 
-      const currentDeposits = fromWei(await pool.getDeposits(owner.address));
+      const currentDeposits = fromWei(await pool.balanceOf(owner.address));
       expect(currentDeposits).to.be.closeTo(1.000000, 0.000001);
     });
 
     it("should hold for one year", async () => {
       await time.increase(time.duration.years(1));
 
-      const oneYear = fromWei(await pool.getDeposits(owner.address));
+      const oneYear = fromWei(await pool.balanceOf(owner.address));
       expect(oneYear).to.be.closeTo(1.051271, 0.000001);
     });
 
@@ -46,14 +46,14 @@ describe('Pool with variable interests rates', () => {
       await ratesCalculator.setRates(toWei("0.1"), toWei("0.1"));
       await pool.setRatesCalculator(ratesCalculator.address);
 
-      const oneYear = fromWei(await pool.getDeposits(owner.address));
+      const oneYear = fromWei(await pool.balanceOf(owner.address));
       expect(oneYear).to.be.closeTo(1.051271, 0.000001);
     });
 
     it("should hold for another year", async () => {
       await time.increase(time.duration.years(1));
 
-      const twoYears = fromWei(await pool.getDeposits(owner.address));
+      const twoYears = fromWei(await pool.balanceOf(owner.address));
       expect(twoYears).to.be.closeTo(1.161834, 0.000001);
     });
 
@@ -76,14 +76,14 @@ describe('Pool with variable interests rates', () => {
       await pool.deposit({value: toWei("1.0")});
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1", "ether"));
 
-      const currentDeposits = fromWei(await pool.getDeposits(owner.address));
+      const currentDeposits = fromWei(await pool.balanceOf(owner.address));
       expect(currentDeposits).to.be.closeTo(1.000000, 0.000001);
     });
 
     it("should hold for one year", async () => {
       await time.increase(time.duration.years(1));
 
-      const oneYear = fromWei(await pool.getDeposits(owner.address));
+      const oneYear = fromWei(await pool.balanceOf(owner.address));
       expect(oneYear).to.be.closeTo(1.051271, 0.000001);
     });
 
@@ -91,14 +91,14 @@ describe('Pool with variable interests rates', () => {
       await ratesCalculator.setRates(toWei("0.01"), toWei("0.1"));
       await pool.setRatesCalculator(ratesCalculator.address);
 
-      let oneYear = fromWei(await pool.getDeposits(owner.address));
+      let oneYear = fromWei(await pool.balanceOf(owner.address));
       expect(oneYear).to.be.closeTo(1.051271, 0.000001);
     });
 
     it("should hold for another year", async () => {
       await time.increase(time.duration.years(1));
 
-      let twoYears = fromWei(await pool.getDeposits(owner.address));
+      let twoYears = fromWei(await pool.balanceOf(owner.address));
       expect(twoYears).to.be.closeTo(1.061836, 0.000001);
     });
 

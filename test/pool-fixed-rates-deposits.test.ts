@@ -33,7 +33,7 @@ describe('Pool with fixed interests rates', () => {
     await sut.deposit({value: toWei("1.0")});
     expect(await provider.getBalance(sut.address)).to.equal(toWei("1"));
 
-    const currentDeposits = await sut.getDeposits(owner.address);
+    const currentDeposits = await sut.balanceOf(owner.address);
     expect(fromWei(currentDeposits)).to.equal(1);
   });
 
@@ -42,9 +42,9 @@ describe('Pool with fixed interests rates', () => {
     await sut.connect(user).deposit({value: toWei("5.0")});
     await sut.connect(user2).deposit({value: toWei("7.0")});
 
-    expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(3.00000, 0.00001);
-    expect(fromWei(await sut.getDeposits(user.address))).to.be.closeTo(5.00000, 0.00001);
-    expect(fromWei(await sut.getDeposits(user2.address))).to.be.closeTo(7.00000, 0.00001);
+    expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(3.00000, 0.00001);
+    expect(fromWei(await sut.balanceOf(user.address))).to.be.closeTo(5.00000, 0.00001);
+    expect(fromWei(await sut.balanceOf(user2.address))).to.be.closeTo(7.00000, 0.00001);
   });
 
   describe("should increase deposit value as time goes", () => {
@@ -53,7 +53,7 @@ describe('Pool with fixed interests rates', () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(1));
 
-      const oneYearDeposit = await sut.getDeposits(owner.address);
+      const oneYearDeposit = await sut.balanceOf(owner.address);
       expect(fromWei(oneYearDeposit)).to.be.closeTo(1.051271, 0.000001);
     });
 
@@ -61,7 +61,7 @@ describe('Pool with fixed interests rates', () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(2));
 
-      const twoYearsDeposit = await sut.getDeposits(owner.address);
+      const twoYearsDeposit = await sut.balanceOf(owner.address);
       expect(fromWei(twoYearsDeposit)).to.be.closeTo(1.105170, 0.000001);
     });
 
@@ -69,7 +69,7 @@ describe('Pool with fixed interests rates', () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(3));
 
-      const threeYearsDeposit = await sut.getDeposits(owner.address);
+      const threeYearsDeposit = await sut.balanceOf(owner.address);
       expect(fromWei(threeYearsDeposit)).to.be.closeTo(1.161834, 0.000001);
     });
 
@@ -77,14 +77,14 @@ describe('Pool with fixed interests rates', () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(5));
 
-      const fiveYearsDeposit = await sut.getDeposits(owner.address);
+      const fiveYearsDeposit = await sut.balanceOf(owner.address);
       expect(fromWei(fiveYearsDeposit)).to.be.closeTo(1.284025, 0.000001);
     });
 
     it("should hold for ten years", async function () {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(10));
-      const tenYearsDeposit = await sut.getDeposits(owner.address);
+      const tenYearsDeposit = await sut.balanceOf(owner.address);
       expect(fromWei(tenYearsDeposit)).to.be.closeTo(1.6487212, 0.000001);
     });
 
@@ -94,7 +94,7 @@ describe('Pool with fixed interests rates', () => {
       });
 
       it("should not change deposit value", async function () {
-        const oneYearDeposit = await sut.getDeposits(owner.address);
+        const oneYearDeposit = await sut.balanceOf(owner.address);
         expect(fromWei(oneYearDeposit)).to.be.closeTo(0, 0.000001);
       });
 
@@ -103,7 +103,7 @@ describe('Pool with fixed interests rates', () => {
         expect(await provider.getBalance(sut.address)).to.equal(toWei("1"));
 
         await time.increase(time.duration.years(1));
-        const oneYearDeposit = await sut.getDeposits(owner.address);
+        const oneYearDeposit = await sut.balanceOf(owner.address);
         expect(fromWei(oneYearDeposit)).to.be.closeTo(1.051271, 0.000001);
       });
     });
@@ -114,39 +114,39 @@ describe('Pool with fixed interests rates', () => {
     beforeEach(async () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(1));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(1.051271, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(1.051271, 0.000001);
     });
 
     it("should properly make another deposits", async () => {
       await sut.deposit({value: toWei("1.0")});
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(2.051271, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(2.051271, 0.000001);
 
       await sut.deposit({value: toWei("2.0")});
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(4.051271, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(4.051271, 0.000001);
 
       await sut.deposit({value: toWei("5.7")});
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(9.751271, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(9.751271, 0.000001);
 
       await sut.deposit({value: toWei("3.00083")});
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(12.752101, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(12.752101, 0.000001);
     });
 
     it("should properly make another deposits with different time gaps", async () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.months(6));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(2.102479, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(2.102479, 0.000001);
 
       await sut.deposit({value: toWei("2.0")});
       await time.increase(time.duration.years(3));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(4.766400, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(4.766400, 0.000001);
 
       await sut.deposit({value: toWei("5.7")});
       await time.increase(time.duration.months(3));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(10.596237, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(10.596237, 0.000001);
 
       await sut.deposit({value: toWei("3.00083")});
       await time.increase(time.duration.years(1));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(14.294203, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(14.294203, 0.000001);
     });
 
   });
@@ -154,16 +154,16 @@ describe('Pool with fixed interests rates', () => {
   describe("withdraw function", () => {
     it("should not allow to withdraw when no deposit", async () => {
       await expect(sut.withdraw(toWei("0.5")))
-        .to.be.revertedWith("You are trying to withdraw more that was deposited.");
+        .to.be.revertedWith("ERC20: burn amount exceeds balance");
       await expect(sut.withdraw(toWei("0.000000001")))
-        .to.be.revertedWith("You are trying to withdraw more that was deposited.");
+        .to.be.revertedWith("ERC20: burn amount exceeds balance");
       ;
     });
 
     it("should not allow to withdraw more than already on deposit", async () => {
       await sut.deposit({value: toWei("1.0")});
       await expect(sut.withdraw(toWei("1.0001")))
-        .to.be.revertedWith("You are trying to withdraw more that was deposited.");
+        .to.be.revertedWith("ERC20: burn amount exceeds balance");
     });
 
     it("should not allow to withdraw more than already on deposit after accumulating interests", async () => {
@@ -171,7 +171,7 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
 
       await expect(sut.withdraw(toWei("1.052")))
-        .to.be.revertedWith("You are trying to withdraw more that was deposited.");
+        .to.be.revertedWith("ERC20: burn amount exceeds balance");
     });
 
     it("should allow to withdraw all deposit", async () => {
@@ -179,7 +179,7 @@ describe('Pool with fixed interests rates', () => {
 
       await sut.withdraw(toWei("1.0"))
 
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(0, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(0, 0.000001);
     });
 
     it("should allow to withdraw all deposit after multiple deposits", async () => {
@@ -187,41 +187,41 @@ describe('Pool with fixed interests rates', () => {
       await sut.deposit({value: toWei("2.5")});
       await sut.deposit({value: toWei("3.7")});
 
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(7.2000, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(7.2000, 0.000001);
 
       await sut.withdraw(toWei("7.2000"));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(0, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(0, 0.000001);
     });
 
     it("should allow to withdraw part of the deposit", async () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(1));
       await sut.withdraw(toWei("0.2000"));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(0.85127, 0.00001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(0.85127, 0.00001);
 
       await sut.deposit({value: toWei("2.5")});
       await time.increase(time.duration.years(3));
       await sut.withdraw(toWei("1.3000"));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(2.59362, 0.00001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(2.59362, 0.00001);
 
       await sut.deposit({value: toWei("3.7")});
       await time.increase(time.duration.years(3));
       await sut.withdraw(toWei("2.1400"));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(5.172145, 0.000001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(5.172145, 0.000001);
     });
 
     it("should withdraw deposit from proper address", async () => {
       await sut.deposit({value: toWei("3.0")});
       await sut.connect(user).deposit({value: toWei("5.0")});
 
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(3.00000, 0.00001);
-      expect(fromWei(await sut.getDeposits(user.address))).to.be.closeTo(5.00000, 0.00001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(3.00000, 0.00001);
+      expect(fromWei(await sut.balanceOf(user.address))).to.be.closeTo(5.00000, 0.00001);
 
       await sut.connect(owner).withdraw(toWei("1.000"));
-      expect(fromWei(await sut.getDeposits(owner.address))).to.be.closeTo(2.00000, 0.00001);
+      expect(fromWei(await sut.balanceOf(owner.address))).to.be.closeTo(2.00000, 0.00001);
 
       await sut.connect(user).withdraw(toWei("2.000"));
-      expect(fromWei(await sut.getDeposits(user.address))).to.be.closeTo(3.00000, 0.00001);
+      expect(fromWei(await sut.balanceOf(user.address))).to.be.closeTo(3.00000, 0.00001);
     });
 
   });
