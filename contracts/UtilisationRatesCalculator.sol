@@ -34,8 +34,8 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
      * @dev _offset the offset of the rate formula
     **/
     function setParameters(uint256 _utilisationFactor, uint256 _offset) public onlyOwner {
-        require(_utilisationFactor <= 1 ether, "Calculator factor must be lower than 1");
-        require(_offset <= 1 ether, "Calculator offset must be lower than 1");
+        require(_utilisationFactor <= 1 ether, "Calculator factor must not be higher than 1.");
+        require(_offset <= 1 ether, "Calculator offset must not be higher than 1.");
 
         utilisationFactor = _utilisationFactor;
         offset = _offset;

@@ -1,4 +1,3 @@
-var path = require('path')
 var utils = require('../../scripts/utils')
 var config = require('../webpack')
 var postcssPlugins = require('../postcss/postcss.config.js').plugins
