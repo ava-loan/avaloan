@@ -3,6 +3,7 @@ pragma solidity ^0.8.2;
 
 import "./WadRayMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 /**
   * CompoundingIndex
@@ -26,6 +27,11 @@ contract CompoundingIndex is Ownable {
 
     uint256 public rate;
 
+    /* ========== CONSTRUCTOR ========== */
+
+    constructor(address owner_) {
+      transferOwnership(owner_);
+    }
 
     /* ========== SETTERS ========== */
 
@@ -78,9 +84,11 @@ contract CompoundingIndex is Ownable {
      * It recalculates the value on-demand without updating the storage
     **/
     function getIndexedValue(uint256 value, address user) public view returns(uint256) {
+        uint256 prevUserIndex = userUpdateTime[user] == 0 ? BASE_RATE : prevIndex[getLastUserUpdateTime(user)];
+
         return value.wadToRay()
         .rayMul(getIndex().wadToRay())
-        .rayDiv(prevIndex[getLastUserUpdateTime(user)].wadToRay())
+        .rayDiv(prevUserIndex.wadToRay())
         .rayToWad();
     }
 

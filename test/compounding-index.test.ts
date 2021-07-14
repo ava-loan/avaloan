@@ -6,6 +6,7 @@ import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.so
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, time, toWei} from "./_helpers";
 import {CompoundingIndex} from "../typechain";
+import {CompoundingIndex__factory} from "../typechain";
 
 chai.use(solidity);
 
@@ -18,11 +19,31 @@ describe('CompoundingIndex',() => {
   let owner: SignerWithAddress;
 
   async function init(rate: string, owner: SignerWithAddress): Promise<CompoundingIndex> {
-    const instance = (await deployContract(owner, CompoundingIndexArtifact)) as CompoundingIndex;
+    const instance = await (new CompoundingIndex__factory(owner).deploy(owner.address));
     await instance.setRate(toWei(rate));
 
     return instance;
   }
+
+  describe('Index without rates', () => {
+    let sut: CompoundingIndex;
+
+    before("deploy the Compounding index", async () => {
+      [owner] = await ethers.getSigners();
+      sut = await (new CompoundingIndex__factory(owner).deploy(owner.address));
+    });
+
+    it("should set initial index 1", async () => {
+      let start = fromWei(await sut.getIndex());
+      expect(start).to.be.closeTo(1, 0.000001);
+    });
+
+    it("should get user value with the default start", async () => {
+      let userValue = fromWei(await sut.getIndexedValue(toWei("1000"), owner.address));
+      expect(userValue).to.be.closeTo(1000, 0.001);
+    });
+
+  });
 
   describe('Simple progress', () => {
 
