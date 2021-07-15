@@ -83,7 +83,7 @@ contract Pool is Ownable, Initializable {
      * Deposits the message value
      * It updates user deposited balance, total deposited and rates
     **/
-    function deposit() payable external {
+    function deposit() payable virtual external {
         accumulateDepositInterests(msg.sender);
 
         deposits[msg.sender] = deposits[msg.sender] + msg.value;
