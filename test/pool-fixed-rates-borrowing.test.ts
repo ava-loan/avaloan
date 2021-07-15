@@ -9,6 +9,7 @@ import OpenBorrowersRegistryArtifact
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, time, toWei} from "./_helpers";
 import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../typechain";
+import {CompoundingIndex__factory} from "../typechain";
 
 chai.use(solidity);
 
@@ -24,12 +25,15 @@ describe('Pool with fixed interests rates', () => {
 
     before("Deploy Pool contract", async () => {
       [owner, depositor] = await ethers.getSigners();
-      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
-      await sut.setRatesCalculator(fixedRatesCalculator.address);
+      
+      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;  
+      const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+      const depositIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
+      const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
+      
+      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
 
-      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      await sut.setBorrowersRegistry(borrowersRegistry.address);
       await sut.connect(depositor).deposit({value: toWei("1.0")});
     });
 
@@ -67,10 +71,12 @@ describe('Pool with fixed interests rates', () => {
       [owner, depositor] = await ethers.getSigners();
       fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
-      await sut.setRatesCalculator(fixedRatesCalculator.address);
 
       let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      await sut.setBorrowersRegistry(borrowersRegistry.address);
+      let depositIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
+      let borrowIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
+      
+      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
       await sut.connect(depositor).deposit({value: toWei("1.0")});
     });
 

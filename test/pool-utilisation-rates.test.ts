@@ -10,6 +10,7 @@ import OpenBorrowersRegistryArtifact
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, time, toWei} from "./_helpers";
 import {OpenBorrowersRegistry, Pool, UtilisationRatesCalculator} from "../typechain";
+import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../typechain";
 
 chai.use(solidity);
 
@@ -27,10 +28,12 @@ describe('Pool with fixed interests rates', () => {
       [borrower, depositor] = await ethers.getSigners();
       ratesCalculator = (await deployContract(borrower, UtilisationRatesCalculatorArtifact, [toWei("0.5"), toWei("0.05")])) as UtilisationRatesCalculator;
       pool = (await deployContract(borrower, PoolArtifact)) as Pool;
-      await pool.setRatesCalculator(ratesCalculator.address);
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(borrower).deploy());
+      const depositIndex = await (new CompoundingIndex__factory(borrower).deploy(pool.address));
+      const borrowIndex = await (new CompoundingIndex__factory(borrower).deploy(pool.address));
+        
+      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
 
-      const borrowersRegistry = (await deployContract(borrower, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      await pool.setBorrowersRegistry(borrowersRegistry.address);
     });
 
     it("should deposit", async () => {

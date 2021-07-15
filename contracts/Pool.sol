@@ -2,6 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
 import "./IBorrowersRegistry.sol";
@@ -13,7 +14,7 @@ import "./IBorrowersRegistry.sol";
  * Rates are compounded every second and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to the external calculator contract.
  */
-contract Pool is Ownable {
+contract Pool is Ownable, Initializable {
 
     mapping(address => uint256) public deposits;
     uint256 public totalDeposited;
@@ -24,8 +25,25 @@ contract Pool is Ownable {
     IRatesCalculator ratesCalculator;
     IBorrowersRegistry borrowersRegistry;
 
-    CompoundingIndex depositIndex = new CompoundingIndex();
-    CompoundingIndex borrowIndex = new CompoundingIndex();
+    CompoundingIndex depositIndex;
+    CompoundingIndex borrowIndex;
+
+
+    function initialize(
+      IRatesCalculator _ratesCalculator,
+      IBorrowersRegistry _borrowersRegistry,
+      CompoundingIndex _depositIndex,
+      CompoundingIndex _borrowIndex
+    )  initializer public {
+
+      ratesCalculator = _ratesCalculator;
+      borrowersRegistry = _borrowersRegistry;
+
+      depositIndex = _depositIndex;
+      borrowIndex = _borrowIndex;
+
+      updateRates();
+    }
 
 
     /* ========== SETTERS ========== */

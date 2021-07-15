@@ -3,11 +3,13 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import FixedRatesCalculatorArtifact from '../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import OpenBorrowersRegistryArtifact from '../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, time, toWei} from "./_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {Pool} from "../typechain";
+import {Pool, OpenBorrowersRegistry} from "../typechain";
+import {CompoundingIndex__factory} from "../typechain";
 
 chai.use(solidity);
 
@@ -25,8 +27,14 @@ describe('Pool with fixed interests rates', () => {
     mockFixedRatesCalculator = await deployMockContract(owner, FixedRatesCalculatorArtifact.abi);
     await mockFixedRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
     await mockFixedRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
+
     sut = (await deployContract(owner, PoolArtifact)) as Pool;
-    await sut.setRatesCalculator(mockFixedRatesCalculator.address);
+
+    const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+    const depositIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
+    const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
+      
+    await sut.initialize(mockFixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
   });
 
   it("should deposit requested value", async () => {
