@@ -39,7 +39,8 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createLoan() public returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan(priceProvider, assetsExchange, pool);
+    SmartLoan newAccount = new SmartLoan();
+    newAccount.initialize(priceProvider, assetsExchange, pool);
 
     //Update registry and emit event
     updateRegistry(newAccount);
@@ -49,7 +50,8 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createAndFundLoan(uint256 _initialDebt) external payable returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan(priceProvider, assetsExchange, pool);
+    SmartLoan newAccount = new SmartLoan();
+    newAccount.initialize(priceProvider, assetsExchange, pool);
 
     //Update registry and emit event
     updateRegistry(newAccount);
@@ -63,6 +65,8 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
     return newAccount;
   }
+
+
 
   function updateRegistry(SmartLoan _newAccount) internal {
     creatorsToAccounts[msg.sender] = _newAccount;

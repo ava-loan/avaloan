@@ -19,7 +19,7 @@ import {
   SimplePriceProvider, SmartLoan
 } from "../typechain";
 
-import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../typechain";
+import {CompoundingIndex__factory, OpenBorrowersRegistry__factory, SmartLoan__factory} from "../typechain";
 
 chai.use(solidity);
 
@@ -57,7 +57,8 @@ describe('Smart loan', () => {
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;
+      loan = await (new SmartLoan__factory(owner).deploy());
+      //loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;
     });
 
     it("should fund a loan", async () => {
