@@ -2,7 +2,6 @@ import {ethers, waffle} from 'hardhat'
 import chai from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, time, toWei} from "./_helpers";
 import {CompoundingIndex} from "../typechain";

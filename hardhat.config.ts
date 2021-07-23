@@ -2,9 +2,9 @@ import '@typechain/hardhat'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import "hardhat-watcher";
-
+// https://hardhat.org/tutorial/testing-contracts.html#full-coverage
 export default {
-  solidity: "0.8.2",
+  solidity: "0.8.6",
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {

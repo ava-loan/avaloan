@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.6;
 
 import "../Pool.sol";
 import "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
@@ -23,6 +23,6 @@ contract MockUpgradedPool is Pool {
         updateRates();
 
         emit Deposit(msg.sender, msg.value, block.timestamp);
-    }  
+    }
 
 }
