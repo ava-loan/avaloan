@@ -15,7 +15,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-describe('Pool with fixed interests rates', () => {
+describe('Pool with fixed interests rates (2)', () => {
   let sut: Pool,
     owner: SignerWithAddress,
     user: SignerWithAddress,
@@ -149,6 +149,7 @@ describe('Pool with fixed interests rates', () => {
       await sut.connect(user).withdraw(toWei("2.000"));
       expect(fromWei(await sut.getDeposits(user.address))).to.be.closeTo(3.00000, 0.00001);
     });
+
 
   });
 

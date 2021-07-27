@@ -1,10 +1,9 @@
 import '@typechain/hardhat'
-import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
-import "hardhat-watcher";
-// https://hardhat.org/tutorial/testing-contracts.html#full-coverage
+import "hardhat-gas-reporter"
+
 export default {
-  solidity: "0.8.6",
+  solidity: "0.8.2",
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
@@ -16,27 +15,5 @@ export default {
   },
   paths: {
     tests: "./test"
-  },
-  watcher: {
-    compilation: {
-      tasks: ["compile"],
-      files: ["./contracts"],
-      verbose: true,
-    },
-    ci: {
-      tasks: [
-        "clean",
-        {command: "compile", params: {quiet: true}},
-        {command: "test", params: {noCompile: true}}
-      ],
-    },
-    test: {
-      tasks: [{command: 'test', params: {noCompile: true, testFiles: ['{path}']}}],
-      files: ['./test/ts/**/*'],
-      verbose: true
-    }
-  },
-  mocha: {
-    "allow-uncaught": true
   }
 };

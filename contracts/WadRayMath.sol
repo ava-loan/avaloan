@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL3
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.2;
 
 /******************
 @title WadRayMath library

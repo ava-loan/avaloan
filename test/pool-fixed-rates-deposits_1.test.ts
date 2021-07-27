@@ -14,7 +14,7 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-describe('Pool with fixed interests rates', () => {
+describe('Pool with fixed interests rates (1)', () => {
   let sut: Pool,
     owner: SignerWithAddress,
     user: SignerWithAddress,
