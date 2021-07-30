@@ -10,7 +10,7 @@ import SimplePriceProviderArtifact from '../artifacts/contracts/SimplePriceProvi
 import SimpleAssetsExchangeArtifact from '../artifacts/contracts/SimpleAssetsExchange.sol/SimpleAssetsExchange.json';
 import SmartLoanArtifact from '../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, time, toBytes32, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, time, toBytes32, toWei} from "./_helpers";
 import {
   FixedRatesCalculator,
   OpenBorrowersRegistry,
@@ -38,7 +38,7 @@ describe('Smart loan', () => {
       liquidator: SignerWithAddress;
 
     before("deploy the Smart Loan", async () => {
-      [owner, oracle, depositor, liquidator] = await ethers.getSigners();
+      [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
       provider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
       await provider.setOracle(oracle.address);
@@ -53,7 +53,7 @@ describe('Smart loan', () => {
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
       const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-        
+
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
@@ -133,7 +133,7 @@ describe('Smart loan', () => {
       liquidator: SignerWithAddress;
 
     before("deploy the Smart Loan", async () => {
-      [owner, oracle, depositor, liquidator] = await ethers.getSigners();
+      [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
       provider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
       await provider.setOracle(oracle.address);
@@ -150,7 +150,7 @@ describe('Smart loan', () => {
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
       const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-        
+
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
@@ -207,7 +207,7 @@ describe('Smart loan', () => {
 
 
     before("deploy the Smart Loan", async () => {
-      [owner, oracle, depositor, liquidator] = await ethers.getSigners();
+      [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
       provider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
       await provider.setOracle(oracle.address);
@@ -224,7 +224,7 @@ describe('Smart loan', () => {
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
       const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-        
+
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 

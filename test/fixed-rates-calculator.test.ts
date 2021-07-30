@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import FixedRatesCalculatorArtifact from '../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import {FixedRatesCalculator} from '../typechain/FixedRatesCalculator';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, toWei} from "./_helpers";
 
 chai.use(solidity);
 
@@ -18,7 +18,7 @@ describe('FixedRatesCalculator', () => {
     nonOwner: SignerWithAddress;
 
   beforeEach(async () => {
-    [owner, nonOwner] = await ethers.getSigners();
+    [owner, nonOwner] = await getFixedGasSigners(10000000);
   });
 
   it('should throw if deposit rate higher than borrowing rate', async () => {

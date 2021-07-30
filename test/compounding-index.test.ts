@@ -4,7 +4,7 @@ import {solidity} from "ethereum-waffle";
 
 import CompoundingIndexArtifact from '../artifacts/contracts/CompoundingIndex.sol/CompoundingIndex.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, time, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, time, toWei} from "./_helpers";
 import {CompoundingIndex} from "../typechain";
 import {CompoundingIndex__factory} from "../typechain";
 
@@ -29,7 +29,7 @@ describe('CompoundingIndex',() => {
     let sut: CompoundingIndex;
 
     before("deploy the Compounding index", async () => {
-      [owner] = await ethers.getSigners();
+      [owner] = await getFixedGasSigners(10000000);
       sut = await (new CompoundingIndex__factory(owner).deploy(owner.address));
     });
 
@@ -50,7 +50,7 @@ describe('CompoundingIndex',() => {
     let sut: CompoundingIndex;
 
     before("deploy the Compounding index", async () => {
-      [owner] = await ethers.getSigners();
+      [owner] = await getFixedGasSigners(10000000);
       sut = await init("0.05", owner);
     });
 

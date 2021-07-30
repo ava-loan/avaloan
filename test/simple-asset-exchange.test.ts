@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import SimpleAssetsExchangeArtifact from '../artifacts/contracts/SimpleAssetsExchange.sol/SimpleAssetsExchange.json';
 import SimplePriceProviderArtifact from '../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, toBytes32, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, toBytes32, toWei} from "./_helpers";
 import {SimpleAssetsExchange, SimplePriceProvider} from "../typechain";
 
 chai.use(solidity);
@@ -23,7 +23,7 @@ describe('SimpleAssetsExchange', () => {
       oracle: SignerWithAddress;
 
     before("deploy the Exchange", async () => {
-      [owner, oracle] = await ethers.getSigners();
+      [owner, oracle] = await getFixedGasSigners(10000000);
       sut = await deployContract(owner, SimpleAssetsExchangeArtifact) as SimpleAssetsExchange;
     });
 

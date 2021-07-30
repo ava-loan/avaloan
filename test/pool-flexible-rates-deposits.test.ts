@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import FixedRatesCalculatorArtifact from '../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, time, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, time, toWei} from "./_helpers";
 import {FixedRatesCalculator, Pool} from "../typechain";
 import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../typechain";
 
@@ -21,15 +21,15 @@ describe('Pool with variable interests rates', () => {
       owner: SignerWithAddress;
 
     before("Deploy Pool contract", async () => {
-      [owner] = await ethers.getSigners();
+      [owner] = await getFixedGasSigners(10000000);
 
       ratesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.05")])) as FixedRatesCalculator;
-    
+
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
       const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-        
+
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
     });
 
@@ -71,14 +71,14 @@ describe('Pool with variable interests rates', () => {
       owner: SignerWithAddress;
 
     before("Deploy Pool contract", async () => {
-      [owner] = await ethers.getSigners();
+      [owner] = await getFixedGasSigners(10000000);
 
       ratesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.05")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       let borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       let depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
       let borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-        
+
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
     });
 

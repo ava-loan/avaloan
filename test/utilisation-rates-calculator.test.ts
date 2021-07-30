@@ -6,7 +6,7 @@ import UtilisationRatesCalculatorArtifact
   from '../artifacts/contracts/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
 import {UtilisationRatesCalculator} from "../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, toWei} from "./_helpers";
 
 chai.use(solidity);
 
@@ -19,7 +19,7 @@ describe('UtilisationRatesCalculator', () => {
     nonOwner: SignerWithAddress;
 
   beforeEach(async () => {
-    [owner, nonOwner] = await ethers.getSigners();
+    [owner, nonOwner] = await getFixedGasSigners(10000000);
     sut = (await deployContract(
       owner,
       UtilisationRatesCalculatorArtifact,
