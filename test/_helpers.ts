@@ -38,7 +38,6 @@ export const getFixedGasSigners = async function(gasLimit:number) {
   signers.forEach(signer => {
     let orig = signer.sendTransaction;
     signer.sendTransaction = function(transaction) {
-      const { BigNumber } = require("ethers");
       transaction.gasLimit = BigNumber.from(gasLimit.toString());
       return orig.apply(signer, [transaction]);
     }
