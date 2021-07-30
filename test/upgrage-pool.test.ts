@@ -7,7 +7,7 @@ import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
 import OpenBorrowersRegistryArtifact
   from '../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, time, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, time, toWei} from "./_helpers";
 import {CompoundingIndex, FixedRatesCalculator, OpenBorrowersRegistry, Pool, TransparentUpgradeableProxy} from "../typechain";
 import {CompoundingIndex__factory, TransparentUpgradeableProxy__factory, Pool__factory, MockUpgradedPool__factory} from "../typechain";
 
@@ -31,18 +31,18 @@ describe('Upgreadable pool', () => {
       proxy: TransparentUpgradeableProxy;
 
     it("should depoloy a contract behind a proxy", async () => {
-      [owner, depositor, borrower, admin, depositor2] = await ethers.getSigners();
+      [owner, depositor, borrower, admin, depositor2] = await getFixedGasSigners(10000000);
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
       proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(pool.address, admin.address, []));
       pool = await (new Pool__factory(owner).attach(proxy.address));
 
-      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;  
+      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
       depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
       borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-        
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);        
+
+      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
     });
 
 
@@ -76,7 +76,7 @@ describe('Upgreadable pool', () => {
       //Upgraded logic doubles deposits value
       await pool.connect(depositor2).deposit({value: toWei("1.0")});
       expect(fromWei(await pool.getDeposits(depositor2.address))).to.be.closeTo(2, 0.000001);
-    });    
+    });
 
   });
 
