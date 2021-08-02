@@ -2,8 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../utils/ContextUpgradeable.sol";
-import "../proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -19,7 +18,7 @@ import "../proxy/utils/Initializable.sol";
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
-abstract contract PermissiveOwnable is Initializable, ContextUpgradeable {
+abstract contract PermissiveOwnable is Initializable {
     address private _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -28,12 +27,11 @@ abstract contract PermissiveOwnable is Initializable, ContextUpgradeable {
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
     function __Ownable_init() internal initializer {
-        __Context_init_unchained();
         __Ownable_init_unchained();
     }
 
     function __Ownable_init_unchained() internal initializer {
-        _setOwner(_msgSender());
+        _setOwner(msg.sender);
     }
 
     /**
@@ -47,7 +45,7 @@ abstract contract PermissiveOwnable is Initializable, ContextUpgradeable {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(owner() == address(0) || owner() == _msgSender(), "Ownable: caller is not the owner");
+        require(owner() == address(0) || owner() == msg.sender, "Ownable: caller is not the owner");
         _;
     }
 

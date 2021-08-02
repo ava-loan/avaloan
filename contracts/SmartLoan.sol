@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
 import "./Pool.sol";
+import "./PermissiveOwnable.sol";
 
 
 /**
@@ -16,7 +17,7 @@ import "./Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is PermissiveOwnable, Initializable {
+contract SmartLoan is PermissiveOwnable {
 
   uint256 private constant PERCENTAGE_PRECISION = 1000;
   uint256 private constant MAX_SOLVENCY_RATIO = 10000;
@@ -30,10 +31,11 @@ contract SmartLoan is PermissiveOwnable, Initializable {
 
   uint256 public minSolvencyRatio = 1200;
 
-  function initialize(IPriceProvider _priceProvider, IAssetsExchange _assetsExchange, Pool _pool) external initializer {
-    priceProvider = _priceProvider;
-    exchange = _assetsExchange;
-    pool = _pool;
+  function initialize(IPriceProvider priceProvider_, IAssetsExchange assetsExchange_, Pool pool_) external initializer {
+    priceProvider = priceProvider_;
+    exchange = assetsExchange_;
+    pool = pool_;
+    __Ownable_init();
   }
 
 
