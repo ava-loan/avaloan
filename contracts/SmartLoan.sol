@@ -134,7 +134,7 @@ contract SmartLoan is PermissiveOwnable {
   /**
     * Returns the current value of a loan including cash and investments
   **/
-  function getTotalValue() public view returns(uint256) {
+  function getTotalValue() public virtual view returns(uint256) {
     uint256 total = address(this).balance;
 
     bytes32[] memory assets = priceProvider.getAllAssets();

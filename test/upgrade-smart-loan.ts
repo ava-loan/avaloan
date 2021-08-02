@@ -16,18 +16,23 @@ import {
   OpenBorrowersRegistry,
   Pool,
   SimpleAssetsExchange,
-  SimplePriceProvider, SmartLoan
+  SimplePriceProvider,
+  SmartLoan,
+  UpgradeableBeacon,
+  BeaconProxy,
+  SmartLoan__factory
 } from "../typechain";
 
 import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../typechain";
+import {UpgradeableBeacon__factory, BeaconProxy__factory, MockUpgradedSmartLoan__factory} from "../typechain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 
-describe('Smart loan - direct creation', () => {
+describe('Smart loan - upgrading', () => {
 
-  describe('A loan without debt', () => {
+  describe('Check basic logic before and after upgrade', () => {
     let provider: SimplePriceProvider,
       exchange: SimpleAssetsExchange,
       loan: SmartLoan,
@@ -35,10 +40,11 @@ describe('Smart loan - direct creation', () => {
       owner: SignerWithAddress,
       oracle: SignerWithAddress,
       depositor: SignerWithAddress,
-      liquidator: SignerWithAddress;
+      other: SignerWithAddress,
+      beacon: UpgradeableBeacon;
 
-    before("deploy provider, exchange and pool", async () => {
-      [owner, oracle, depositor, liquidator] = await ethers.getSigners();
+    before("should deploy provider, exchange and pool", async () => {
+      [owner, oracle, depositor, other] = await ethers.getSigners();
 
       provider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
       await provider.setOracle(oracle.address);
@@ -56,12 +62,14 @@ describe('Smart loan - direct creation', () => {
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
 
-    it("should deploy a pool", async () => {
-      
-
+    it("should deploy a loan", async () => {
       loan = (await deployContract(owner, SmartLoanArtifact)) as SmartLoan;
+      beacon = await (new UpgradeableBeacon__factory(owner).deploy(loan.address));
+      let proxy = await (new BeaconProxy__factory(owner).deploy(beacon.address, []));
+      loan = await (new SmartLoan__factory(owner).attach(proxy.address));
       await loan.initialize(provider.address, exchange.address, pool.address);
     });
+
 
     it("should fund a loan", async () => {
       expect(fromWei(await loan.getTotalValue())).to.be.equal(0);
@@ -75,6 +83,7 @@ describe('Smart loan - direct creation', () => {
       expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
     });
 
+
     it("should buy asset", async () => {
       await provider.connect(oracle).setPrice(toBytes32('USD'), toWei("0.5"));
       await loan.invest(toBytes32('USD'), toWei("100"));
@@ -84,7 +93,23 @@ describe('Smart loan - direct creation', () => {
       expect(fromWei(await loan.getTotalValue())).to.be.equal(100);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
       expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
-    });   
+    }); 
+    
+
+    it("should not allow to upgrade from non-owner", async () => {
+      await expect(beacon.connect(other).upgradeTo(other.address))
+        .to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+
+    it("should upgrade", async () => {
+      let loanV2 = await (new MockUpgradedSmartLoan__factory(owner).deploy());
+
+      await beacon.upgradeTo(loanV2.address);
+
+      //The mock loan has a hardcoded total value of 777
+      expect(await loan.getTotalValue()).to.be.equal(777);
+    });
 
   });
 
