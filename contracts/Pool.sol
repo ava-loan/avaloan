@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
 import "./IBorrowersRegistry.sol";
+import "./PermissiveOwnable.sol";
 
 /**
  * @title Pool
@@ -14,7 +15,7 @@ import "./IBorrowersRegistry.sol";
  * Rates are compounded every second and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to the external calculator contract.
  */
-contract Pool is Ownable, Initializable {
+contract Pool is PermissiveOwnable {
 
     mapping(address => uint256) public deposits;
     uint256 public totalDeposited;
@@ -41,6 +42,8 @@ contract Pool is Ownable, Initializable {
 
       depositIndex = _depositIndex;
       borrowIndex = _borrowIndex;
+
+      __Ownable_init();
 
       updateRates();
     }

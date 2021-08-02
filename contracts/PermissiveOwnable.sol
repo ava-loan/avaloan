@@ -54,7 +54,7 @@ abstract contract PermissiveOwnable is Initializable {
      * `onlyOwner` functions anymore. Can only be called by the current owner.
      *
      * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
+     * thereby opening all the owner-only logic to the public
      */
     function renounceOwnership() public virtual onlyOwner {
         _setOwner(address(0));
