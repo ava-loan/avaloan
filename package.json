@@ -25,6 +25,7 @@
     "erc-1155": "git+https://github.com/enjin/erc-1155.git",
     "ethers": "^5.4.0",
     "solidity-docgen": "^0.3.13",
+    "truffle": "^5.4.3",
     "truffle-contract": "^4.0.31",
     "vue": "^2.6.14",
     "vue-async-computed": "^3.9.0",
