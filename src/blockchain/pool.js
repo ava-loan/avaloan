@@ -25,76 +25,75 @@ export async function getMyDeposits() {
   let pool = await getPool();
   let main = await getMainAccount();
 
-  let poolDepositorBalance = await pool.getDeposits(main);
-  state.pool.myDeposits  = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
-  console.log("User pool deposits: " + state.pool.myDeposits);
-
-  let totalDeposited = 0;
-  let totalWithdrawn = 0;
-  let provider = await getProvider();
-  let logs = await provider.getLogs({
-    fromBlock: deploymentBlock,
-    //address: pool.address
-  });
-  logs = logs.filter(item => item.address === pool.address);
-  state.pool.history.length = 0;
-  logs.forEach(log => {
-    console.log(log);
-    let parsed = pool.iface.parseLog(log);
-    console.log(parsed);
-    if (parsed.name !== 'Deposit' && parsed.name !== 'Withdrawal') return;
-    console.log("User: " + parsed.values.user);
-    console.log("Main: " + main);
-    if (parsed.values.user.toLocaleLowerCase() !== main.toLocaleLowerCase()) return;
-
-    let event = {
-      type: parsed.name,
-      time: new Date(parseInt(parsed.values.timestamp.toString())*1000),
-      value: parseFloat(ethers.utils.formatEther(parsed.values.value)),
-      tx: log.transactionHash
-    };
-    if (event.type === 'Deposit') totalDeposited += event.value;
-    if (event.type === 'Withdrawal') totalWithdrawn += event.value;
-    console.log(event);
-    state.pool.history.unshift(event);
-    return event;
-  });
-
-  state.pool.depositInterests = state.pool.myDeposits - totalDeposited + totalWithdrawn;
-
-  console.log("T deposited: " + totalDeposited);
-  console.log("T withdrawn: " + totalWithdrawn);
-  console.log("Interests: " + state.pool.depositInterests);
+  // let poolDepositorBalance = await pool.getDeposits(main);
+  // state.pool.myDeposits  = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
+  // console.log("User pool deposits: " + state.pool.myDeposits);
+  //
+  // let totalDeposited = 0;
+  // let totalWithdrawn = 0;
+  // let provider = await getProvider();
+  // let logs = await provider.getLogs({
+  //   fromBlock: deploymentBlock,
+  //   //address: pool.address
+  // });
+  // logs = logs.filter(item => item.address === pool.address);
+  // state.pool.history.length = 0;
+  // logs.forEach(log => {
+  //   console.log(log);
+  //   let parsed = pool.iface.parseLog(log);
+  //   console.log(parsed);
+  //   if (parsed.name !== 'Deposit' && parsed.name !== 'Withdrawal') return;
+  //   console.log("User: " + parsed.values.user);
+  //   console.log("Main: " + main);
+  //   if (parsed.values.user.toLocaleLowerCase() !== main.toLocaleLowerCase()) return;
+  //
+  //   let event = {
+  //     type: parsed.name,
+  //     time: new Date(parseInt(parsed.values.timestamp.toString())*1000),
+  //     value: parseFloat(ethers.utils.formatEther(parsed.values.value)),
+  //     tx: log.transactionHash
+  //   };
+  //   if (event.type === 'Deposit') totalDeposited += event.value;
+  //   if (event.type === 'Withdrawal') totalWithdrawn += event.value;
+  //   console.log(event);
+  //   state.pool.history.unshift(event);
+  //   return event;
+  // });
+  //
+  // state.pool.depositInterests = state.pool.myDeposits - totalDeposited + totalWithdrawn;
+  //
+  // console.log("T deposited: " + totalDeposited);
+  // console.log("T withdrawn: " + totalWithdrawn);
+  // console.log("Interests: " + state.pool.depositInterests);
 
 }
 
 export async function getMyLoans() {
-  let pool = await getPool();
-  let main = await getMainAccount();
-
-  let balance = await pool.getBorrowed(main);
-  state.pool.myBorrowed = parseFloat(ethers.utils.formatEther(balance));
-  console.log("User pool loans: " + state.pool.myBorrowed);
+  // let pool = await getPool();
+  // let main = await getMainAccount();
+  //
+  // let balance = await pool.getBorrowed(main);
+  // state.pool.myBorrowed = parseFloat(ethers.utils.formatEther(balance));
+  // console.log("User pool loans: " + state.pool.myBorrowed);
 }
 
 export async function getPoolStats() {
   let pool = await getPool();
   let main = await getMainAccount();
 
+  console.log("Main: " + main);
+
   let poolDepositorBalance = await pool.getDeposits(main);
-  state.pool.myDeposits = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
-
-  //Pool stats
-  state.pool.totalDeposited = parseFloat(ethers.utils.formatEther(await pool.totalDeposited()));
-  state.pool.totalBorrowed = parseFloat(ethers.utils.formatEther(await pool.totalBorrowed()));
-  state.pool.depositRate = parseFloat(ethers.utils.formatEther(await pool.getDepositRate()));
-  state.pool.borrowingRate = parseFloat(ethers.utils.formatEther(await pool.getBorrowingRate()));
-  state.pool.available = state.pool.totalDeposited - state.pool.totalBorrowed;
-
-  console.log("Pool total deposited: " + state.pool.myDeposits);
-
-
-
+  // state.pool.myDeposits = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
+  //
+  // //Pool stats
+  // state.pool.totalDeposited = parseFloat(ethers.utils.formatEther(await pool.totalDeposited()));
+  // state.pool.totalBorrowed = parseFloat(ethers.utils.formatEther(await pool.totalBorrowed()));
+  // state.pool.depositRate = parseFloat(ethers.utils.formatEther(await pool.getDepositRate()));
+  // state.pool.borrowingRate = parseFloat(ethers.utils.formatEther(await pool.getBorrowingRate()));
+  // state.pool.available = state.pool.totalDeposited - state.pool.totalBorrowed;
+  //
+  // console.log("Pool total deposited: " + state.pool.myDeposits);
 }
 
 export async function sendDeposit(amount) {

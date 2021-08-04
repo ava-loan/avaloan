@@ -24,6 +24,7 @@ import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../type
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Smart loan', () => {
 
@@ -51,10 +52,8 @@ describe('Smart loan', () => {
       const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-      const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;
@@ -147,10 +146,8 @@ describe('Smart loan', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-      const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;
@@ -221,10 +218,8 @@ describe('Smart loan', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-      const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;

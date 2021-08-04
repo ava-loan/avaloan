@@ -14,6 +14,7 @@ import {CompoundingIndex__factory} from "../typechain";
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with fixed interests rates', () => {
   let sut: Pool,
@@ -31,10 +32,8 @@ describe('Pool with fixed interests rates', () => {
     sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
     const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-    const depositIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
-    const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
 
-    await sut.initialize(mockFixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+    await sut.initialize(mockFixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
   });
 
   it("should deposit requested value", async () => {

@@ -39,8 +39,8 @@ contract Pool is Ownable, Initializable {
       ratesCalculator = _ratesCalculator;
       borrowersRegistry = _borrowersRegistry;
 
-      depositIndex = _depositIndex;
-      borrowIndex = _borrowIndex;
+      depositIndex = address(_depositIndex) == address(0) ? new CompoundingIndex() : _depositIndex;
+      borrowIndex = address(_borrowIndex) == address(0) ? new CompoundingIndex() : _borrowIndex;
 
       updateRates();
     }

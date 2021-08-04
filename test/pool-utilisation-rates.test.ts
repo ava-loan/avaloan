@@ -15,6 +15,7 @@ import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../type
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with fixed interests rates', () => {
 
@@ -29,10 +30,8 @@ describe('Pool with fixed interests rates', () => {
       ratesCalculator = (await deployContract(borrower, UtilisationRatesCalculatorArtifact, [toWei("0.5"), toWei("0.05")])) as UtilisationRatesCalculator;
       pool = (await deployContract(borrower, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(borrower).deploy());
-      const depositIndex = await (new CompoundingIndex__factory(borrower).deploy(pool.address));
-      const borrowIndex = await (new CompoundingIndex__factory(borrower).deploy(pool.address));
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
 
     });
 

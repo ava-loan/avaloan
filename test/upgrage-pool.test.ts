@@ -14,6 +14,7 @@ import {CompoundingIndex__factory, TransparentUpgradeableProxy__factory, Pool__f
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Upgreadable pool', () => {
 
@@ -39,10 +40,8 @@ describe('Upgreadable pool', () => {
 
       fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-      borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
 
 

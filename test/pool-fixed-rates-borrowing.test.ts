@@ -13,6 +13,8 @@ import {CompoundingIndex__factory} from "../typechain";
 
 chai.use(solidity);
 
+const ZERO = ethers.constants.AddressZero;
+
 const {deployContract, provider} = waffle;
 
 describe('Pool with fixed interests rates', () => {
@@ -29,10 +31,8 @@ describe('Pool with fixed interests rates', () => {
 
       fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      const depositIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
-      const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
 
-      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
 
       await sut.connect(depositor).deposit({value: toWei("1.0")});
     });
@@ -73,10 +73,8 @@ describe('Pool with fixed interests rates', () => {
       sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
       let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-      let depositIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
-      let borrowIndex = await (new CompoundingIndex__factory(owner).deploy(sut.address));
 
-      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await sut.connect(depositor).deposit({value: toWei("1.0")});
     });
 

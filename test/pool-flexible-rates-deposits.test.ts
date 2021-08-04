@@ -12,6 +12,7 @@ import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../type
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe('Pool with variable interests rates', () => {
 
@@ -27,10 +28,8 @@ describe('Pool with variable interests rates', () => {
 
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      const depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-      const borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
 
     it("should deposit", async () => {
@@ -76,10 +75,8 @@ describe('Pool with variable interests rates', () => {
       ratesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.05")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       let borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      let depositIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
-      let borrowIndex = await (new CompoundingIndex__factory(owner).deploy(pool.address));
 
-      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, depositIndex.address, borrowIndex.address);
+      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
 
     it("should deposit", async () => {
