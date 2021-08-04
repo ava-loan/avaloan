@@ -16,8 +16,8 @@ module.exports = function(deployer) {
       console.log("Smart Loan factory deployed: " + factory.address);
       return Pool.deployed();
     }).then(function(pool) {
-     console.log("Setting borrowers registry on: " + pool.address);
-     return pool.initialize(UtilisationRatesCalculator.address, factory.address, ZERO, ZERO, {gas:300000});
+     console.log("Initializing pool: " + pool.address);
+     return pool.initialize(UtilisationRatesCalculator.address, factory.address, ZERO, ZERO, {gas:6000000});
   })
 
 };
