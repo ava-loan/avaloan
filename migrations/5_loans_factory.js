@@ -1,7 +1,12 @@
+const ZERO = require("ethers").constants.AddressZero;
+
 const AssetsExchange = artifacts.require("./SimpleAssetsExchange.sol");
 const PriceProvider = artifacts.require("./SimplePriceProvider.sol");
+const UtilisationRatesCalculator = artifacts.require("./UtilisationRatesCalculator.sol");
 const Pool = artifacts.require("./Pool.sol");
 const SmartLoansFactory = artifacts.require("./SmartLoansFactory.sol");
+
+
 
 module.exports = function(deployer) {
   var factory;
@@ -12,7 +17,7 @@ module.exports = function(deployer) {
       return Pool.deployed();
     }).then(function(pool) {
      console.log("Setting borrowers registry on: " + pool.address);
-     return pool.setBorrowersRegistry(factory.address, {gas:300000});
+     return pool.initialize(UtilisationRatesCalculator.address, factory.address, ZERO, ZERO, {gas:300000});
   })
 
 };
