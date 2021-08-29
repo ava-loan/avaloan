@@ -1,24 +1,44 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.2;
 
+import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/PangolinRouter.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
 
 /**
- * @title SimpleAssetsExchange
+ * @title PangolinAssetsExchange
  * @dev Contract allows user to invest into an asset
- * It is a simple implementation that could be replace by a DEX or synthetic asset provider
+ * This implementation uses the Pangolin DEX
  */
-contract SimpleAssetsExchange is Ownable, IAssetsExchange {
-
+contract PangolinAssetsExchange is Ownable, IAssetsExchange {
   mapping(address => mapping(bytes32 =>uint256)) balance;
+  mapping(bytes32 => address) assetAddress;
 
+  IPangolinRouter public pangolinRouter;
   IPriceProvider public priceProvider;
 
+  /* ========= MODIFIERS ========= */
+
+  modifier RefundRemainder {
+    uint256 initial_balance = getInitialBalance();
+    _;
+    if (address(this).balance > initial_balance) {
+      (bool success,) = msg.sender.call{ value: address(this).balance - initial_balance }("");
+      require(success, "Refund failed");
+    }
+  }
 
   /* ========== SETTERS ========== */
 
+  /**
+   * Sets a new address to a chosen asset
+   * @dev _asset The code of the ERC20 asset
+   * @dev _address The address of a ERC20 compatible asset
+  **/
+  function setAssetAddress(bytes32 _asset, address _address) external onlyOwner {
+    assetAddress[_asset] = _address;
+  }
 
   /**
    * Sets the new oracle
@@ -33,24 +53,23 @@ contract SimpleAssetsExchange is Ownable, IAssetsExchange {
     emit PriceProviderChanged(address(priceProvider));
   }
 
-
   /* ========== MUTATIVE FUNCTIONS ========== */
 
 
   /**
-   * Buys selected asset with AVAX
+   * Buys selected asset with AVAX using the Pangolin DEX
+   * Refunds unused AVAX to the msg.sender
    * @dev _asset asset code
    * @dev _amount amount to be bought
   **/
-  function buyAsset(bytes32 _asset, uint256 _amount) payable override external {
+  function buyAsset(bytes32 _asset, uint256 _amount) payable override external RefundRemainder{
     uint256 amountIn = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountIn > 0, "Incorrect input amount");
     require(msg.value >= amountIn, "Not enough funds provided");
 
+    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_asset), address(this), block.timestamp + 100);
     balance[msg.sender][_asset] = balance[msg.sender][_asset] + _amount;
 
-    uint256 remainder = msg.value - amountIn;
-    payable(msg.sender).transfer(remainder);
   }
 
 
@@ -85,6 +104,40 @@ contract SimpleAssetsExchange is Ownable, IAssetsExchange {
   }
 
 
+  /**
+   * Returns the balance of this contract before the current call's msg.value was added
+   * The return value can be further used to calculate the AVAX remainder to refund
+  **/
+  function getInitialBalance() internal view returns (uint256) {
+    if (address(this).balance <= msg.value) {
+      return 0;
+    } else {
+      return address(this).balance - msg.value;
+    }
+  }
+
+  /**
+   * Returns a path containing WAVAX token's address and chosen asset's address
+   * @dev _asset The code for the asset
+   * @dev _user the address of queried user
+  **/
+  function getPathForAVAXtoToken(bytes32 _asset) private view returns (address[] memory) {
+    require(assetAddress[_asset] != address(0), 'This asset is not supported.');
+    address[] memory path = new address[](2);
+    path[0] = pangolinRouter.WAVAX();
+    path[1] = assetAddress[_asset];
+    return path;
+  }
+
+  function getPathForTokenToAVAX(bytes32 _asset) private view returns (address[] memory) {
+    require(assetAddress[_asset] != address(0), 'This asset is not supported.');
+    address[] memory path = new address[](2);
+    path[0] = assetAddress[_asset];
+    path[1] = pangolinRouter.WAVAX();
+    return path;
+  }
+
+
   /* ========== EVENTS ========== */
 
 
@@ -95,3 +148,4 @@ contract SimpleAssetsExchange is Ownable, IAssetsExchange {
   event PriceProviderChanged(address indexed priceProvider);
 
 }
+
