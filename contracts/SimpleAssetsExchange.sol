@@ -2,6 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/PangolinRouter.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
@@ -83,6 +84,10 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
 
     uint256 amountOut = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountOut > 0, "Incorrect output amount");
+
+    IERC20 token = IERC20(assetAddress[_asset]);
+    token.approve(address(pangolinRouter), tokenInAmount);
+    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(asset), address(this), block.timestamp + 100);
 
     balance[msg.sender][_asset] = balance[msg.sender][_asset] - _amount;
 
