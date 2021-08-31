@@ -13,7 +13,6 @@ import "./IAssetsExchange.sol";
  * This implementation uses the Pangolin DEX
  */
 contract PangolinAssetsExchange is Ownable, IAssetsExchange {
-  mapping(address => mapping(bytes32 =>uint256)) balance;
   mapping(bytes32 => address) assetAddress;
 
   IPangolinRouter public pangolinRouter;
@@ -68,9 +67,7 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
     require(amountIn > 0, "Incorrect input amount");
     require(msg.value >= amountIn, "Not enough funds provided");
 
-    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_asset), address(this), block.timestamp + 100);
-    balance[msg.sender][_asset] = balance[msg.sender][_asset] + _amount;
-
+    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_asset), msg.sender, block.timestamp + 100);
   }
 
 
@@ -80,16 +77,13 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
    * @dev _amount amount to be bought
   **/
   function sellAsset(bytes32 _asset, uint256 _amount) payable override external {
-    require(balance[msg.sender][_asset] >= _amount, "Not enough assets to sell");
 
     uint256 amountOut = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountOut > 0, "Incorrect output amount");
 
     IERC20 token = IERC20(assetAddress[_asset]);
     token.approve(address(pangolinRouter), tokenInAmount);
-    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(asset), address(this), block.timestamp + 100);
-
-    balance[msg.sender][_asset] = balance[msg.sender][_asset] - _amount;
+    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(asset), msg.sender, block.timestamp + 100);
 
     payable(msg.sender).transfer(amountOut);
   }
@@ -97,17 +91,6 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
 
 
   /* ========== VIEW FUNCTIONS ========== */
-
-
-  /**
-   * Returns the current balance of the asset held by given user
-   * @dev _asset the code of an asset
-   * @dev _user the address of queried user
-  **/
-  function getBalance(address _user, bytes32 _asset) external override view returns(uint256) {
-    return balance[_user][_asset];
-  }
-
 
   /**
    * Returns the balance of this contract before the current call's msg.value was added
