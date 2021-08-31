@@ -67,7 +67,7 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
     require(amountIn > 0, "Incorrect input amount");
     require(msg.value >= amountIn, "Not enough funds provided");
 
-    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_asset), msg.sender, block.timestamp + 100);
+    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_asset), msg.sender, block.timestamp);
   }
 
 
@@ -83,7 +83,7 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
 
     IERC20 token = IERC20(assetAddress[_asset]);
     token.approve(address(pangolinRouter), tokenInAmount);
-    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(asset), msg.sender, block.timestamp + 100);
+    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(asset), msg.sender, block.timestamp);
 
     payable(msg.sender).transfer(amountOut);
   }
