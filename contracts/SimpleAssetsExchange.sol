@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.2;
 
-import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/PangolinRouter.sol";
+import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/IPangolinRouter.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IPriceProvider.sol";
@@ -13,8 +13,11 @@ import "./IAssetsExchange.sol";
  * This implementation uses the Pangolin DEX
  */
 contract PangolinAssetsExchange is Ownable, IAssetsExchange {
-  IPangolinRouter public pangolinRouter;
-  IPriceProvider public priceProvider;
+  /* ========= CONSTRUCTOR ========= */
+
+  constructor (address _pangolinRouter) {
+    IPangolinRouter pangolinRouter = IPangolinRouter(_pangolinRouter);
+  }
 
   /* ========= MODIFIERS ========= */
 
@@ -26,22 +29,6 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
       require(success, "Refund failed");
     }
   }
-
-  /* ========== SETTERS ========== */
-
-  /**
-   * Sets the new oracle
-   * The oracle is an entity authorised to set assets prices
-   * @dev _oracle the address of the new oracle
-  **/
-  function setPriceProvider(IPriceProvider _priceProvider) public onlyOwner {
-    require(address(_priceProvider) != address(0), "The price provider cannot set to a null address");
-
-    priceProvider = _priceProvider;
-
-    emit PriceProviderChanged(address(priceProvider));
-  }
-
   /* ========== MUTATIVE FUNCTIONS ========== */
 
 
@@ -50,10 +37,11 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
    * Refunds unused AVAX to the msg.sender
    * @dev _token ERC20 token's address
    * @dev _amount amount of the ERC20 token to be bought
+   * TODO: Implement slippage % tolerance and add as a require check
   **/
   function buyERC20Token(address _token, uint256 _amount) payable override external RefundRemainder{
-    uint256 amountIn = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountIn > 0, "Incorrect input amount");
+    uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, _token);
     require(msg.value >= amountIn, "Not enough funds provided");
 
     pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_token), msg.sender, block.timestamp);
@@ -64,15 +52,19 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
    * Sells selected ERC20 token for AVAX
    * @dev _token ERC20 token's address
    * @dev _amount amount of the ERC20 token to be sold
+   * TODO: Implement slippage % tolerance and add as a require check
   **/
   function sellERC20Token(address _token, uint256 _amount) payable override external {
-
-    uint256 amountOut = _amount * priceProvider.getPrice(_asset) / 1 ether;
-    require(amountOut > 0, "Incorrect output amount");
+    require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
+    uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, _token);
 
     IERC20 token = IERC20(_token);
+    uint256 allowance = token.allowance(msg.sender, address(this));
+    require(allowance >= amount, "Insufficient token allowance");
+    token.transferFrom(msg.sender, address(this), _amountIn);
+
     token.approve(address(pangolinRouter), tokenInAmount);
-    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(_token), msg.sender, block.timestamp);
+    pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(_token), msg.sender, block.timestamp);
 
     payable(msg.sender).transfer(amountOut);
   }
@@ -80,6 +72,21 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
 
 
   /* ========== VIEW FUNCTIONS ========== */
+
+  /**
+     * Returns the minimum AVAX amount that is required to buy _tokenAmount of _token ERC20 token.
+  **/
+  function getEstimatedAVAXForERC20Token(uint256 _amountOut, address _token) public view returns (uint256) {
+    address[2] memory path = getPathForAVAXtoToken(_token);
+    return pangolinRouter.getAmountsIn(_amountOut, path)[0];
+  }
+  /**
+     * Returns the minimum AVAX amount that will be obtained in the event os selling _tokenAmount of _token ERC20 token.
+  **/
+  function getEstimatedERC20TokenForAVAX(uint256 _amountIn, address _token) public view returns (uint256) {
+    address[2] memory path = getPathForTokenToAVAX(_token);
+    return pangolinRouter.getAmountsOut(_amountIn, path)[0];
+  }
 
   /**
    * Returns the balance of this contract before the current call's msg.value was added
@@ -122,8 +129,7 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
   /**
     * @dev emitted after the owner changes the price provider
     * @param priceProvider the address of a new price provider
+    * TODO: Add some purchase/sell-related events?
   **/
-  event PriceProviderChanged(address indexed priceProvider);
-
 }
 
