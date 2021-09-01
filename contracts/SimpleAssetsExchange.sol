@@ -9,12 +9,10 @@ import "./IAssetsExchange.sol";
 
 /**
  * @title PangolinAssetsExchange
- * @dev Contract allows user to invest into an asset
+ * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
 contract PangolinAssetsExchange is Ownable, IAssetsExchange {
-  mapping(bytes32 => address) assetAddress;
-
   IPangolinRouter public pangolinRouter;
   IPriceProvider public priceProvider;
 
@@ -30,15 +28,6 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
   }
 
   /* ========== SETTERS ========== */
-
-  /**
-   * Sets a new address to a chosen asset
-   * @dev _asset The code of the ERC20 asset
-   * @dev _address The address of a ERC20 compatible asset
-  **/
-  function setAssetAddress(bytes32 _asset, address _address) external onlyOwner {
-    assetAddress[_asset] = _address;
-  }
 
   /**
    * Sets the new oracle
@@ -57,33 +46,33 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
 
 
   /**
-   * Buys selected asset with AVAX using the Pangolin DEX
+   * Buys selected ERC20 token with AVAX using the Pangolin DEX
    * Refunds unused AVAX to the msg.sender
-   * @dev _asset asset code
-   * @dev _amount amount to be bought
+   * @dev _token ERC20 token's address
+   * @dev _amount amount of the ERC20 token to be bought
   **/
-  function buyAsset(bytes32 _asset, uint256 _amount) payable override external RefundRemainder{
+  function buyERC20Token(address _token, uint256 _amount) payable override external RefundRemainder{
     uint256 amountIn = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountIn > 0, "Incorrect input amount");
     require(msg.value >= amountIn, "Not enough funds provided");
 
-    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_asset), msg.sender, block.timestamp);
+    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_token), msg.sender, block.timestamp);
   }
 
 
   /**
-   * Sells selected asset for AVAX
-   * @dev _asset asset code
-   * @dev _amount amount to be bought
+   * Sells selected ERC20 token for AVAX
+   * @dev _token ERC20 token's address
+   * @dev _amount amount of the ERC20 token to be sold
   **/
-  function sellAsset(bytes32 _asset, uint256 _amount) payable override external {
+  function sellERC20Token(address _token, uint256 _amount) payable override external {
 
     uint256 amountOut = _amount * priceProvider.getPrice(_asset) / 1 ether;
     require(amountOut > 0, "Incorrect output amount");
 
-    IERC20 token = IERC20(assetAddress[_asset]);
+    IERC20 token = IERC20(_token);
     token.approve(address(pangolinRouter), tokenInAmount);
-    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(asset), msg.sender, block.timestamp);
+    pangolinRouter.swapExactTokensForAVAX(tokenInAmount, minAmountOut, getPathForTokenToAVAX(_token), msg.sender, block.timestamp);
 
     payable(msg.sender).transfer(amountOut);
   }
@@ -105,22 +94,23 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
   }
 
   /**
-   * Returns a path containing WAVAX token's address and chosen asset's address
-   * @dev _asset The code for the asset
-   * @dev _user the address of queried user
+   * Returns a path containing WAVAX token's address and chosen ERC20 token's address
+   * @dev _token ERC20 token's address
   **/
-  function getPathForAVAXtoToken(bytes32 _asset) private view returns (address[] memory) {
-    require(assetAddress[_asset] != address(0), 'This asset is not supported.');
+  function getPathForAVAXtoToken(address _token) private view returns (address[] memory) {
     address[] memory path = new address[](2);
     path[0] = pangolinRouter.WAVAX();
-    path[1] = assetAddress[_asset];
+    path[1] = _token;
     return path;
   }
 
-  function getPathForTokenToAVAX(bytes32 _asset) private view returns (address[] memory) {
-    require(assetAddress[_asset] != address(0), 'This asset is not supported.');
+  /**
+    * Returns a path containing chosen ERC20 token's address and WAVAX token's address
+    * @dev _token ERC20 token's address
+  **/
+  function getPathForTokenToAVAX(address _token) private view returns (address[] memory) {
     address[] memory path = new address[](2);
-    path[0] = assetAddress[_asset];
+    path[0] = _token;
     path[1] = pangolinRouter.WAVAX();
     return path;
   }
