@@ -4,15 +4,13 @@ pragma solidity ^0.8.2;
 import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/IPangolinRouter.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IPriceProvider.sol";
-import "./IAssetsExchange.sol";
 
 /**
- * @title PangolinAssetsExchange
+ * @title PangolinAssetsExchange:wq
  * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
-contract PangolinAssetsExchange is Ownable, IAssetsExchange {
+contract PangolinAssetsExchange is Ownable {
   /* ========= CONSTRUCTOR ========= */
 
   constructor (address _pangolinRouter) {
@@ -25,7 +23,7 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
     uint256 initial_balance = getInitialBalance();
     _;
     if (address(this).balance > initial_balance) {
-      (bool success,) = msg.sender.call{ value: address(this).balance - initial_balance }("");
+      (bool success,) = msg.sender.call{value : address(this).balance - initial_balance}("");
       require(success, "Refund failed");
     }
   }
@@ -39,12 +37,12 @@ contract PangolinAssetsExchange is Ownable, IAssetsExchange {
    * @dev _amount amount of the ERC20 token to be bought
    * TODO: Implement slippage % tolerance and add as a require check
   **/
-  function buyERC20Token(address _token, uint256 _amount) payable override external RefundRemainder{
+  function buyERC20Token(address _token, uint256 _amount) payable override external RefundRemainder {
     require(amountIn > 0, "Incorrect input amount");
     uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, _token);
     require(msg.value >= amountIn, "Not enough funds provided");
 
-    pangolinRouter.swapAVAXForExactTokens{ value: msg.value }(_amount, getPathForAVAXtoToken(_token), msg.sender, block.timestamp);
+    pangolinRouter.swapAVAXForExactTokens{value : msg.value}(_amount, getPathForAVAXtoToken(_token), msg.sender, block.timestamp);
   }
 
 
