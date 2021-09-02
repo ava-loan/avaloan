@@ -23,10 +23,9 @@ contract PangolinAssetsExchange is Ownable {
   /* ========= MODIFIERS ========= */
 
   modifier RefundRemainder {
-    uint256 initial_balance = getInitialBalance();
     _;
-    if (address(this).balance > initial_balance) {
-      (bool success,) = msg.sender.call{value : address(this).balance - initial_balance}("");
+    if (address(this).balance > 0) {
+      (bool success,) = msg.sender.call{value : address(this).balance}("");
       require(success, "Refund failed");
     }
   }
@@ -55,7 +54,7 @@ contract PangolinAssetsExchange is Ownable {
    * @dev _amount amount of the ERC20 token to be sold
    * TODO: Implement slippage % tolerance and add as a require check
   **/
-  function sellERC20Token(address _token, uint256 _amount) payable external {
+  function sellERC20Token(address _token, uint256 _amount) payable external RefundRemainder {
     require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
     uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, _token);
 
@@ -66,8 +65,6 @@ contract PangolinAssetsExchange is Ownable {
 
     token.approve(address(pangolinRouter), _amount);
     pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(_token), msg.sender, block.timestamp);
-
-    payable(msg.sender).transfer(minAmountOut);
   }
 
 
@@ -81,24 +78,13 @@ contract PangolinAssetsExchange is Ownable {
     address[] memory path = getPathForAVAXtoToken(_token);
     return pangolinRouter.getAmountsIn(_amountOut, path)[0];
   }
+
   /**
      * Returns the minimum AVAX amount that will be obtained in the event os selling _tokenAmount of _token ERC20 token.
   **/
   function getEstimatedERC20TokenForAVAX(uint256 _amountIn, address _token) public view returns (uint256) {
     address[] memory path = getPathForTokenToAVAX(_token);
     return pangolinRouter.getAmountsOut(_amountIn, path)[0];
-  }
-
-  /**
-   * Returns the balance of this contract before the current call's msg.value was added
-   * The return value can be further used to calculate the AVAX remainder to refund
-  **/
-  function getInitialBalance() internal view returns (uint256) {
-    if (address(this).balance <= msg.value) {
-      return 0;
-    } else {
-      return address(this).balance - msg.value;
-    }
   }
 
   /**
