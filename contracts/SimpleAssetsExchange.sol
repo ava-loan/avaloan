@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.so
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title PangolinAssetsExchange:wq
+ * @title PangolinAssetsExchange
  * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
@@ -40,7 +40,7 @@ contract PangolinAssetsExchange is Ownable {
    * TODO: Implement slippage % tolerance and add as a require check
   **/
   function buyERC20Token(address _token, uint256 _amount) payable external RefundRemainder {
-    require(_amount > 0, "Incorrect input amount");
+    require(_amount > 0, "Amount of tokens to buy has to be greater than 0");
     uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, _token);
     require(msg.value >= amountIn, "Not enough funds provided");
 
