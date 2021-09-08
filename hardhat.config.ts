@@ -11,7 +11,11 @@ export default {
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
-      timeout: 1800000
+      timeout: 1800000,
+      forking: {
+        url: 'https://api.avax.network/ext/bc/C/rpc',
+        // blockNumber: XXXXXXX - currently unsupported for non-Ethereum networks as confirmed by the hardhat team. They are planning to implement this in the future so that we can leverage the caching mechanism.
+      }
     }
   },
   paths: {
