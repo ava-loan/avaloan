@@ -67,12 +67,14 @@ contract PangolinExchange is Ownable {
     pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(_token), msg.sender, block.timestamp);
   }
 
+  /* ========== RECEIVE AVAX FUNCTION ========== */
+  receive() external payable {  }
 
 
   /* ========== VIEW FUNCTIONS ========== */
 
   /**
-     * Returns the minimum AVAX amount that is required to buy _tokenAmount of _token ERC20 token.
+     * Returns the minimum AVAX amount that is required to buy _amountOut of _token ERC20 token.
   **/
   function getEstimatedAVAXForERC20Token(uint256 _amountOut, address _token) public view returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
@@ -80,11 +82,11 @@ contract PangolinExchange is Ownable {
   }
 
   /**
-     * Returns the minimum AVAX amount that will be obtained in the event os selling _tokenAmount of _token ERC20 token.
+     * Returns the maximum AVAX amount that will be obtained in the event os selling _amountIn of _token ERC20 token.
   **/
   function getEstimatedERC20TokenForAVAX(uint256 _amountIn, address _token) public view returns (uint256) {
     address[] memory path = getPathForTokenToAVAX(_token);
-    return pangolinRouter.getAmountsOut(_amountIn, path)[0];
+    return pangolinRouter.getAmountsOut(_amountIn, path)[1];
   }
 
   /**
