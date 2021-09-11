@@ -31,15 +31,15 @@ const pangolinRouterAbi = [
 describe('PangolinExchange', () => {
   describe('Test buying and selling an asset', () => {
     let sut: PangolinExchange,
-      daie: Contract,
-      pgrt: Contract,
+      daiToken: Contract,
+      pangolinRouter: Contract,
       owner: SignerWithAddress;
 
     before('Deploy the PangolinExchange contract', async () => {
       [owner] = await getFixedGasSigners(10000000);
       sut = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      daie = await new ethers.Contract(daiETokenAddress, ERC20Abi);
-      pgrt = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
+      daiToken = await new ethers.Contract(daiETokenAddress, ERC20Abi);
+      pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
     });
 
 
@@ -50,7 +50,7 @@ describe('PangolinExchange', () => {
 
     it('should check if enough funds were provided', async () => {
       const daiePurchaseAmount = 1e18;
-      const estimatedAvax = (await pgrt.connect(owner).getAmountsIn(daiePurchaseAmount.toString(), [WAVAXTokenAddress, daiETokenAddress]))[0];
+      const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiePurchaseAmount.toString(), [WAVAXTokenAddress, daiETokenAddress]))[0];
 
       await expect(sut.buyERC20Token(daiETokenAddress, daiePurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('Not enough funds provided');
     });
@@ -58,20 +58,20 @@ describe('PangolinExchange', () => {
 
     it('should check if an erc20 tokens were purchased successfully', async () => {
       const DAIePurchaseAmount = 1e18;
-      const estimatedAvax = (await pgrt.connect(owner).getAmountsIn(DAIePurchaseAmount.toString(), [WAVAXTokenAddress, daiETokenAddress]))[0];
-      const initialDAIeBalance = await daie.connect(owner).balanceOf(owner.address);
+      const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(DAIePurchaseAmount.toString(), [WAVAXTokenAddress, daiETokenAddress]))[0];
+      const initialDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
 
       expect(initialDAIeBalance).to.equal(0);
 
       await sut.buyERC20Token(daiETokenAddress, DAIePurchaseAmount.toString(), {value: estimatedAvax.toString()});
 
-      const currentDAIeBalance = await daie.connect(owner).balanceOf(owner.address);
+      const currentDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);
-      const avaxBalanceDifference = BigNumber.from(initialAvaxBalance.toString()).sub(BigNumber.from(estimatedAvax.toString()));
+      const expectedAvaxBalance = BigNumber.from(initialAvaxBalance.toString()).sub(BigNumber.from(estimatedAvax.toString()));
 
       expect(currentDAIeBalance).to.equal(DAIePurchaseAmount.toString());
-      expect(currentAvaxBalance).to.be.lt(avaxBalanceDifference);
+      expect(currentAvaxBalance).to.be.lt(expectedAvaxBalance);
     });
 
 
@@ -86,14 +86,14 @@ describe('PangolinExchange', () => {
 
 
     it('should check if an erc20 tokens were sold successfully', async () => {
-      const initialDAIeBalance = await daie.connect(owner).balanceOf(owner.address);
+      const initialDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
       const daieSaleAmount = 1e18/2;
 
-      await daie.connect(owner).approve(sut.address, daieSaleAmount.toString());
+      await daiToken.connect(owner).approve(sut.address, daieSaleAmount.toString());
       await sut.sellERC20Token(daiETokenAddress, daieSaleAmount.toString());
 
-      const currentDAIeBalance = await daie.connect(owner).balanceOf(owner.address);
+      const currentDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);
       const daieBalanceDifference = BigNumber.from(initialDAIeBalance.toString()).sub(BigNumber.from(currentDAIeBalance.toString()));
 
