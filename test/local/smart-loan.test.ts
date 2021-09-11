@@ -2,24 +2,24 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
-import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
+import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import OpenBorrowersRegistryArtifact
-  from '../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
-import SimplePriceProviderArtifact from '../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
-import SimpleAssetsExchangeArtifact from '../artifacts/contracts/SimpleAssetsExchange.sol/SimpleAssetsExchange.json';
-import SmartLoanArtifact from '../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
+  from '../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import SimplePriceProviderArtifact from '../../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
+import SimpleAssetsExchangeArtifact from '../../artifacts/contracts/SimpleAssetsExchange.sol/SimpleAssetsExchange.json';
+import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toBytes32, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, time, toBytes32, toWei} from "../_helpers";
 import {
   FixedRatesCalculator,
   OpenBorrowersRegistry,
   Pool,
   SimpleAssetsExchange,
   SimplePriceProvider, SmartLoan
-} from "../typechain";
+} from "../../typechain";
 
-import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../typechain";
+import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../../typechain";
 
 chai.use(solidity);
 

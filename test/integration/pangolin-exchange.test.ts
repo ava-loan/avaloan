@@ -3,10 +3,10 @@ import chai from 'chai';
 import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
 
-import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
+import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {PangolinExchange} from '../typechain';
-import {getFixedGasSigners} from "./_helpers";
+import {PangolinExchange} from '../../typechain';
+import {getFixedGasSigners} from "../_helpers";
 
 chai.use(solidity);
 

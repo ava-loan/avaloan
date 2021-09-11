@@ -2,11 +2,11 @@ import {ethers, waffle} from 'hardhat'
 import chai from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import SimpleAssetsExchangeArtifact from '../artifacts/contracts/SimpleAssetsExchange.sol/SimpleAssetsExchange.json';
-import SimplePriceProviderArtifact from '../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
+import SimpleAssetsExchangeArtifact from '../../artifacts/contracts/SimpleAssetsExchange.sol/SimpleAssetsExchange.json';
+import SimplePriceProviderArtifact from '../../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, toBytes32, toWei} from "./_helpers";
-import {SimpleAssetsExchange, SimplePriceProvider} from "../typechain";
+import {fromWei, getFixedGasSigners, toBytes32, toWei} from "../_helpers";
+import {SimpleAssetsExchange, SimplePriceProvider} from "../../typechain";
 
 chai.use(solidity);
 
