@@ -6,7 +6,7 @@ import {solidity} from "ethereum-waffle";
 import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from '../../typechain';
-import {getFixedGasSigners} from "../_helpers";
+import {getFixedGasSigners, toWei} from "../_helpers";
 
 chai.use(solidity);
 
@@ -49,7 +49,7 @@ describe('PangolinExchange', () => {
 
 
     it('should check if enough funds were provided', async () => {
-      const daiTokenPurchaseAmount = 1e20;
+      const daiTokenPurchaseAmount = toWei("100");
       const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
 
       await expect(sut.buyERC20Token(daiTokenAddress, daiTokenPurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('Not enough funds provided');
@@ -57,7 +57,7 @@ describe('PangolinExchange', () => {
 
 
     it('should check if an erc20 tokens were purchased successfully', async () => {
-      const daiTokenPurchaseAmount = 1e20;
+      const daiTokenPurchaseAmount = toWei("100");
       const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
       const initialDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
@@ -87,7 +87,7 @@ describe('PangolinExchange', () => {
     it('should check if an erc20 tokens were sold successfully', async () => {
       const initialDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
-      const daiTokenAmount = 1e20;
+      const daiTokenAmount = toWei("100");
 
       await daiToken.connect(owner).approve(sut.address, daiTokenAmount.toString());
       await sut.sellERC20Token(daiTokenAddress, daiTokenAmount.toString());
