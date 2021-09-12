@@ -45,6 +45,8 @@ contract PangolinExchange is Ownable {
     require(msg.value >= amountIn, "Not enough funds provided");
 
     pangolinRouter.swapAVAXForExactTokens{value : msg.value}(_amount, getPathForAVAXtoToken(_token), msg.sender, block.timestamp);
+
+    emit TokenPurchase(msg.sender, _amount, block.timestamp);
   }
 
 
@@ -65,6 +67,8 @@ contract PangolinExchange is Ownable {
 
     token.approve(address(pangolinRouter), _amount);
     pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(_token), msg.sender, block.timestamp);
+
+    emit TokenSell(msg.sender, _amount, block.timestamp);
   }
 
   /* ========== RECEIVE AVAX FUNCTION ========== */
@@ -111,7 +115,19 @@ contract PangolinExchange is Ownable {
     return path;
   }
 
-/**
-  * TODO: Add some purchase/sell-related events?
-**/
+  /* ========== EVENTS ========== */
+
+  /**
+  * @dev emitted after a tokens were purchased
+  * @param buyer the address which bought tokens
+  * @param amount the amount of token bought
+  **/
+  event TokenPurchase(address indexed buyer, uint amount, uint256 timestamp);
+
+  /**
+  * @dev emitted after a tokens were sold
+  * @param seller the address which sold tokens
+  * @param amount the amount of token sold
+  **/
+  event TokenSell(address indexed seller, uint amount, uint256 timestamp);
 }
