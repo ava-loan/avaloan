@@ -12,9 +12,6 @@ export default {
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
       timeout: 1800000,
-      forking: {
-        url: 'https://api.avax.network/ext/bc/C/rpc',
-      }
     },
     'hardhat-integration': {
       timeout: 1800000,
