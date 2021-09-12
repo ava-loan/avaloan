@@ -14,7 +14,7 @@ const {deployContract, provider} = waffle;
 const {expect} = chai;
 
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
-const daiETokenAddress = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
+const daiTokenAddress = '0xd586E7F844cEa2F87f50152665BCbc2C279D8d70';
 const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 
 const ERC20Abi = [
@@ -38,66 +38,66 @@ describe('PangolinExchange', () => {
     before('Deploy the PangolinExchange contract', async () => {
       [owner] = await getFixedGasSigners(10000000);
       sut = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      daiToken = await new ethers.Contract(daiETokenAddress, ERC20Abi);
+      daiToken = await new ethers.Contract(daiTokenAddress, ERC20Abi);
       pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
     });
 
 
     it('should check for the amount of tokens to buy to be greater than 0', async () => {
-      await expect(sut.buyERC20Token(daiETokenAddress, 0)).to.be.revertedWith('Amount of tokens to buy has to be greater than 0');
+      await expect(sut.buyERC20Token(daiTokenAddress, 0)).to.be.revertedWith('Amount of tokens to buy has to be greater than 0');
     });
 
 
     it('should check if enough funds were provided', async () => {
-      const daiePurchaseAmount = 1e18;
-      const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiePurchaseAmount.toString(), [WAVAXTokenAddress, daiETokenAddress]))[0];
+      const daiTokenPurchaseAmount = 1e18;
+      const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
 
-      await expect(sut.buyERC20Token(daiETokenAddress, daiePurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('Not enough funds provided');
+      await expect(sut.buyERC20Token(daiTokenAddress, daiTokenPurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('Not enough funds provided');
     });
 
 
     it('should check if an erc20 tokens were purchased successfully', async () => {
-      const DAIePurchaseAmount = 1e18;
-      const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(DAIePurchaseAmount.toString(), [WAVAXTokenAddress, daiETokenAddress]))[0];
-      const initialDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      const daiTokenPurchaseAmount = 1e18;
+      const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
+      const initialDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
 
-      expect(initialDAIeBalance).to.equal(0);
+      expect(initialDAITokenBalance).to.equal(0);
 
-      await sut.buyERC20Token(daiETokenAddress, DAIePurchaseAmount.toString(), {value: estimatedAvax.toString()});
+      await sut.buyERC20Token(daiTokenAddress, daiTokenPurchaseAmount.toString(), {value: estimatedAvax.toString()});
 
-      const currentDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      const currentDaiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);
       const expectedAvaxBalance = BigNumber.from(initialAvaxBalance.toString()).sub(BigNumber.from(estimatedAvax.toString()));
 
-      expect(currentDAIeBalance).to.equal(DAIePurchaseAmount.toString());
+      expect(currentDaiTokenBalance).to.equal(daiTokenPurchaseAmount.toString());
       expect(currentAvaxBalance).to.be.lt(expectedAvaxBalance);
     });
 
 
     it('should check for the amount of tokens to sell to be greater than 0', async () => {
-      await expect(sut.sellERC20Token(daiETokenAddress, 0)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
+      await expect(sut.sellERC20Token(daiTokenAddress, 0)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
     });
 
 
     it('should check for a sufficient token allowance', async () => {
-      await expect(sut.sellERC20Token(daiETokenAddress, 1)).to.be.revertedWith('Insufficient token allowance');
+      await expect(sut.sellERC20Token(daiTokenAddress, 1)).to.be.revertedWith('Insufficient token allowance');
     });
 
 
     it('should check if an erc20 tokens were sold successfully', async () => {
-      const initialDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      const initialDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
-      const daieSaleAmount = 1e18/2;
+      const daiTokenAmount = 1e18/2;
 
-      await daiToken.connect(owner).approve(sut.address, daieSaleAmount.toString());
-      await sut.sellERC20Token(daiETokenAddress, daieSaleAmount.toString());
+      await daiToken.connect(owner).approve(sut.address, daiTokenAmount.toString());
+      await sut.sellERC20Token(daiTokenAddress, daiTokenAmount.toString());
 
-      const currentDAIeBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      const currentDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);
-      const daieBalanceDifference = BigNumber.from(initialDAIeBalance.toString()).sub(BigNumber.from(currentDAIeBalance.toString()));
+      const daiTokenExpectedBalance = BigNumber.from(initialDAITokenBalance.toString()).sub(BigNumber.from(currentDAITokenBalance.toString()));
 
-      expect(currentDAIeBalance).to.be.equal(daieBalanceDifference);
+      expect(currentDAITokenBalance).to.be.equal(daiTokenExpectedBalance);
       expect(currentAvaxBalance).to.be.gt(initialAvaxBalance);
     });
   });
