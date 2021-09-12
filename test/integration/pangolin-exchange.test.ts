@@ -6,7 +6,7 @@ import {solidity} from "ethereum-waffle";
 import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange} from '../../typechain';
-import {getFixedGasSigners} from "../_helpers";
+import {getFixedGasSigners, toBytes32} from "../_helpers";
 
 chai.use(solidity);
 
@@ -40,11 +40,12 @@ describe('PangolinExchange', () => {
       sut = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
       daiToken = await new ethers.Contract(daiTokenAddress, ERC20Abi);
       pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
+      sut.updateAssetAddress(toBytes32('DAI'), daiTokenAddress);
     });
 
 
     it('should check for the amount of tokens to buy to be greater than 0', async () => {
-      await expect(sut.buyERC20Token(daiTokenAddress, 0)).to.be.revertedWith('Amount of tokens to buy has to be greater than 0');
+      await expect(sut.buyAsset(toBytes32('DAI'), 0)).to.be.revertedWith('Amount of tokens to buy has to be greater than 0');
     });
 
 
@@ -52,7 +53,7 @@ describe('PangolinExchange', () => {
       const daiTokenPurchaseAmount = 1e20;
       const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
 
-      await expect(sut.buyERC20Token(daiTokenAddress, daiTokenPurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('Not enough funds provided');
+      await expect(sut.buyAsset(toBytes32('DAI'), daiTokenPurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('Not enough funds provided');
     });
 
 
@@ -62,7 +63,7 @@ describe('PangolinExchange', () => {
       const initialDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
 
-      await sut.buyERC20Token(daiTokenAddress, daiTokenPurchaseAmount.toString(), {value: estimatedAvax.toString()});
+      await sut.buyAsset(toBytes32('DAI'), daiTokenPurchaseAmount.toString(), {value: estimatedAvax.toString()})
 
       const currentDaiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);
@@ -74,12 +75,12 @@ describe('PangolinExchange', () => {
 
 
     it('should check for the amount of tokens to sell to be greater than 0', async () => {
-      await expect(sut.sellERC20Token(daiTokenAddress, 0)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
+      await expect(sut.sellAsset(toBytes32('DAI'), 0)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
     });
 
 
     it('should check for a sufficient token allowance', async () => {
-      await expect(sut.sellERC20Token(daiTokenAddress, 1)).to.be.revertedWith('Insufficient token allowance');
+      await expect(sut.sellAsset(toBytes32('DAI'), 1)).to.be.revertedWith('Insufficient token allowance');
     });
 
 
@@ -89,8 +90,7 @@ describe('PangolinExchange', () => {
       const daiTokenAmount = 1e20;
 
       await daiToken.connect(owner).approve(sut.address, daiTokenAmount.toString());
-      await sut.sellERC20Token(daiTokenAddress, daiTokenAmount.toString());
-
+      await sut.sellAsset(toBytes32('DAI'), daiTokenAmount.toString());
 
       const currentDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);
@@ -99,5 +99,12 @@ describe('PangolinExchange', () => {
       expect(currentDAITokenBalance).to.be.equal(daiTokenExpectedBalance);
       expect(currentAvaxBalance).to.be.gt(initialAvaxBalance);
     });
+
+    it('should return the balance of a token', async () => {
+      const daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      const exchangeDAITokenBalance = await sut.getBalance(owner.address, toBytes32('DAI'));
+
+      expect(daiTokenBalance).to.be.equal(exchangeDAITokenBalance);
+    })
   });
 });

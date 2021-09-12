@@ -4,15 +4,17 @@ pragma solidity ^0.8.2;
 import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/IPangolinRouter.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IAssetsExchange.sol";
 
 /**
  * @title PangolinExchange
  * @dev Contract allows user to invest into an ERC20 token
  * This implementation uses the Pangolin DEX
  */
-contract PangolinExchange is Ownable {
+contract PangolinExchange is Ownable, IAssetsExchange {
   /* ========= STATE VARIABLES ========= */
   IPangolinRouter pangolinRouter;
+  mapping(bytes32 => address) assetToAddressMapping;
 
   /* ========= CONSTRUCTOR ========= */
 
@@ -31,6 +33,12 @@ contract PangolinExchange is Ownable {
   }
   /* ========== MUTATIVE FUNCTIONS ========== */
 
+  function updateAssetAddress(bytes32 _asset, address _address) external onlyOwner {
+    require(assetToAddressMapping[_asset] == address(0), "Cannot change the address of an asset that has already been set");
+
+    assetToAddressMapping[_asset] = _address;
+  }
+
 
   /**
    * Buys selected ERC20 token with AVAX using the Pangolin DEX
@@ -39,12 +47,14 @@ contract PangolinExchange is Ownable {
    * @dev _amount amount of the ERC20 token to be bought
    * TODO: Implement slippage % tolerance and add as a require check
   **/
-  function buyERC20Token(address _token, uint256 _amount) payable external RefundRemainder {
+  function buyAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
+    require(assetToAddressMapping[_token] != address(0), "Trading this asset is not allowed");
     require(_amount > 0, "Amount of tokens to buy has to be greater than 0");
-    uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, _token);
+    address tokenAddress = assetToAddressMapping[_token];
+    uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, tokenAddress);
     require(msg.value >= amountIn, "Not enough funds provided");
 
-    pangolinRouter.swapAVAXForExactTokens{value : msg.value}(_amount, getPathForAVAXtoToken(_token), msg.sender, block.timestamp);
+    pangolinRouter.swapAVAXForExactTokens{value : msg.value}(_amount, getPathForAVAXtoToken(tokenAddress), msg.sender, block.timestamp);
 
     emit TokenPurchase(msg.sender, _amount, block.timestamp);
   }
@@ -56,17 +66,19 @@ contract PangolinExchange is Ownable {
    * @dev _amount amount of the ERC20 token to be sold
    * TODO: Implement slippage % tolerance and add as a require check
   **/
-  function sellERC20Token(address _token, uint256 _amount) payable external RefundRemainder {
+  function sellAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
+    require(assetToAddressMapping[_token] != address(0), "Trading this asset is not allowed");
     require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
-    uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, _token);
+    address tokenAddress = assetToAddressMapping[_token];
+    uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, tokenAddress);
 
-    IERC20 token = IERC20(_token);
+    IERC20 token = IERC20(tokenAddress);
     uint256 allowance = token.allowance(msg.sender, address(this));
     require(allowance >= _amount, "Insufficient token allowance");
-    token.transferFrom(msg.sender, address(this), _amount);
 
+    token.transferFrom(msg.sender, address(this), _amount);
     token.approve(address(pangolinRouter), _amount);
-    pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(_token), msg.sender, block.timestamp);
+    pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp);
 
     emit TokenSell(msg.sender, _amount, block.timestamp);
   }
@@ -76,6 +88,17 @@ contract PangolinExchange is Ownable {
 
 
   /* ========== VIEW FUNCTIONS ========== */
+
+  /**
+    * Returns the current balance of the asset held by a given user
+    * @dev _asset the code of an asset
+    * @dev _user the address of queried user
+  **/
+  function getBalance(address _user, bytes32 _asset) external override view returns(uint256) {
+    require(assetToAddressMapping[_asset] != address(0), "Obtaining balance of this asset is not allowed");
+    IERC20 token = IERC20(assetToAddressMapping[_asset]);
+    return token.balanceOf(_user);
+  }
 
   /**
      * Returns the minimum AVAX amount that is required to buy _amountOut of _token ERC20 token.
