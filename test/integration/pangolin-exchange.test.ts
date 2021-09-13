@@ -43,6 +43,11 @@ describe('PangolinExchange', () => {
       sut.updateAssetAddress(toBytes32('DAI'), daiTokenAddress);
     });
 
+    it('should check if it is only possible to obtain assets address if it was previously set', async () => {
+      await sut.getAssetAddress(toBytes32('DAI'));
+      expect(sut.getAssetAddress(toBytes32('FOOBAR'))).to.be.revertedWith('This asset is not supported');
+    });
+
 
     it('should check for the amount of tokens to buy to be greater than 0', async () => {
       await expect(sut.buyAsset(toBytes32('DAI'), 0)).to.be.revertedWith('Amount of tokens to buy has to be greater than 0');

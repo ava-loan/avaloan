@@ -48,9 +48,8 @@ contract PangolinExchange is Ownable, IAssetsExchange {
    * TODO: Implement slippage % tolerance and add as a require check
   **/
   function buyAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
-    require(assetToAddressMapping[_token] != address(0), "Trading this asset is not allowed");
     require(_amount > 0, "Amount of tokens to buy has to be greater than 0");
-    address tokenAddress = assetToAddressMapping[_token];
+    address tokenAddress = getAssetAddress(_token);
     uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, tokenAddress);
     require(msg.value >= amountIn, "Not enough funds provided");
 
@@ -67,9 +66,8 @@ contract PangolinExchange is Ownable, IAssetsExchange {
    * TODO: Implement slippage % tolerance and add as a require check
   **/
   function sellAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
-    require(assetToAddressMapping[_token] != address(0), "Trading this asset is not allowed");
     require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
-    address tokenAddress = assetToAddressMapping[_token];
+    address tokenAddress = getAssetAddress(_token);
     uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, tokenAddress);
 
     IERC20 token = IERC20(tokenAddress);
@@ -95,9 +93,14 @@ contract PangolinExchange is Ownable, IAssetsExchange {
     * @dev _user the address of queried user
   **/
   function getBalance(address _user, bytes32 _asset) external override view returns(uint256) {
-    require(assetToAddressMapping[_asset] != address(0), "Obtaining balance of this asset is not allowed");
-    IERC20 token = IERC20(assetToAddressMapping[_asset]);
+    IERC20 token = IERC20(getAssetAddress(_asset));
     return token.balanceOf(_user);
+  }
+
+
+  function getAssetAddress(bytes32 asset) public view returns(address) {
+    require(assetToAddressMapping[asset] != address(0), "This asset is not supported");
+    return assetToAddressMapping[asset];
   }
 
   /**
