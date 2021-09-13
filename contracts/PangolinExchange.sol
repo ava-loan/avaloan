@@ -15,6 +15,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   /* ========= STATE VARIABLES ========= */
   IPangolinRouter pangolinRouter;
   mapping(bytes32 => address) assetToAddressMapping;
+  mapping(bytes32 => uint256) assetToDecimalPlacesMapping;
 
   /* ========= CONSTRUCTOR ========= */
 
@@ -33,9 +34,10 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   }
   /* ========== MUTATIVE FUNCTIONS ========== */
 
-  function updateAssetAddress(bytes32 _asset, address _address) external onlyOwner {
-    require(assetToAddressMapping[_asset] == address(0), "Cannot change the address of an asset that has already been set");
+  function updateAsset(bytes32 _asset, address _address, uint256 _decimalPlaces) external onlyOwner {
+    require(assetToAddressMapping[_asset] == address(0), "Cannot change an asset that has already been set");
 
+    assetToDecimalPlacesMapping[_asset] = _decimalPlaces;
     assetToAddressMapping[_asset] = _address;
   }
 
@@ -98,7 +100,21 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   }
 
 
-  function getAssetAddress(bytes32 asset) public view returns(address) {
+  /**
+     * Returns number of decimal places of a chosen asset given that it was previously set. Raises an error otherwise.
+     * @dev _asset the code of an asset
+  **/
+  function getAssetDecimalPlaces(bytes32 asset) external override view returns(uint256) {
+    require(assetToDecimalPlacesMapping[asset] != 0, "This asset is not supported");
+    return assetToDecimalPlacesMapping[asset];
+  }
+
+
+  /**
+     * Returns an address of a chosen asset given that it was previously set. Raises an error otherwise.
+     * @dev _asset the code of an asset
+  **/
+  function getAssetAddress(bytes32 asset) public override view returns(address) {
     require(assetToAddressMapping[asset] != address(0), "This asset is not supported");
     return assetToAddressMapping[asset];
   }

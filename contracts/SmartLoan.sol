@@ -2,6 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
 import "./Pool.sol";
@@ -125,6 +126,19 @@ contract SmartLoan is Ownable {
 
   receive() external payable {}
 
+  /**
+    * Sets ERC20Token allowance for the exchange so that it can sell assets
+    * @dev _asset the code of the given asset
+    * @dev _amount amount of the asset to be allowed
+  **/
+  function setExchangeAllowance(bytes32 _asset, uint256 _amount) public onlyOwner{
+    require(_amount <= exchange.getBalance(address(this), _asset), "Insufficient asset balance");
+
+    address assetAddress = exchange.getAssetAddress(_asset);
+    IERC20 token = IERC20(assetAddress);
+    token.approve(address(exchange), _amount);
+  }
+
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -185,7 +199,7 @@ contract SmartLoan is Ownable {
     * @param _asset the code of the given asset
   **/
   function getAssetValue(bytes32 _asset) public view returns(uint256) {
-    return priceProvider.getPrice(_asset) * exchange.getBalance(address(this), _asset) / 1 ether;
+    return priceProvider.getPrice(_asset) * exchange.getBalance(address(this), _asset) / 10**exchange.getAssetDecimalPlaces(_asset);
   }
 
 

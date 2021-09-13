@@ -4,48 +4,64 @@ import {solidity} from "ethereum-waffle";
 
 import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import OpenBorrowersRegistryArtifact
-  from '../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import SimplePriceProviderArtifact from '../../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
-import SimpleAssetsExchangeArtifact from '../../artifacts/contracts/SimpleAssetsExchange.sol/SimpleAssetsExchange.json';
 import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toBytes32, toWei} from "../_helpers";
+import {fromWei, getFixedGasSigners, time, toBytes32, toWei, formatUnits} from "../_helpers";
 import {
   FixedRatesCalculator,
-  OpenBorrowersRegistry,
+  PangolinExchange,
   Pool,
-  SimpleAssetsExchange,
   SimplePriceProvider, SmartLoan
 } from "../../typechain";
 
-import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../../typechain";
+import {OpenBorrowersRegistry__factory} from "../../typechain";
+import {BigNumber, Contract} from "ethers";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
+const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
+const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
+const erc20ABI = [
+  'function decimals() public view returns (uint8)',
+  'function balanceOf(address _owner) public view returns (uint256 balance)',
+  'function approve(address _spender, uint256 _value) public returns (bool success)',
+  'function allowance(address owner, address spender) public view returns (uint256)'
+]
+
 
 describe('Smart loan', () => {
 
   describe('A loan without debt', () => {
-    let provider: SimplePriceProvider,
-      exchange: SimpleAssetsExchange,
+    let priceProvider: SimplePriceProvider,
+      exchange: PangolinExchange,
       loan: SmartLoan,
       pool: Pool,
       owner: SignerWithAddress,
       oracle: SignerWithAddress,
       depositor: SignerWithAddress,
-      liquidator: SignerWithAddress;
+      liquidator: SignerWithAddress,
+      usdTokenContract: Contract,
+      usdTokenDecimalPlaces: BigNumber;
 
     before("deploy the Smart Loan", async () => {
       [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
-      provider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
-      await provider.setOracle(oracle.address);
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      exchange = (await deployContract(owner, SimpleAssetsExchangeArtifact)) as SimpleAssetsExchange;
-      await exchange.setPriceProvider(provider.address);
+      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
+      await priceProvider.setOracle(oracle.address);
+
+      exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
+      await exchange.updateAsset(toBytes32('USD'), usdTokenAddress, 6);
+      await exchange.updateAsset(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', 18);
+      await exchange.updateAsset(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218', 8);
+      await exchange.updateAsset(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3', 18);
+
+      usdTokenDecimalPlaces = await exchange.getAssetDecimalPlaces(toBytes32('USD'));
     });
 
     it("should deploy a pool", async () => {
@@ -56,19 +72,19 @@ describe('Smart loan', () => {
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;
+      loan = (await deployContract(owner, SmartLoanArtifact, [priceProvider.address, exchange.address, pool.address])) as SmartLoan;
     });
 
     it("should fund a loan", async () => {
       expect(fromWei(await loan.getTotalValue())).to.be.equal(0);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
 
       await loan.fund({value: toWei("200")});
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(200);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
     });
 
     it("should withdraw part of funds", async () => {
@@ -76,94 +92,141 @@ describe('Smart loan', () => {
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(100);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
     });
 
     it("should buy asset", async () => {
-      await provider.connect(oracle).setPrice(toBytes32('USD'), toWei("0.5"));
-      await loan.invest(toBytes32('USD'), toWei("100"));
+      const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
+      await priceProvider.connect(oracle).setPrice(toBytes32('USD'), estimatedAVAXPriceFor1USDToken);
 
-      expect(fromWei(await loan.getAssetValue(toBytes32('USD')))).to.be.equal(50);
+      await loan.invest(toBytes32('USD'), toWei("100", usdTokenDecimalPlaces));
 
-      expect(fromWei(await loan.getTotalValue())).to.be.equal(100);
+      const expectedAssetValue = estimatedAVAXPriceFor1USDToken.mul("100")
+
+      expect(await loan.getAssetValue(toBytes32('USD'))).to.be.equal(expectedAssetValue);
+
+      expect(fromWei(await loan.getTotalValue())).to.be.closeTo(100, 0.00001);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
     });
 
     it("should provide assets balances and prices", async () => {
-      let balances = await loan.getAllAssetsBalances();
-      expect(fromWei(balances[0])).to.be.equal(100);
+      const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
+      const usdTokenBalance = (await loan.getAllAssetsBalances())[0];
+      expect(formatUnits(usdTokenBalance, usdTokenDecimalPlaces)).to.be.equal(100);
 
-      let prices = await loan.getAllAssetsPrices();
-      expect(fromWei(prices[0])).to.be.equal(0.5);
+      const usdTokenPrice = (await loan.getAllAssetsPrices())[0];
+      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.000001);
     });
 
+
     it("should update valuation after price change", async () => {
-      await provider.connect(oracle).setPrice(toBytes32('USD'), toWei("0.1"));
+      const initialUSDTokenPrice = await priceProvider.connect(owner).getPrice(toBytes32('USD'));
+      const initialUSDTokenAssetValue = await loan.getAssetValue(toBytes32('USD'));
+      const initialLoanTotalValue = await loan.getTotalValue();
 
-      expect(fromWei(await loan.getAssetValue(toBytes32('USD')))).to.be.equal(10);
+      const newUSDTokenPrice = initialUSDTokenPrice.mul(2);
+      const expectedUSDTokenValue = initialUSDTokenAssetValue.mul(2);
+      const usdTokenValueDifference = expectedUSDTokenValue.sub(initialUSDTokenAssetValue);
 
-      expect(fromWei(await loan.getTotalValue())).to.be.equal(60);
+      await priceProvider.connect(oracle).setPrice(toBytes32('USD'), newUSDTokenPrice);
+
+      expect(await loan.getAssetValue(toBytes32('USD'))).to.be.equal(expectedUSDTokenValue);
+      expect(await loan.getTotalValue()).to.be.equal(initialLoanTotalValue.add(usdTokenValueDifference));
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
+    });
+
+
+    it("should fail to set token allowance due to insufficient token balance", async () => {
+      await expect(loan.connect(owner).setExchangeAllowance(toBytes32('USD'), toWei("999", usdTokenDecimalPlaces))).to.be.revertedWith('Insufficient asset balance');
+    });
+
+
+    it("should successfully set token allowance", async () => {
+      const initialUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
+      await loan.connect(owner).setExchangeAllowance(toBytes32('USD'), initialUSDTokenBalance);
+      expect(await usdTokenContract.allowance(loan.address, exchange.address)).to.be.equal(initialUSDTokenBalance);
     });
 
     it("should redeem investment", async () => {
-      await loan.redeem(toBytes32('USD'), toWei("100"));
+      const initialUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
+      const estimatedAVAXReceivedFor1USDToken = await exchange.getEstimatedERC20TokenForAVAX(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
 
+      await priceProvider.connect(oracle).setPrice(toBytes32('USD'), estimatedAVAXReceivedFor1USDToken);
+      await loan.redeem(toBytes32('USD'), initialUSDTokenBalance);
+
+      const currentUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
+
+      expect(currentUSDTokenBalance).to.be.equal(0);
       expect(fromWei(await loan.getAssetValue(toBytes32('USD')))).to.be.equal(0);
 
-      expect(fromWei(await loan.getTotalValue())).to.be.equal(60);
+      const currentLoanTotalValue = await loan.getTotalValue();
+
+      // TODO: Refactor this using the .to.be.closeTo (delta 0.001) after resolving argument types issues
+      const lowerExpectedBound = currentLoanTotalValue.mul(999).div(1000);
+      const upperExpectedBound = currentLoanTotalValue.mul(1001).div(1000);
+      expect(currentLoanTotalValue).to.be.gte(lowerExpectedBound);
+      expect(currentLoanTotalValue).to.be.lte(upperExpectedBound);
+
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
     });
 
   });
 
   describe('A loan with debt and repayment', () => {
-    let provider: SimplePriceProvider,
-      exchange: SimpleAssetsExchange,
+    let priceProvider: SimplePriceProvider,
+      exchange: PangolinExchange,
       loan: SmartLoan,
       pool: Pool,
       owner: SignerWithAddress,
       oracle: SignerWithAddress,
       depositor: SignerWithAddress,
-      liquidator: SignerWithAddress;
+      liquidator: SignerWithAddress,
+      usdTokenContract: Contract,
+      usdTokenDecimalPlaces: BigNumber;
 
     before("deploy the Smart Loan", async () => {
       [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
-      provider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
-      await provider.setOracle(oracle.address);
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      exchange = (await deployContract(owner, SimpleAssetsExchangeArtifact)) as SimpleAssetsExchange;
-      await exchange.setPriceProvider(provider.address);
+      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
+      await priceProvider.setOracle(oracle.address);
+
+      exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
+      await exchange.updateAsset(toBytes32('USD'), usdTokenAddress, 6);
+      await exchange.updateAsset(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', 18);
+      await exchange.updateAsset(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218', 8);
+      await exchange.updateAsset(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3', 18);
+
+      usdTokenDecimalPlaces = await exchange.getAssetDecimalPlaces(toBytes32('USD'));
     });
 
 
     it("should deploy a pool", async () => {
       const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;
+      loan = (await deployContract(owner, SmartLoanArtifact, [priceProvider.address, exchange.address, pool.address])) as SmartLoan;
     });
 
 
     it("should fund a loan", async () => {
       expect(fromWei(await loan.getTotalValue())).to.be.equal(0);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
 
       await loan.fund({value: toWei("100")});
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(100);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
     });
 
 
@@ -172,7 +235,7 @@ describe('Smart loan', () => {
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(300);
       expect(fromWei(await loan.getDebt())).to.be.closeTo(200, 0.1);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1500");
+      expect(await loan.getSolvencyRatio()).to.be.equal(1500);
     });
 
 
@@ -181,7 +244,7 @@ describe('Smart loan', () => {
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(200);
       expect(fromWei(await loan.getDebt())).to.be.closeTo(100, 0.1);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1999");
+      expect(await loan.getSolvencyRatio()).to.be.equal(1999);
     });
 
 
@@ -192,37 +255,45 @@ describe('Smart loan', () => {
   });
 
   describe('A loan with liquidation', () => {
-    let provider: SimplePriceProvider,
-      exchange: SimpleAssetsExchange,
+    let priceProvider: SimplePriceProvider,
+      exchange: PangolinExchange,
       loan: SmartLoan,
       pool: Pool,
       owner: SignerWithAddress,
       oracle: SignerWithAddress,
       depositor: SignerWithAddress,
-      liquidator: SignerWithAddress;
+      liquidator: SignerWithAddress,
+      usdTokenContract: Contract,
+      usdTokenDecimalPlaces: BigNumber;
 
 
     before("deploy the Smart Loan", async () => {
       [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
-      provider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
-      await provider.setOracle(oracle.address);
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      exchange = (await deployContract(owner, SimpleAssetsExchangeArtifact)) as SimpleAssetsExchange;
-      await exchange.setPriceProvider(provider.address);
+      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
+      await priceProvider.setOracle(oracle.address);
+
+      exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
+      await exchange.updateAsset(toBytes32('USD'), usdTokenAddress, 6);
+      await exchange.updateAsset(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', 18);
+      await exchange.updateAsset(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218', 8);
+      await exchange.updateAsset(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3', 18);
+
+      usdTokenDecimalPlaces = await exchange.getAssetDecimalPlaces(toBytes32('USD'));
     });
 
 
     it("should deploy a pool", async () => {
       const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      pool = (await deployContract(owner, PoolArtifact)) as Pool;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      loan = (await deployContract(owner, SmartLoanArtifact, [provider.address, exchange.address, pool.address])) as SmartLoan;
+      loan = (await deployContract(owner, SmartLoanArtifact, [priceProvider.address, exchange.address, pool.address])) as SmartLoan;
     });
 
     it("should fund a loan", async () => {
@@ -234,36 +305,63 @@ describe('Smart loan', () => {
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(500);
       expect(fromWei(await loan.getDebt())).to.be.closeTo(400, 0.1);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1250");
+      expect(await loan.getSolvencyRatio()).to.be.equal(1250);
     });
 
     it("should invest", async () => {
-      await provider.connect(oracle).setPrice(toBytes32('USD'), toWei("0.5"));
-      await loan.invest(toBytes32('USD'), toWei("100"));
+      const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
+      await priceProvider.connect(oracle).setPrice(toBytes32('USD'), estimatedAVAXPriceFor1USDToken);
+
+
+      await loan.invest(toBytes32('USD'), toWei("1200", usdTokenDecimalPlaces));
+
+      const currentUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
+      expect(currentUSDTokenBalance).to.be.equal(toWei("1200", usdTokenDecimalPlaces));
     });
 
     it("should update valuation after price change", async () => {
-      await provider.connect(oracle).setPrice(toBytes32('USD'), toWei("0.1"));
+      const loanAVAXValue = await provider.getBalance(loan.address);
+      const USDTokenBalance = (await loan.getAllAssetsBalances())[0];
+      const initialUSDTokenPrice = await priceProvider.connect(owner).getPrice(toBytes32('USD'));
+      const newUSDTokenPrice = initialUSDTokenPrice.div(10);
 
-      expect(fromWei(await loan.getAssetValue(toBytes32('USD')))).to.be.equal(10);
+      await priceProvider.connect(oracle).setPrice(toBytes32('USD'), newUSDTokenPrice);
 
-      expect(fromWei(await loan.getTotalValue())).to.be.equal(460);
-      expect(fromWei(await loan.getDebt())).to.be.closeTo(400, 0.1);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("1149");
+      const usdTokenAssetValue = await loan.getAssetValue(toBytes32('USD'));
+      const expectedUSDTokenAssetValue = newUSDTokenPrice.mul(formatUnits(USDTokenBalance, usdTokenDecimalPlaces));
+
+      expect(usdTokenAssetValue).to.be.equal((expectedUSDTokenAssetValue));
+
+      const currentLoanTotalValue = await loan.getTotalValue();
+      const currentLoanDebt = await loan.getDebt();
+
+      expect(currentLoanTotalValue).to.be.equal(loanAVAXValue.add(usdTokenAssetValue));
+      expect(fromWei(currentLoanDebt)).to.be.closeTo(400, 0.1);
+
+      const expectedSolvencyRation = currentLoanTotalValue.mul(1000).div(currentLoanDebt);
+
+      expect(await loan.getSolvencyRatio()).to.be.equal(expectedSolvencyRation);
     });
 
 
     it("should liquidate", async () => {
       expect(await loan.isSolvent()).to.be.false;
-      expect(fromWei(await loan.getTotalValue())).to.be.equal(460);
 
-      await loan.connect(liquidator).liquidate(toWei("300"));
+      const initialLoanAVAXValue = await provider.getBalance(loan.address);
+      const initialUSDTokenAssetValue = await loan.getAssetValue(toBytes32('USD'));
 
-      //Liquidator bonus was 10% of 300 = 30
-      expect(fromWei(await loan.getTotalValue())).to.be.equal(130);
-      expect(fromWei(await loan.getDebt())).to.be.closeTo(100, 0.1);
+      expect(await loan.getTotalValue()).to.be.equal(initialLoanAVAXValue.add(initialUSDTokenAssetValue));
+
+      await loan.connect(liquidator).liquidate(toWei("200"));
+
+      const currentUSDTokenAssetValue = await loan.getAssetValue(toBytes32('USD'));
+      const currentLoanAVAXValue = await provider.getBalance(loan.address);
+
+      //Liquidator bonus was 10% of 200 = 20
+      expect(currentLoanAVAXValue).to.be.equal(initialLoanAVAXValue.sub(toWei("220")));
+      expect(await loan.getTotalValue()).to.be.equal(currentLoanAVAXValue.add(currentUSDTokenAssetValue));
+      expect(fromWei(await loan.getDebt())).to.be.closeTo(200, 0.1);
       expect(await loan.isSolvent()).to.be.true;
-
     });
 
   });

@@ -34,4 +34,18 @@ interface IAssetsExchange {
   **/
   function getBalance(address _user, bytes32 _asset) external view returns(uint256);
 
+
+  /**
+     * Returns number of decimal places of a chosen asset given that it was previously set. Raises an error otherwise.
+     * @dev _asset the code of an asset
+  **/
+  function getAssetDecimalPlaces(bytes32 asset) external view returns(uint256);
+
+
+  /**
+   * Returns an address of a chosen asset given that it was previously set. Raises an error otherwise.
+   * @dev _asset the code of an asset
+  **/
+  function getAssetAddress(bytes32 asset) external view returns(address);
+
 }

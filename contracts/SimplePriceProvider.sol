@@ -17,10 +17,9 @@ contract SimplePriceProvider is Ownable, IPriceProvider {
   bytes32 public USD = 'USD';
   bytes32 public BTC = 'BTC';
   bytes32 public ETH = 'ETH';
-  bytes32 public XRP = 'XRP';
-  bytes32 public LNK = 'LNK';
+  bytes32 public LINK = 'LINK';
 
-  bytes32[5] public ASSETS = [USD, BTC, ETH, XRP, LNK];
+  bytes32[4] public ASSETS = [USD, BTC, ETH, LINK];
 
   address public oracle;
 

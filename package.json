@@ -13,7 +13,7 @@
     "build": "yarn build:contracts:truffle && node scripts/build.js",
     "test-local": "yarn hardhat test",
     "forked-test-node": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc",
-    "test-integration": "yarn hardhat test --network hardhat-integration test/integration/pangolin-exchange.test.ts",
+    "test-integration": "yarn hardhat test test/local/smart-loan.test.ts test/integration/pangolin-exchange.test.ts --network hardhat-integration",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci"
   },
