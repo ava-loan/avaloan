@@ -24,7 +24,7 @@ interface IAssetsExchange {
    * @dev _asset asset code
    * @dev _amount amount to be bought
   **/
-  function sellAsset(bytes32 _asset, uint256 _amount) payable external;
+  function sellAsset(bytes32 _asset, uint256 _amount) external;
 
 
   /**

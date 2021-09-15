@@ -67,7 +67,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
    * @dev _amount amount of the ERC20 token to be sold
    * TODO: Implement slippage % tolerance and add as a require check
   **/
-  function sellAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
+  function sellAsset(bytes32 _token, uint256 _amount) external override RefundRemainder {
     require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
     address tokenAddress = getAssetAddress(_token);
     uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, tokenAddress);
