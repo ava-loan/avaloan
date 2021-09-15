@@ -56,12 +56,12 @@ describe('Smart loan', () => {
       await priceProvider.setOracle(oracle.address);
 
       exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      await exchange.updateAsset(toBytes32('USD'), usdTokenAddress, 6);
-      await exchange.updateAsset(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', 18);
-      await exchange.updateAsset(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218', 8);
-      await exchange.updateAsset(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3', 18);
+      await exchange.updateAssetAddress(toBytes32('USD'), usdTokenAddress);
+      await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
+      await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
+      await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
 
-      usdTokenDecimalPlaces = await exchange.getAssetDecimalPlaces(toBytes32('USD'));
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
     });
 
     it("should deploy a pool", async () => {
@@ -196,12 +196,12 @@ describe('Smart loan', () => {
       await priceProvider.setOracle(oracle.address);
 
       exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      await exchange.updateAsset(toBytes32('USD'), usdTokenAddress, 6);
-      await exchange.updateAsset(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', 18);
-      await exchange.updateAsset(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218', 8);
-      await exchange.updateAsset(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3', 18);
+      await exchange.updateAssetAddress(toBytes32('USD'), usdTokenAddress);
+      await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
+      await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
+      await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
 
-      usdTokenDecimalPlaces = await exchange.getAssetDecimalPlaces(toBytes32('USD'));
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
     });
 
 
@@ -276,12 +276,12 @@ describe('Smart loan', () => {
       await priceProvider.setOracle(oracle.address);
 
       exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      await exchange.updateAsset(toBytes32('USD'), usdTokenAddress, 6);
-      await exchange.updateAsset(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', 18);
-      await exchange.updateAsset(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218', 8);
-      await exchange.updateAsset(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3', 18);
+      await exchange.updateAssetAddress(toBytes32('USD'), usdTokenAddress);
+      await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
+      await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
+      await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
 
-      usdTokenDecimalPlaces = await exchange.getAssetDecimalPlaces(toBytes32('USD'));
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
     });
 
 
@@ -313,10 +313,10 @@ describe('Smart loan', () => {
       await priceProvider.connect(oracle).setPrice(toBytes32('USD'), estimatedAVAXPriceFor1USDToken);
 
 
-      await loan.invest(toBytes32('USD'), toWei("1200", usdTokenDecimalPlaces));
+      await loan.invest(toBytes32('USD'), toWei("1500", usdTokenDecimalPlaces));
 
       const currentUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("1200", usdTokenDecimalPlaces));
+      expect(currentUSDTokenBalance).to.be.equal(toWei("1500", usdTokenDecimalPlaces));
     });
 
     it("should update valuation after price change", async () => {

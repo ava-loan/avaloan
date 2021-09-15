@@ -40,17 +40,12 @@ describe('PangolinExchange', () => {
       sut = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
       daiToken = await new ethers.Contract(daiTokenAddress, ERC20Abi);
       pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
-      sut.updateAsset(toBytes32('DAI'), daiTokenAddress, 6);
+      sut.updateAssetAddress(toBytes32('DAI'), daiTokenAddress);
     });
 
     it('should check if it is only possible to obtain assets address if it was previously set', async () => {
       expect(await sut.getAssetAddress(toBytes32('DAI'))).to.be.equal(daiTokenAddress);
       expect(sut.getAssetAddress(toBytes32('FOOBAR'))).to.be.revertedWith('This asset is not supported');
-    });
-
-    it('should check if it is only possible to obtain assets decimal places if it was previously set', async () => {
-      expect(await sut.getAssetDecimalPlaces(toBytes32('DAI'))).to.be.equal(6);
-      expect(sut.getAssetDecimalPlaces(toBytes32('FOOBAR'))).to.be.revertedWith('This asset is not supported');
     });
 
 
