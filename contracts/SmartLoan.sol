@@ -79,6 +79,8 @@ contract SmartLoan is Ownable {
    * @param _amount to sell
   **/
   function redeem(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
+    IERC20Metadata token = getERC20TokenInstance(_asset);
+    token.transfer(address(exchange), _amount);
     exchange.sellAsset(_asset, _amount);
 
     emit Redeemed(msg.sender, _asset, _amount, block.timestamp);
@@ -126,19 +128,6 @@ contract SmartLoan is Ownable {
 
   receive() external payable {}
 
-  /**
-    * Sets ERC20Token allowance for the exchange so that it can sell assets
-    * @dev _asset the code of the given asset
-    * @dev _amount amount of the asset to be allowed
-  **/
-  function setExchangeAllowance(bytes32 _asset, uint256 _amount) public onlyOwner{
-    require(_amount <= exchange.getBalance(address(this), _asset), "Insufficient asset balance");
-
-    address assetAddress = exchange.getAssetAddress(_asset);
-    IERC20Metadata token = IERC20Metadata(assetAddress);
-    token.approve(address(exchange), _amount);
-  }
-
 
   /* ========== VIEW FUNCTIONS ========== */
 
@@ -153,6 +142,13 @@ contract SmartLoan is Ownable {
       total = total + getAssetValue(assets[i]);
     }
     return total;
+  }
+
+
+  function getERC20TokenInstance(bytes32 _asset) internal view returns(IERC20Metadata) {
+    address assetAddress = exchange.getAssetAddress(_asset);
+    IERC20Metadata token = IERC20Metadata(assetAddress);
+    return token;
   }
 
 
@@ -199,8 +195,7 @@ contract SmartLoan is Ownable {
     * @param _asset the code of the given asset
   **/
   function getAssetValue(bytes32 _asset) public view returns(uint256) {
-    address assetAddress = exchange.getAssetAddress(_asset);
-    IERC20Metadata token = IERC20Metadata(assetAddress);
+    IERC20Metadata token = getERC20TokenInstance(_asset);
     return priceProvider.getPrice(_asset) * exchange.getBalance(address(this), _asset) / 10**token.decimals();
   }
 

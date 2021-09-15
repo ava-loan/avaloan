@@ -138,17 +138,6 @@ describe('Smart loan', () => {
     });
 
 
-    it("should fail to set token allowance due to insufficient token balance", async () => {
-      await expect(loan.connect(owner).setExchangeAllowance(toBytes32('USD'), toWei("999", usdTokenDecimalPlaces))).to.be.revertedWith('Insufficient asset balance');
-    });
-
-
-    it("should successfully set token allowance", async () => {
-      const initialUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
-      await loan.connect(owner).setExchangeAllowance(toBytes32('USD'), initialUSDTokenBalance);
-      expect(await usdTokenContract.allowance(loan.address, exchange.address)).to.be.equal(initialUSDTokenBalance);
-    });
-
     it("should redeem investment", async () => {
       const initialUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
       const estimatedAVAXReceivedFor1USDToken = await exchange.getEstimatedERC20TokenForAVAX(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);

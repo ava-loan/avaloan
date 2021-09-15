@@ -20,7 +20,8 @@ const WAVAXTokenAddress = '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7';
 const ERC20Abi = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
-  'function approve(address _spender, uint256 _value) public returns (bool success)'
+  'function approve(address _spender, uint256 _value) public returns (bool success)',
+  'function transfer(address _to, uint256 _value) public returns (bool success)'
 ]
 
 const pangolinRouterAbi = [
@@ -85,7 +86,7 @@ describe('PangolinExchange', () => {
 
 
     it('should check for a sufficient token allowance', async () => {
-      await expect(sut.sellAsset(toBytes32('DAI'), 1)).to.be.revertedWith('Insufficient token allowance');
+      await expect(sut.sellAsset(toBytes32('DAI'), 1)).to.be.revertedWith('Insufficient token balance');
     });
 
 
@@ -94,7 +95,7 @@ describe('PangolinExchange', () => {
       const initialAvaxBalance = await provider.getBalance(owner.address);
       const daiTokenAmount = 1e20;
 
-      await daiToken.connect(owner).approve(sut.address, daiTokenAmount.toString());
+      await daiToken.connect(owner).transfer(sut.address, daiTokenAmount.toString());
       await sut.sellAsset(toBytes32('DAI'), daiTokenAmount.toString());
 
       const currentDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
