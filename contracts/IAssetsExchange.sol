@@ -24,7 +24,7 @@ interface IAssetsExchange {
    * @dev _asset asset code
    * @dev _amount amount to be bought
   **/
-  function sellAsset(bytes32 _asset, uint256 _amount) payable external;
+  function sellAsset(bytes32 _asset, uint256 _amount) external;
 
 
   /**
@@ -33,5 +33,12 @@ interface IAssetsExchange {
    * @dev _user the address of queried user
   **/
   function getBalance(address _user, bytes32 _asset) external view returns(uint256);
+
+
+  /**
+   * Returns an address of a chosen asset given that it was previously set. Raises an error otherwise.
+   * @dev _asset the code of an asset
+  **/
+  function getAssetAddress(bytes32 asset) external view returns(address);
 
 }

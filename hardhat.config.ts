@@ -11,7 +11,11 @@ export default {
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
-      timeout: 1800000
+      timeout: 1800000,
+    },
+    'hardhat-integration': {
+      timeout: 1800000,
+      url: 'http://127.0.0.1:8545/',
     }
   },
   paths: {

@@ -2,14 +2,14 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
-import OpenBorrowersRegistryArtifact from '../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
-import PoolArtifact from '../artifacts/contracts/Pool.sol/Pool.json';
+import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "./_helpers";
+import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
-import {Pool, OpenBorrowersRegistry} from "../typechain";
-import {CompoundingIndex__factory} from "../typechain";
+import {Pool, OpenBorrowersRegistry} from "../../typechain";
+import {CompoundingIndex__factory} from "../../typechain";
 
 chai.use(solidity);
 

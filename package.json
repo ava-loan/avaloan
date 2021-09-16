@@ -11,13 +11,16 @@
     "build:contracts:truffle": "truffle compile",
     "build:contracts:truffle:force": "rm -rf build && truffle compile",
     "build": "yarn build:contracts:truffle && node scripts/build.js",
-    "test": "yarn hardhat test",
+    "test-local": "yarn hardhat test",
+    "forked-test-node": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc",
+    "test-integration": "yarn hardhat test test/local/smart-loan.test.ts test/integration/pangolin-exchange.test.ts --network hardhat-integration",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci"
   },
   "dependencies": {
     "@growthbunker/vuetimeline": "^0.1.17",
     "@openzeppelin/contracts": "^4.1.0",
+    "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "chart.js": "^2.9.4",
     "coingecko-api": "^1.0.10",
@@ -98,8 +101,7 @@
     "webpack": "^2.7.0",
     "webpack-bundle-analyzer": "4.4.2",
     "webpack-dev-middleware": "^2.0.6",
-    "webpack-hot-middleware": "^2.25.0",
-    "webpack-merge": "^4.2.2"
+    "webpack-hot-middleware": "^2.25.0"
   },
   "engines": {
     "node": ">= 4.0.0 < 16.0.0",

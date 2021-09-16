@@ -2,6 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
 import "./Pool.sol";
@@ -78,6 +79,8 @@ contract SmartLoan is Ownable {
    * @param _amount to sell
   **/
   function redeem(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
+    IERC20Metadata token = getERC20TokenInstance(_asset);
+    token.transfer(address(exchange), _amount);
     exchange.sellAsset(_asset, _amount);
 
     emit Redeemed(msg.sender, _asset, _amount, block.timestamp);
@@ -142,6 +145,13 @@ contract SmartLoan is Ownable {
   }
 
 
+  function getERC20TokenInstance(bytes32 _asset) internal view returns(IERC20Metadata) {
+    address assetAddress = exchange.getAssetAddress(_asset);
+    IERC20Metadata token = IERC20Metadata(assetAddress);
+    return token;
+  }
+
+
   /**
     * Returns the current debt associated with the loan
   **/
@@ -185,7 +195,8 @@ contract SmartLoan is Ownable {
     * @param _asset the code of the given asset
   **/
   function getAssetValue(bytes32 _asset) public view returns(uint256) {
-    return priceProvider.getPrice(_asset) * exchange.getBalance(address(this), _asset) / 1 ether;
+    IERC20Metadata token = getERC20TokenInstance(_asset);
+    return priceProvider.getPrice(_asset) * exchange.getBalance(address(this), _asset) / 10**token.decimals();
   }
 
 

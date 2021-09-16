@@ -3,9 +3,9 @@ import chai from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "./_helpers";
-import {CompoundingIndex} from "../typechain";
-import {CompoundingIndex__factory} from "../typechain";
+import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
+import {CompoundingIndex} from "../../typechain";
+import {CompoundingIndex__factory} from "../../typechain";
 
 chai.use(solidity);
 
