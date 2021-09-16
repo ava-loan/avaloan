@@ -71,9 +71,6 @@ contract PangolinExchange is Ownable, IAssetsExchange {
     uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, tokenAddress);
 
     IERC20 token = IERC20(tokenAddress);
-    uint256 balance = token.balanceOf(address(this));
-    require(balance >= _amount, "Insufficient token balance");
-
     token.approve(address(pangolinRouter), _amount);
     pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp);
 

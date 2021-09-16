@@ -85,8 +85,8 @@ describe('PangolinExchange', () => {
     });
 
 
-    it('should check for a sufficient token allowance', async () => {
-      await expect(sut.sellAsset(toBytes32('DAI'), 1)).to.be.revertedWith('Insufficient token balance');
+    it('should revert transaction in case of a sufficient token balance transferred to an exchange', async () => {
+      await expect(sut.sellAsset(toBytes32('DAI'), 1)).to.be.revertedWith('TransferHelper: TRANSFER_FROM_FAILED');
     });
 
 
