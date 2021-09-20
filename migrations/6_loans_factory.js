@@ -1,6 +1,6 @@
 const ZERO = require("ethers").constants.AddressZero;
 
-const AssetsExchange = artifacts.require("./SimpleAssetsExchange.sol");
+const AssetsExchange = artifacts.require("./PangolinExchange.sol");
 const PriceProvider = artifacts.require("./SimplePriceProvider.sol");
 const UtilisationRatesCalculator = artifacts.require("./UtilisationRatesCalculator.sol");
 const Pool = artifacts.require("./Pool.sol");

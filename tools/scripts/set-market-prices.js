@@ -14,11 +14,10 @@ async function fetchPrice(tokens) {
 };
 
 async function setMarketPrice() {
-  let prices = await fetchPrice(['avalanche-2', 'ethereum', 'bitcoin', 'ripple', 'chainlink']);
+  let prices = await fetchPrice(['avalanche-2', 'ethereum', 'bitcoin', 'chainlink']);
   await PriceOracle.setPrice('BTC', prices['bitcoin'].usd/prices['avalanche-2'].usd);
   await PriceOracle.setPrice('ETH', prices['ethereum'].usd/prices['avalanche-2'].usd);
-  await PriceOracle.setPrice('XRP', prices['ripple'].usd/prices['avalanche-2'].usd);
-  await PriceOracle.setPrice('LNK', prices['chainlink'].usd/prices['avalanche-2'].usd);
+  await PriceOracle.setPrice('LINK', prices['chainlink'].usd/prices['avalanche-2'].usd);
   setTimeout(setMarketPrice, 600000);
 }
 

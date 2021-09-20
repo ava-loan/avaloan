@@ -1,148 +1,148 @@
 <template>
-  <md-app id="app">
-    <md-app-toolbar class="md-primary">
-      <img class="app-logo" src="/static/logo-background.png" @click="$router.push({path: '/'})"/>
-      <span class="md-title">Avaloan</span>
-
-
-
-        <!--<md-tabs class="md-primary" style="margin-left: 200px;" md-sync-route>-->
-          <!--<md-tab-->
-            <!--key="pool"-->
-            <!--to="/pool"-->
-            <!--md-label="Deposit & Earn"-->
-            <!--exact>-->
-          <!--</md-tab>-->
-
-          <!--<md-tab-->
-            <!--key="trade"-->
-            <!--to="/trade"-->
-            <!--md-label="Borrow & Trade"-->
-            <!--exact>-->
-          <!--</md-tab>-->
-
-
-        <!--</md-tabs>-->
-
-
-      <div class="md-toolbar-section-end" >
-        <a href="https://github.com/jakub-wojciechowski/Avaloan" target="_blank" style="color: white;">
-          <i class="fa fa-github" style="font-size:32px"></i>
-        </a>
-      </div>
-     </md-app-toolbar>
-
-    <md-app-content>
-      <div>
-        <md-dialog :md-active.sync="showNoWeb3">
-          <md-app-toolbar class="md-accent">
-            <span class="md-title">
-              <md-icon>warning</md-icon>
-              Cannot connect to the Blockchain
-            </span>
-
-
-          </md-app-toolbar>
-
-          <md-dialog-content>
-            Viewing this content requires using a Web3 browser such as Metamask.
-            Please connect to the Kovan testnet.
-            <br/><br/>
-            Please refresh the window after setting up the Web3 plugin.
-
-          </md-dialog-content>
-
-        </md-dialog>
-
-        <md-dialog :md-active.sync="showWrongNetwork">
-          <md-app-toolbar class="md-accent">
-            <span class="md-title">
-              <md-icon>warning</md-icon>
-              Cannot connect to the testnet
-            </span>
-          </md-app-toolbar>
-
-          <md-dialog-content>
-            Please make sure you are connecting to the testnet using your web3 browser.
-            <br/><br/>
-            Please refresh the window after updating the Web3 plugin.
-          </md-dialog-content>
-
-        </md-dialog>
-
-
-        <router-view></router-view>
-      </div>
-    </md-app-content>
-
-  </md-app>
+<div class="page-content">
+  <div class="top-bar">
+    <router-link to="/">
+      <img src="src/assets/icons/avaloan-logo.svg" class="logo">
+    </router-link> 
+    <Navbar></Navbar>
+    <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>
+    <Wallet class="wallet" v-else />
+  </div>
+  <router-view></router-view>
+</div>
 </template>
 
 
 
 <script>
-  import State from '@/state'
-  import { EventBus } from './event-bus.js';
+  import Navbar from "@/components/Navbar.vue";
+  import Wallet from "@/components/Wallet.vue";
+  import { mapActions, mapState } from "vuex";
+  import config from "@/config";
+  const ethereum = window.ethereum;
+  import Vue from 'vue';
 
   export default {
-    data() {
-      return {
-        showWelcome: false,
-        showNoWeb3: false,
-        showWrongNetwork: false,
-        show3Box: false,
-        ida: State.ida,
-        desktopScreen: false,
-        showMobileScreen: false
+    components: {
+      Navbar,
+      Wallet
+    },
+    async created() {
+      if (await this.checkConnectedChain() == config.chainId) {
+        //TODO: optimize async tasks
+
+        await this.initNetwork();
+        await this.initPrices();
+        await this.initPool();
+        await this.initLoan();
+        await this.updatePoolData();
+      } else {
+        this.connectToProperChain();
       }
     },
+    data() {
+      return {
+      }
+    },
+    computed: {
+      ...mapState('network', ['account'])
+    },
     methods: {
-    }
+      ...mapActions("network", ["initNetwork"]),
+      ...mapActions("pool", ["initPool", "updatePoolData"]),
+      ...mapActions("loan", ["initLoan"]),
+      ...mapActions("prices", ["initPrices"]),
+      async checkConnectedChain() {
+        const chainId = await ethereum.request({ method: 'eth_chainId' });
 
+        ethereum.on('chainChanged', () => {
+          window.location.reload();
+        });
+
+        return this.toDec(chainId);
+      },
+      async connectToProperChain() {
+        try {
+          await ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: this.toHex(config.chainId) }],
+          });
+        } catch (switchError) {
+          // This error code indicates that the chain has not been added to MetaMask.
+          if (switchError.code === 4902) {
+            try {
+              //TODO IMPORTANT: change in production
+              await ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{ 
+                  chainName: 'Localhost',
+                  chainId: this.toHex(config.chainId),
+                  rpcUrls:  [ "http://localhost:8545" ] }],
+              });
+            } catch (addError) {
+              Vue.$toast.error("Error while adding network");
+            }
+          }
+          Vue.$toast.error("Error while switching network");
+        }
+      }
+    }
   }
 </script>
 
-<style>
-  #app {
-    font-family: 'Avenir', Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+<style lang="scss" scoped>
+@import "~@/styles/variables";
+
+  .page-content:before {
+    content: ' ';
+    display: block;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    opacity: 0.08;
+    z-index: -1;
+
+    background-image: linear-gradient(152deg, #7476fc 23%, #ff6f43 65%, #f5217f 96%);
   }
 
-  .md-app-content.md-theme-default {
-    padding: 0;
-    background-color: #7AE5BC;
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 40px 0;
   }
 
-  .md-toolbar-row {
-    width: auto;
-  }
-
-  .md-toolbar.md-theme-default.md-primary {
-    background-color: #E84341;
-    min-height: 52px;
-  }
-
-  .md-tabs.md-theme-default.md-primary .md-tabs-navigation {
-    background-color: #E84341;
-  }
-
-  .md-dialog.md-theme-default {
-    max-width: 768px;
-    background-color: #f5f5f5;
-  }
-  .md-dialog-content {
-    padding: 20px;
-  }
-
-  .md-app-container {
-    overflow-x: hidden;
-  }
-
-  img.app-logo {
-    height: 40px;
+  .logo {
     cursor: pointer;
+    margin-left: 5vw;
+
+    @media screen and (min-width: $md) {
+      margin-left: 40px;
+    }
+
+    &:hover {
+      transform: scale(1.02);
+    }
   }
 
+  .connect, .wallet {
+    margin-right: 5vw;
+
+    @media screen and (min-width: $md) {
+      margin-right: 40px;
+    }
+  }
+
+  .connect {
+    white-space: nowrap;
+    color: #6b70ed;
+    cursor: pointer;
+
+    &:hover {
+      font-weight: 500;
+    }
+  }
 </style>
 
