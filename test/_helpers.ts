@@ -1,6 +1,9 @@
-import {ethers, network} from "hardhat";
+import {ethers, network, waffle} from "hardhat";
 import {BigNumber} from "ethers";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {PangolinExchange} from "../typechain";
+const {deployContract} = waffle;
+import PangolinExchangeArtifact from '../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 
 export const toWei = ethers.utils.parseUnits;
 export const formatUnits = (val: BigNumber, decimalPlaces: BigNumber) => parseFloat(ethers.utils.formatUnits(val, decimalPlaces));
@@ -44,4 +47,14 @@ export const getFixedGasSigners = async function(gasLimit:number) {
     }
   });
   return signers;
+};
+
+export const deployAndInitPangolinExchangeContract = async function(owner:SignerWithAddress, pangolinRouterAddress:string) {
+  const exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
+  await exchange.updateAssetAddress(toBytes32('USD'), '0xc7198437980c041c805a1edcba50c1ce5db95118');
+  await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
+  await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
+  await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
+
+  return exchange
 };

@@ -5,6 +5,8 @@ import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
+import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 /**
  * @title SmartLoansFactory
@@ -20,10 +22,11 @@ contract SmartLoansFactory is IBorrowersRegistry {
   Pool private pool;
   IPriceProvider private priceProvider;
   IAssetsExchange assetsExchange;
+  UpgradeableBeacon public upgradeableBeacon;
 
   uint256 private constant MAX_VAL = 2**256-1 ether;
 
-  mapping(address => SmartLoan) public creatorsToAccounts;
+  mapping(address => SmartLoan) public ownersToLoans;
   mapping(address => address) public accountsToCreators;
 
   SmartLoan[] loans;
@@ -36,38 +39,42 @@ contract SmartLoansFactory is IBorrowersRegistry {
     pool = _pool;
     priceProvider = _priceProvider;
     assetsExchange = _assetsExchange;
+    SmartLoan smartLoanImplementation = new SmartLoan();
+    upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
+    upgradeableBeacon.transferOwnership(msg.sender);
   }
 
   function createLoan() public returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan();
-    newAccount.initialize(priceProvider, assetsExchange, pool);
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
+    SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(newAccount);
-    newAccount.transferOwnership(msg.sender);
+    updateRegistry(smartLoan);
+    smartLoan.transferOwnership(msg.sender);
 
-    return newAccount;
+    return smartLoan;
   }
 
   function createAndFundLoan(uint256 _initialDebt) external payable returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan();
-    newAccount.initialize(priceProvider, assetsExchange, pool);
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
+    SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
+    smartLoan.initialize(priceProvider, assetsExchange, pool);
 
     //Update registry and emit event
-    updateRegistry(newAccount);
+    updateRegistry(smartLoan);
 
     //Fund account with own funds and credit
-    newAccount.fund{value:msg.value}();
-    newAccount.borrow(_initialDebt);
-    require(newAccount.isSolvent());
+    smartLoan.fund{value:msg.value}();
+    smartLoan.borrow(_initialDebt);
+    require(smartLoan.isSolvent());
 
-    newAccount.transferOwnership(msg.sender);
+    smartLoan.transferOwnership(msg.sender);
 
-    return newAccount;
+    return smartLoan;
   }
 
   function updateRegistry(SmartLoan _newAccount) internal {
-    creatorsToAccounts[msg.sender] = _newAccount;
+    ownersToLoans[msg.sender] = _newAccount;
     accountsToCreators[address(_newAccount)] = msg.sender;
     loans.push(_newAccount);
 
@@ -79,7 +86,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function getAccountForUser(address _user) external view override returns(address) {
-    return address(creatorsToAccounts[_user]);
+    return address(ownersToLoans[_user]);
   }
 
   function getOwnerOfLoan(address _loan) external view override returns(address) {
