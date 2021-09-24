@@ -17,6 +17,11 @@ import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
  */
 contract SmartLoansFactory is IBorrowersRegistry {
 
+  modifier oneLoanPerOwner {
+    require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed.");
+    _;
+  }
+
   event SmartLoanCreated(address indexed accountAddress, address indexed creator);
 
   Pool private pool;
@@ -26,8 +31,8 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
   uint256 private constant MAX_VAL = 2**256-1 ether;
 
-  mapping(address => SmartLoan) public ownersToLoans;
-  mapping(address => address) public accountsToCreators;
+  mapping(address => address) public ownersToLoans;
+  mapping(address => address) public loansToOwners;
 
   SmartLoan[] loans;
 
@@ -44,7 +49,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
     upgradeableBeacon.transferOwnership(msg.sender);
   }
 
-  function createLoan() public returns(SmartLoan) {
+  function createLoan() external oneLoanPerOwner returns(SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
@@ -55,10 +60,9 @@ contract SmartLoansFactory is IBorrowersRegistry {
     return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) external payable returns(SmartLoan) {
+  function createAndFundLoan(uint256 _initialDebt) external oneLoanPerOwner payable returns(SmartLoan) {
     BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
-    smartLoan.initialize(priceProvider, assetsExchange, pool);
 
     //Update registry and emit event
     updateRegistry(smartLoan);
@@ -74,15 +78,15 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function updateRegistry(SmartLoan _newAccount) internal {
-    ownersToLoans[msg.sender] = _newAccount;
-    accountsToCreators[address(_newAccount)] = msg.sender;
+    ownersToLoans[msg.sender] = address(_newAccount);
+    loansToOwners[address(_newAccount)] = msg.sender;
     loans.push(_newAccount);
 
     emit SmartLoanCreated(address(_newAccount), msg.sender);
   }
 
   function canBorrow(address _account) external view override returns(bool) {
-    return accountsToCreators[_account] != address(0);
+    return loansToOwners[_account] != address(0);
   }
 
   function getAccountForUser(address _user) external view override returns(address) {
@@ -90,7 +94,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function getOwnerOfLoan(address _loan) external view override returns(address) {
-    return accountsToCreators[_loan];
+    return loansToOwners[_loan];
   }
 
   function getAllLoans() public view returns(SmartLoan[] memory) {

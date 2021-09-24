@@ -2,11 +2,10 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
 import "./IBorrowersRegistry.sol";
-import "./PermissiveOwnable.sol";
 
 /**
  * @title Pool
@@ -15,7 +14,7 @@ import "./PermissiveOwnable.sol";
  * Rates are compounded every second and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to the external calculator contract.
  */
-contract Pool is PermissiveOwnable {
+contract Pool is OwnableUpgradeable {
 
     mapping(address => uint256) public deposits;
     uint256 public totalDeposited;
