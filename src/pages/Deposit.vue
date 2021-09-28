@@ -1,28 +1,28 @@
 <template>
   <div class="deposit container">
     <Bar>
-      <Value label="Your deposits" 
-        :primary="{value: userDeposited, type: 'avax', showIcon: true}" 
+      <Value label="Your deposits"
+        :primary="{value: userDeposited, type: 'avax', showIcon: true}"
         :secondary="{value: toUSD(userDeposited), type: 'usd'}"
         :flexDirection="isMobile ? 'row' : 'column'" />
-      <Value label="Current APR" 
+      <Value label="Current APR"
         :primary="{value: depositRate, type: 'percent'}"
         :flexDirection="isMobile ? 'row' : 'column'" />
-      <Value label="All deposits" 
+      <Value label="All deposits"
         :primary="{value: totalDeposited, type: 'avax', showIcon: true}"
-        :secondary="{value: toUSD(totalDeposited), type: 'usd'}" 
+        :secondary="{value: toUSD(totalDeposited), type: 'usd'}"
         :flexDirection="isMobile ? 'row' : 'column'" />
-    </Bar>    
+    </Bar>
     <Block class="block" :bordered="true">
       <Tabs>
         <Tab title="Deposit" imgActive="add-deposit-active" img="add-deposit" imgPosition="left" titleWidth="100px">
           <CurrencyInput label="Deposit" v-on:submitValue="depositValue" :waiting="waitingForDeposit" flexDirection="column"/>
         </Tab>
         <Tab title="Withdraw" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right" titleWidth="140px">
-          <CurrencyInput label="Withdraw" v-on:submitValue="withdrawValue" :waiting="waitingForDeposit" flexDirection="column" /> 
+          <CurrencyInput label="Withdraw" v-on:submitValue="withdrawValue" :waiting="waitingForWithdraw" flexDirection="column" />
         </Tab>
       </Tabs>
-    </Block>  
+    </Block>
     <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(history && history.length > 0)">
       <div class="history-title">Deposits history</div>
       <div>
@@ -43,12 +43,13 @@
   import HistoryList from "@/components/HistoryList.vue";
   import Chart from "@/components/Chart.vue";
   import { mapState, mapActions } from 'vuex';
+  import Vue from "vue";
 
   export default {
     name: 'Deposit',
     components: {
-      CurrencyInput, 
-      Tabs, 
+      CurrencyInput,
+      Tabs,
       Tab,
       Value,
       Block,
@@ -58,11 +59,13 @@
     },
     data() {
       return {
-        maximumDeposit: 0
+        maximumDeposit: 0,
+        waitingForDeposit: false,
+        waitingForWithdraw: false
       }
     },
     computed: {
-      ...mapState('pool', ['userDeposited', 'depositRate', 'totalDeposited', 'history', 'waitingForDeposit']),
+      ...mapState('pool', ['userDeposited', 'depositRate', 'totalDeposited', 'history']),
       chartPoints() {
         if (this.history == null || this.history.length == 0) {
           return [];
@@ -100,10 +103,10 @@
     methods: {
       ...mapActions('pool', ['sendDeposit', 'withdraw']),
       async depositValue(value) {
-        await this.sendDeposit({amount: value});
+        await this.handleTransaction(this.sendDeposit, value, "waitingForDeposit");
       },
       async withdrawValue(value) {
-        await this.withdraw({amount: value});
+        await this.handleTransaction(this.withdraw, value, "waitingForWithdraw");
       }
     }
   }

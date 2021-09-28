@@ -1,4 +1,5 @@
 import { mapState } from 'vuex';
+import Vue from "vue";
 
 export default {
   data() {
@@ -19,6 +20,20 @@ export default {
     },
     toDec(hex) {
       return parseInt(hex, 16);
+    },
+    async handleTransaction(fun, value, variable) {
+      this[variable] = true;
+
+      fun({amount: value})
+        .then(() => {
+          Vue.$toast.success('Transaction success');
+        })
+        .catch(() => {
+          Vue.$toast.error('Transaction error');
+        })
+        .finally(() => {
+          this[variable] = false;
+        });
     }
   },
   computed: {
@@ -26,7 +41,6 @@ export default {
       avaxPrice: state => state.avaxPrice,
     }),
     isMobile() {
-      console.log(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
   }

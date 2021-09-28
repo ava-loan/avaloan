@@ -2,8 +2,8 @@
   <div class="smart-loan container">
     <Bar>
       <div>
-        <Value label="Borrowed" 
-          :primary="{value: debt, type: 'avax', showIcon: true}" 
+        <Value label="Borrowed"
+          :primary="{value: debt, type: 'avax', showIcon: true}"
           :secondary="{value: toUSD(debt), type: 'usd'}"
           :flexDirection="isMobile ? 'row' : 'column'" />
           <div class="borrow-buttons">
@@ -11,45 +11,45 @@
           </div>
       </div>
       <div class="solvency-value">
-        <div class="label"> 
+        <div class="label">
           Solvency
         </div>
         <div class="solvency-gauge">
           <SolvencyGauge />
         </div>
-      </div>  
+      </div>
       <div>
-        <Value label="Collateral" 
+        <Value label="Collateral"
           :primary="{value: collateral, type: 'avax', showIcon: true}"
-          :secondary="{value: toUSD(collateral), type: 'usd'}" 
+          :secondary="{value: toUSD(collateral), type: 'usd'}"
           :flexDirection="isMobile ? 'row' : 'column'" />
           <div class="fund-buttons">
             <img @click="toggleSolvencyInput" src="src/assets/icons/transfer.svg"/>
           </div>
       </div>
-    </Bar>   
+    </Bar>
     <Block v-if="showSolvencyInput" class="block solvency-block" :bordered="true">
       <SolvencyGauge />
       <Tabs>
         <Tab title="Add collateral" imgActive="add-deposit-active" img="add-deposit" imgPosition="left">
-          <CurrencyInput label="Add" v-on:submitValue="fundValue" :waiting="processing" flexDirection="column" :style="{'width': '490px'}"/>
+          <CurrencyInput label="Add" v-on:submitValue="fundValue" :waiting="waitingForFund" flexDirection="column" :style="{'width': '490px'}"/>
         </Tab>
         <Tab title="Reduce collateral" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right">
-          <CurrencyInput label="Reduce" v-on:submitValue="withdrawValue" :waiting="processing" flexDirection="column" :style="{'width': '490px'}" /> 
+          <CurrencyInput label="Reduce" v-on:submitValue="withdrawValue" :waiting="waitingForWithdraw" flexDirection="column" :style="{'width': '490px'}" />
         </Tab>
       </Tabs>
-    </Block>  
+    </Block>
     <Block v-if="showBorrowBlock" class="block solvency-block" :bordered="true">
       <SolvencyGauge />
       <Tabs>
         <Tab title="Borrow" imgActive="add-deposit-active" img="add-deposit" imgPosition="left">
-          <CurrencyInput label="Borrow" v-on:submitValue="borrowValue" :waiting="processing" flexDirection="column" :style="{'width': '490px'}"/>
+          <CurrencyInput label="Borrow" v-on:submitValue="borrowValue" :waiting="waitingForBorrow" flexDirection="column" :style="{'width': '490px'}"/>
         </Tab>
         <Tab title="Repay" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right">
-          <CurrencyInput label="Repay" v-on:submitValue="repayValue" :waiting="processing" flexDirection="column" :style="{'width': '490px'}" /> 
+          <CurrencyInput label="Repay" v-on:submitValue="repayValue" :waiting="waitingForRepay" flexDirection="column" :style="{'width': '490px'}" />
         </Tab>
       </Tabs>
-    </Block>  
+    </Block>
     <Block class="block" :bordered="true" >
       <AssetsList :assets="assets" class="assets-list"/>
     </Block>
@@ -65,10 +65,9 @@
   import Tabs from "@/components/Tabs.vue";
   import Tab from "@/components/Tab.vue";
   import SolvencyGauge from "@/components/SolvencyGauge.vue";
-  import { VueSvgGauge } from 'vue-svg-gauge'
   import CurrencyInput from "@/components/CurrencyInput.vue";
   import { mapState, mapActions } from "vuex";
-  import { formatUnits } from "@/utils/calculate";
+  import Vue from "vue";
 
   export default {
   name: 'SmartLoan',
@@ -76,10 +75,11 @@
     return {
       showSolvencyInput: false,
       showBorrowBlock: false,
+      waitingForWithdraw: false,
+      waitingForFund: false,
+      waitingForBorrow: false,
+      waitingForRepay: false
     }
-  },
-  methods: {
-    
   },
   components: {
     Bar,
@@ -89,11 +89,10 @@
     CurrencyInput,
     Tab,
     Tabs,
-    VueSvgGauge,
     SolvencyGauge
   },
   computed: {
-    ...mapState('loan', ['debt', 'totalValue', 'solvency', 'assets', 'processing']),
+    ...mapState('loan', ['debt', 'totalValue', 'solvency', 'assets']),
     collateral() {
       return this.totalValue - this.debt;
     }
@@ -109,16 +108,16 @@
       this.showBorrowBlock = !this.showBorrowBlock;
     },
     async fundValue(value) {
-      await this.fund({amount: value});
+      await this.handleTransaction(this.fund, value, "waitingForFund");
     },
     async withdrawValue(value) {
-      await this.withdraw({amount: value});
+      await this.handleTransaction(this.withdraw, value, "waitingForWithdraw");
     },
     async borrowValue(value) {
-      await this.borrow({amount: value});
+      await this.handleTransaction(this.borrow, value, "waitingForBorrow");
     },
     async repayValue(value) {
-      await this.repay({amount: value});
+      await this.handleTransaction(this.repay, value, "waitingForRepay");
     },
   }
 }
@@ -150,7 +149,7 @@
     height: 44px;
     cursor: pointer;
     opacity: 0.7;
-    transition: transform .4s ease-in-out;  
+    transition: transform .4s ease-in-out;
 
     &:hover {
       opacity: 1;
@@ -197,7 +196,7 @@
 @import "~@/styles/variables";
 .smart-loan {
   .currency-input-wrapper {
-    margin-top: 2rem; 
+    margin-top: 2rem;
     justify-content: space-between;
 
     .input-wrapper {
@@ -205,11 +204,11 @@
 
       @media screen and (min-width: $md) {
         margin-bottom: 0;
-      }    
+      }
     }
 
     @media screen and (min-width: $md) {
-      margin-top: 0; 
+      margin-top: 0;
       width: 500px;
     }
   }
@@ -231,7 +230,7 @@
       @media screen and (min-width: $md) {
         width: 330px !important;
       }
-    } 
+    }
   }
 }
 

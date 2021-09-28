@@ -4,9 +4,9 @@ import {solidity} from "ethereum-waffle";
 
 import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import SimplePriceProviderArtifact from '../../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
-import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
+import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import SupportedAssetsArtifact from '../../artifacts/contracts/SupportedAssets.sol/SupportedAssets.json';
 import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {deployAndInitPangolinExchangeContract, fromWei, time, toBytes32, toWei} from "../_helpers";
@@ -14,16 +14,18 @@ import {
   FixedRatesCalculator,
   Pool,
   PangolinExchange,
-  SimplePriceProvider,
   SmartLoan,
   UpgradeableBeacon,
-  SmartLoansFactory
+  SmartLoansFactory,
+  SupportedAssets
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
 import {MockUpgradedSmartLoan__factory} from "../../typechain";
 import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
+import {WrapperBuilder} from "redstone-flash-storage";
+import { syncTime } from "../../tools/helpers";
 
 chai.use(solidity);
 
@@ -39,11 +41,25 @@ const erc20ABI = [
 ]
 
 describe('Smart loan - upgrading', () => {
+  function getMockPrices(usdPrice: BigNumber): Array<{symbol: string, value: number}> {
+    const MOCK_AVAX_PRICE = 100000;
+    return [
+      {
+        symbol: 'USD',
+        value: MOCK_AVAX_PRICE * fromWei(usdPrice)
+      },
+      {
+        symbol: 'AVAX',
+        value: MOCK_AVAX_PRICE
+      }
+    ]
+  }
 
   describe('Check basic logic before and after upgrade', () => {
-    let priceProvider: SimplePriceProvider,
+    let supportedAssets: SupportedAssets,
       exchange: PangolinExchange,
       loan: SmartLoan,
+      wrappedLoan: any,
       smartLoansFactory: SmartLoansFactory,
       pool: Pool,
       owner: SignerWithAddress,
@@ -59,16 +75,16 @@ describe('Smart loan - upgrading', () => {
 
       const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
+      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
+      await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, priceProvider.address, exchange.address]) as SmartLoansFactory;
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, supportedAssets.address, exchange.address]) as SmartLoansFactory;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
-      await priceProvider.setOracle(oracle.address);
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
@@ -113,16 +129,42 @@ describe('Smart loan - upgrading', () => {
 
     it("should buy an asset", async () => {
       const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
-      await priceProvider.connect(oracle).setPrice(toBytes32('USD'), estimatedAVAXPriceFor1USDToken);
 
-      await loan.invest(toBytes32('USD'), toWei("100", usdTokenDecimalPlaces));
+      const mockPrices = getMockPrices(estimatedAVAXPriceFor1USDToken);
+
+      wrappedLoan = WrapperBuilder
+        .mockLite(loan)
+        .using(
+          () => { return {
+            prices: mockPrices,
+            timestamp: Date.now()
+          }
+        })
+
+      await wrappedLoan.authorizeProvider();
+
+      await syncTime(); // recommended for hardhat test
+
+      await wrappedLoan.invest(toBytes32('USD'), toWei("100", usdTokenDecimalPlaces));
+
+      //wrapping again to get a new timestamp for data
+      const rewrappedLoan: any = WrapperBuilder
+        .mockLite(loan)
+        .using(
+          () => { return {
+            prices: mockPrices,
+            timestamp: Date.now()
+          }
+        })
+
+      await rewrappedLoan.authorizeProvider();
 
       const expectedAssetValue = estimatedAVAXPriceFor1USDToken.mul("100")
 
-      expect(await loan.getAssetValue(toBytes32('USD'))).to.be.equal(expectedAssetValue);
-      expect(fromWei(await loan.getTotalValue())).to.be.closeTo(100, 0.00001);
-      expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect(await loan.getSolvencyRatio()).to.be.equal(10000);
+      expect(fromWei(await rewrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(fromWei(expectedAssetValue), 0.00001);
+      expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.00001);
+      expect(fromWei(await rewrappedLoan.getDebt())).to.be.equal(0);
+      expect(await rewrappedLoan.getSolvencyRatio()).to.be.equal(10000);
     });
 
 
@@ -138,7 +180,7 @@ describe('Smart loan - upgrading', () => {
       await beacon.connect(owner).upgradeTo(loanV2.address);
 
       //The mock loan has a hardcoded total value of 777
-      expect(await loan.getTotalValue()).to.be.equal(777);
+      expect(await wrappedLoan.getTotalValue()).to.be.equal(777);
     });
 
   });

@@ -1,7 +1,7 @@
 <template>
   <div class="currency-input-wrapper" :style="{ 'flex-direction': flexDirection}">
     <div class="input-wrapper" :style="{ 'margin-top': flexDirection == 'column-reverse' ? '40px' : '0'}">
-      <input type="number" v-model="value" step='0.01' min="0" max="999999">
+      <input type="number" v-model="value" step='0.01' placeholder="0" min="0" max="999999">
       <div class="converted" v-if="value && (value !== 0)">
         ~ {{ (price ? price : 1) * toUSD(value) | usd}}
       </div>
@@ -10,14 +10,14 @@
         <span class="symbol">{{ symbol }}</span>
       </div>
     </div>
-    <button class="btn" :class="[waiting ? 'waiting' : '', color]" @click="emitValue(true)" 
+    <button class="btn" :class="[waiting ? 'waiting' : '', color]" @click="emitValue(true)"
       :style="{ 'margin-top': flexDirection == 'column' ? '40px' : '0'}">
       <div v-if="!waiting">
         {{label}}
       </div>
       <vue-loaders-ball-beat v-else color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
     </button>
-    <button v-if="hasSecondButton" class="btn" :class="[waiting ? 'waiting' : '', color]" @click="emitValue(false)" 
+    <button v-if="hasSecondButton" class="btn" :class="[waiting ? 'waiting' : '', color]" @click="emitValue(false)"
       :style="{ 'margin-top': flexDirection == 'column' ? '40px' : '0'}">
       <div v-if="!waiting">
         {{secondLabel}}
@@ -43,7 +43,7 @@
     },
     data() {
       return {
-        value: 0
+        value: null
       }
     },
     methods: {
@@ -54,8 +54,9 @@
           } else {
             this.$emit('submitValue', { value: this.value, first: isFirstButton });
           }
+          this.value = null;
         }
-      }   
+      }
     }
   }
 </script>
@@ -84,7 +85,7 @@
   @media screen and (min-width: $md) {
     padding-left: 40px;
     padding-right: 30px;
-  }    
+  }
 }
 
 input {

@@ -1,9 +1,16 @@
 <template>
 <div class="page-content">
+  <Banner v-if="showNetworkBanner">
+    You are connected to a wrong network. <a @click="connectToProperChain"><b>Click here</b></a> to switch to the correct one.
+  </Banner>
+  <Banner v-if="showMetamaskBanner">
+    Please download and activate
+    <a href="https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn" target="_blank"><b>Metamask plugin</b></a>.
+  </Banner>
   <div class="top-bar">
     <router-link to="/">
       <img src="src/assets/icons/avaloan-logo.svg" class="logo">
-    </router-link> 
+    </router-link>
     <Navbar></Navbar>
     <div class="connect" v-if="!account" v-on:click="initNetwork()">Connect to wallet</div>
     <Wallet class="wallet" v-else />
@@ -17,6 +24,7 @@
 <script>
   import Navbar from "@/components/Navbar.vue";
   import Wallet from "@/components/Wallet.vue";
+  import Banner from "@/components/Banner";
   import { mapActions, mapState } from "vuex";
   import config from "@/config";
   const ethereum = window.ethereum;
@@ -25,24 +33,31 @@
   export default {
     components: {
       Navbar,
-      Wallet
+      Wallet,
+      Banner
+    },
+    data: () => {
+      return {
+        showNetworkBanner: false,
+        showMetamaskBanner: false
+      }
     },
     async created() {
-      if (await this.checkConnectedChain() == config.chainId) {
-        //TODO: optimize async tasks
+      if (!ethereum) {
+        this.showMetamaskBanner = true;
+        return;
+      }
 
-        await this.initNetwork();
-        await this.initPrices();
-        await this.initPool();
-        await this.initLoan();
-        await this.updatePoolData();
-      } else {
-        this.connectToProperChain();
+      if (await this.checkConnectedChain() !== config.chainId) {
+        this.showNetworkBanner = true;
+        return;
       }
-    },
-    data() {
-      return {
-      }
+
+      await this.initNetwork();
+      await this.initPrices();
+      await this.initPool();
+      await this.initLoan();
+      await this.updatePoolData();
     },
     computed: {
       ...mapState('network', ['account'])
@@ -74,7 +89,7 @@
               //TODO IMPORTANT: change in production
               await ethereum.request({
                 method: 'wallet_addEthereumChain',
-                params: [{ 
+                params: [{
                   chainName: 'Localhost',
                   chainId: this.toHex(config.chainId),
                   rpcUrls:  [ "http://localhost:8545" ] }],
@@ -92,6 +107,10 @@
 
 <style lang="scss" scoped>
 @import "~@/styles/variables";
+
+  a {
+    color: black;
+  }
 
   .page-content:before {
     content: ' ';

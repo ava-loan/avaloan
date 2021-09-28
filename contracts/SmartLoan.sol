@@ -3,9 +3,10 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
+import "./SupportedAssets.sol";
 import "./Pool.sol";
+import "redstone-flash-storage/lib/contracts/message-based/PriceAware.sol";
 
 
 /**
@@ -16,7 +17,7 @@ import "./Pool.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is OwnableUpgradeable {
+contract SmartLoan is OwnableUpgradeable, PriceAware {
 
   uint256 private constant PERCENTAGE_PRECISION = 1000;
   uint256 private constant MAX_SOLVENCY_RATIO = 10000;
@@ -24,14 +25,14 @@ contract SmartLoan is OwnableUpgradeable {
   uint256 public constant LIQUIDATION_BONUS = 100;
   uint256 private constant LIQUIDATION_CAP = 200;
 
-  IPriceProvider public priceProvider;
+  SupportedAssets supportedAssets;
   IAssetsExchange public exchange;
   Pool pool;
 
   uint256 public minSolvencyRatio = 1200;
 
-  function initialize(IPriceProvider priceProvider_, IAssetsExchange assetsExchange_, Pool pool_) external initializer {
-    priceProvider = priceProvider_;
+  function initialize(SupportedAssets _supportedAssets, IAssetsExchange assetsExchange_, Pool pool_) external initializer {
+    supportedAssets = _supportedAssets;
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
@@ -138,8 +139,9 @@ contract SmartLoan is OwnableUpgradeable {
   function getTotalValue() public virtual view returns(uint256) {
     uint256 total = address(this).balance;
 
-    bytes32[] memory assets = priceProvider.getAllAssets();
-    for(uint i = 0; i< assets.length; i++) {
+    bytes32[] memory assets = supportedAssets.getAllAssets();
+
+    for(uint i = 0; i < assets.length; i++) {
       total = total + getAssetValue(assets[i]);
     }
     return total;
@@ -147,9 +149,15 @@ contract SmartLoan is OwnableUpgradeable {
 
 
   function getERC20TokenInstance(bytes32 _asset) internal view returns(IERC20Metadata) {
-    address assetAddress = exchange.getAssetAddress(_asset);
+    address assetAddress = supportedAssets.getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
+  }
+
+
+  function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns(uint256) {
+    uint normalizedPrice = (getPriceFromMsg(_asset) * 10**18) / getPriceFromMsg(bytes32('AVAX'));
+    return normalizedPrice;
   }
 
 
@@ -197,7 +205,14 @@ contract SmartLoan is OwnableUpgradeable {
   **/
   function getAssetValue(bytes32 _asset) public view returns(uint256) {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    return priceProvider.getPrice(_asset) * exchange.getBalance(address(this), _asset) / 10**token.decimals();
+
+    uint256 assetBalance = exchange.getBalance(address(this), _asset);
+
+    if (assetBalance > 0) {
+      return getAssetPriceInAVAXWei(_asset) * assetBalance / 10**token.decimals();
+    } else {
+      return 0;
+    }
   }
 
 
@@ -206,7 +221,7 @@ contract SmartLoan is OwnableUpgradeable {
     * It could be used as a helper method for UI
   **/
   function getAllAssetsBalances() public view returns(uint256[] memory) {
-    bytes32[] memory assets = priceProvider.getAllAssets();
+    bytes32[] memory assets = supportedAssets.getAllAssets();
     uint256[] memory balances = new uint256[] (assets.length);
 
 
@@ -223,12 +238,12 @@ contract SmartLoan is OwnableUpgradeable {
     * It could be used as a helper method for UI
   **/
   function getAllAssetsPrices() public view returns(uint256[] memory) {
-    bytes32[] memory assets = priceProvider.getAllAssets();
+    bytes32[] memory assets = supportedAssets.getAllAssets();
     uint256[] memory prices = new uint256[] (assets.length);
 
 
     for(uint i = 0; i< assets.length; i++) {
-      prices[i] = priceProvider.getPrice(assets[i]);
+      prices[i] = getAssetPriceInAVAXWei(assets[i]);
     }
 
     return prices;

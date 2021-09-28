@@ -1,5 +1,4 @@
 import POOL from '@contracts/Pool.json';
-import Vue from "vue";
 const ethers = require('ethers');
 
 export default {
@@ -14,8 +13,7 @@ export default {
     depositInterests: null,
     userBorrowed: null,
     userDeposited: null,
-    deploymentBlock: null,
-    waitingForDeposit: null
+    deploymentBlock: null
   },
   mutations: {
     setPool(state, pool) {
@@ -37,19 +35,16 @@ export default {
       state.history = history;
     },
     setDepositInterests(state, depositInterests) {
-      state.depositInterests = depositInterests; 
+      state.depositInterests = depositInterests;
     },
     setDeploymentBlock(state, deploymentBlock) {
-      state.deploymentBlock = deploymentBlock; 
+      state.deploymentBlock = deploymentBlock;
     },
     setUserBorrowed(state, userBorrowed) {
-      state.userBorrowed = userBorrowed; 
+      state.userBorrowed = userBorrowed;
     },
     setUserDeposited(state, deposited) {
-      state.userDeposited = deposited; 
-    },
-    setWaitingForDeposit(state, waiting) {
-      state.waitingForDeposit = waiting; 
+      state.userDeposited = deposited;
     }
   },
   getters: {
@@ -61,19 +56,13 @@ export default {
     async initPool({ state, commit, rootState }) {
       if (!state.pool) {
         const provider = rootState.network.provider;
-        console.log('provider');
-        console.log(provider);
         const deploymentTx = POOL.networks[rootState.network.chainId].transactionHash;
-        console.log('rootState.network.networkId');
-        console.log(rootState.network.networkId);
-        console.log('POOL')
-        console.log(POOL)
         const deploymentReceipt = await rootState.network.provider.getTransactionReceipt(deploymentTx);
 
         commit('setDeploymentBlock', deploymentReceipt.blockNumber);
         let pool = new ethers.Contract(POOL.networks[rootState.network.chainId].address, POOL.abi, provider.getSigner());
         pool.iface = new ethers.utils.Interface(POOL.abi);
-        console.log("Connected to the pool: " + pool.address);
+
         commit('setPool', pool);
       }
     },
@@ -99,11 +88,7 @@ export default {
     async updateUserDeposited({ state, commit, rootState }) {
       const userDeposited = parseFloat(ethers.utils.formatEther(await state.pool.getDeposits(rootState.network.account)));
       commit('setUserDeposited', userDeposited);
-      commit('setWaitingForDeposit', false);
-    },
-    async updateUserBorrowed({ state, commit, rootState }) {
-      const userDeposited = parseFloat(ethers.utils.formatEther(await state.pool.getBorrowed(rootState.network.account)));
-      commit('setUserBorrowed', userDeposited);
+      return true;
     },
     async updateDepositRate({ state, commit }) {
       const depositRate = parseFloat(ethers.utils.formatEther(await state.pool.getDepositRate()));
@@ -119,7 +104,7 @@ export default {
       const poolDepositorBalance = await pool.getDeposits(account);
 
       pool.myDeposits  = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
-      
+
       let totalDeposited = 0;
       let totalWithdrawn = 0;
       const provider = rootState.network.provider;
@@ -132,16 +117,12 @@ export default {
 
       const history = [];
       logs.forEach(log => {
-        console.log(log);
         let parsed = pool.iface.parseLog(log);
-        console.log(parsed);
+
         if (parsed.name !== 'Deposit' && parsed.name !== 'Withdrawal') return;
 
-        console.log("User: " + parsed.args.user);
-        console.log("Main account: " + account);
-
         if (parsed.args.user.toLocaleLowerCase() !== account.toLocaleLowerCase()) return;
-      
+
         let event = {
           type: parsed.name,
           time: new Date(parseInt(parsed.args.timestamp.toString()) * 1000),
@@ -152,90 +133,49 @@ export default {
         if (event.type === 'Deposit') totalDeposited += event.value;
         if (event.type === 'Withdrawal') totalWithdrawn += event.value;
 
-        console.log(event);
         history.unshift(event);
       });
 
       commit('setHistory', history);
-  
+
       const depositInterests = pool.myDeposits - totalDeposited + totalWithdrawn;
-      
+
       commit('setDepositInterests', depositInterests);
     },
-    async updateUserBorrowed({ state, rootState }) {
+    async updateUserBorrowed({ state, rootState, commit }) {
       const balance = await state.pool.getBorrowed(rootState.network.account);
       const userBorrowed = parseFloat(ethers.utils.formatEther(balance));
-
-      console.log("User pool loans: " + state.pool.myBorrowed);
-
-      commit('setUserBorrowed', userBorrowed);
-    },
-    async updateUserBorrowed({ commit, state, rootState }) {
-      const balance = await state.pool.getBorrowed(rootState.network.account);
-
-      const userBorrowed = parseFloat(ethers.utils.formatEther(balance));
-      console.log("User pool loans: " + state.pool.myBorrowed);
 
       commit('setUserBorrowed', userBorrowed);
     },
     async sendDeposit({ state, rootState, dispatch, commit }, { amount }) {
-      commit('setWaitingForDeposit', true);
-      try {
-        console.log("Depositing: " + amount);
-        const tx = await state.pool.deposit({gasLimit: 500000, value: ethers.utils.parseEther(amount)});
-        console.log("Deposited: " + tx.hash);
-        const receipt = await rootState.network.provider.waitForTransaction(tx.hash);
-        console.log(receipt);
-        dispatch('updateHistory');
-        dispatch('updatePoolData');
-        Vue.$toast.success("Transaction success");
-        dispatch('network/updateBalance', {}, {root:true})
-      } catch(e) {
-        console.error('Transaction error');
-        console.error(e);
-        commit('setWaitingForDeposit', false);
-        Vue.$toast.error("Transaction error");
-      } 
+      const tx = await state.pool.deposit({gasLimit: 500000, value: ethers.utils.parseEther(amount)});
+      await rootState.network.provider.waitForTransaction(tx.hash);
+
+      dispatch('updateHistory');
+      dispatch('updatePoolData');
+      dispatch('network/updateBalance', {}, {root:true})
     },
     async repay({ state, dispatch }, { amount }) {
-      console.log("Repaying: " + amount);
-  
+
       const tx = await state.pool.repay({gasLimit: 500000, value: ethers.utils.parseEther(amount.toString())});
-      console.log("Repaid: " + tx.hash);
-      const receipt = await provider.waitForTransaction(tx.hash);
-      console.log(receipt);
+      await provider.waitForTransaction(tx.hash);
 
       dispatch('updateUserBorrowed');
       dispatch('updatePoolData');
     },
     async withdraw({ state, dispatch, commit }, { amount }) {
-      try {
-        commit('setWaitingForDeposit', true);
-        console.log("Withdrawing: " + amount);
-      
-        const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 500000});
-        console.log("Withdrawn: " + tx.hash);
-        const receipt = await provider.waitForTransaction(tx.hash);
-        console.log(receipt);
-    
-        dispatch('updateHistory');
-        dispatch('updatePoolData');
-        Vue.$toast.success("Transaction success");
-        dispatch('network/updateBalance', {}, {root:true})
-      } catch (e) {
-        console.error('Transaction error');
-        console.error(e);
-        commit('setWaitingForDeposit', false);
-        Vue.$toast.error("Transaction error");
-      }
+      const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 500000});
+      await provider.waitForTransaction(tx.hash);
+
+      dispatch('updateHistory');
+      dispatch('updatePoolData');
+      dispatch('network/updateBalance', {}, {root:true})
     },
     async borrow({ state, dispatch }, { amount }) {
-      console.log("Borrowing: " + amount);
-  
       const tx = await state.pool.borrow(ethers.utils.parseEther(amount), {gasLimit: 500000});
-      console.log("Borrowed: " + tx.hash);
-      const receipt = await provider.waitForTransaction(tx.hash);
-      console.log(receipt);
+      await provider.waitForTransaction(tx.hash);
+
       dispatch('updateHistory');
       dispatch('updatePoolData');
     }

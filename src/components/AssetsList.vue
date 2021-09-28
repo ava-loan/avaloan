@@ -1,5 +1,5 @@
 <template>
-  <div class="list"> 
+  <div class="list">
     <div class="elements">
       <table id="assetsTable">
         <thead>
@@ -21,21 +21,24 @@
             <td v-if="!isMobile" />
             <td v-if="!isMobile" />
             <td data-label="Total"><b>{{ toUSD(totalValue) | usd }}</b></td>
-          </tr>  
-          <tr v-for="asset in assetList" 
-            v-bind:key="asset.symbol" 
-            @click="rowClicked(asset)" 
+          </tr>
+          <div v-if="assetList && assetList.length === 0" class="chart-loader">
+            <vue-loaders-ball-beat color="#A6A3FF" scale="0.75"></vue-loaders-ball-beat>
+          </div>
+          <tr v-for="asset in assetList"
+            v-bind:key="asset.symbol"
+            @click="rowClicked(asset)"
             :class="{'clickable': asset.showAddInput || asset.showChart}">
             <td data-label="Asset">
               <div class="token-logo-wrapper">
                 <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.svg`" class="token-logo"/>
-              </div>  
+              </div>
               <span class="token-name">{{ asset.name }}</span>
               </td>
             <td data-label="Price">{{ toUSD(asset.price) | usd }}</td>
             <td class="chart-icon" v-if="!isMobile" @click.stop="toggleChart(asset)">
-              <SimpleChart 
-                :dataPoints="asset.prices" 
+              <SimpleChart
+                :dataPoints="asset.prices"
                 :lineWidth="1"/>
             </td>
             <td data-label="Balance">{{ asset.balance | units}}</td>
@@ -45,24 +48,24 @@
               <img v-if="!asset.native" @click="toggleChangeAsset(asset)" src="src/assets/icons/transfer.svg"/>
             </td>
             <td class="input" v-if="asset.showAddInput" @click.stop>
-              <CurrencyInput 
-              label="Add" 
+              <CurrencyInput
+              label="Add"
               :symbol="asset.symbol"
               :price="asset.price"
-              :hasSecondButton="true" 
-              secondLabel="Withdraw" 
-              v-on:submitValue="({ value, first }) => changeAssetAmount(asset.symbol, value, asset.decimals, first)" 
+              :hasSecondButton="true"
+              secondLabel="Withdraw"
+              v-on:submitValue="({ value, first }) => changeAssetAmount(asset.symbol, value, asset.decimals, first)"
               flexDirection="row" />
             </td>
             <td class="chart" v-if="(asset.showChart || isMobile) && asset.prices" @click.stop>
-              <Chart 
-              :dataPoints="asset.prices" 
+              <Chart
+              :dataPoints="asset.prices"
               :minY="asset.minPrice" :maxY="asset.maxPrice" :lineWidth="2"/>
             </td>
           </tr>
         </tbody>
       </table>
-    </div>  
+    </div>
   </div>
 </template>
 
@@ -89,8 +92,8 @@
       assets: [],
       fields: [
         'Asset',
-        'Price', 
-        'Balance', 
+        'Price',
+        'Balance',
         'Value',
         'Share',
         { key: 'actions', label: ''}
@@ -128,7 +131,7 @@
         if (points == null || points.length == 0) {
           return [];
         }
-        
+
         let maxValue = 0;
         let minValue = points[0].value;
 
@@ -136,7 +139,7 @@
         let dataPoints = points.map(
           item => {
             if (item.value > maxValue) maxValue = item.value;
-            
+
             if (item.value < minValue) minValue = item.value;
 
             return {
@@ -158,7 +161,7 @@
       async updateAssets(list) {
         let newList = await Promise.all(list.map(
           async (asset) => {
-    
+
             const priceResponse = await redstone.getHistoricalPrice(asset.symbol, {
               startDate: Date.now() - 3600 * 1000,
               interval: 1,
@@ -205,7 +208,7 @@
   padding: 16px 0;
   border-style: solid;
   border-width: 2px 0 0 0;
-  border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79)); 
+  border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79));
   border-image-slice: 1;
   font-weight: 500;
 
@@ -239,7 +242,7 @@
     height: 32px;
     cursor: pointer;
     opacity: 0.7;
-    transition: transform .4s ease-in-out;  
+    transition: transform .4s ease-in-out;
 
     @media screen and (max-width: $md) {
       height: 44px;
@@ -298,7 +301,7 @@ thead tr {
 tbody tr {
   border-style: solid;
   border-width: 2px 0 0 0;
-  border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79)); 
+  border-image-source: linear-gradient(91deg, rgba(223, 224, 255, 0.43), rgba(255, 225, 194, 0.62), rgba(255, 211, 224, 0.79));
   border-image-slice: 1;
   padding-top: 1rem;
   padding-bottom: 1rem;
@@ -316,16 +319,16 @@ tbody tr {
     margin-top: 0;
 
     .currency-input-wrapper {
-      margin-top: 1rem;      
+      margin-top: 1rem;
     }
-  }  
+  }
 }
 
 .total-value {
-  font-size: 24px; 
+  font-size: 24px;
 
   @media screen and (min-width: $md) {
-    font-size: 16px; 
+    font-size: 16px;
   }
 }
 
@@ -337,7 +340,7 @@ tbody tr {
   table caption {
     font-size: 1.3em;
   }
-  
+
   table thead {
     border: none;
     clip: rect(0 0 0 0);
@@ -348,7 +351,7 @@ tbody tr {
     position: absolute;
     width: 1px;
   }
-  
+
   table tr {
     border-width: 0px 0 3px 0;
     display: block;
@@ -356,7 +359,7 @@ tbody tr {
     margin-top: 0;
     padding-top: 0;
   }
-  
+
   table td {
     border-bottom: 1px solid #ddd;
     display: block;
@@ -364,13 +367,13 @@ tbody tr {
     text-align: right;
     padding: 0.5rem 0;
   }
-  
+
   table td::before {
     content: attr(data-label);
     float: left;
     font-weight: bold;
   }
-  
+
   table td:last-child {
     border-bottom: 0;
   }
@@ -398,6 +401,11 @@ tbody tr {
   .input {
     border: none;
   }
+}
+
+.chart-loader {
+  display: flex;
+  justify-content: center;
 }
 </style>
 

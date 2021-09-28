@@ -31,7 +31,7 @@
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.closePath();
-        ctx.fill();   
+        ctx.fill();
 
 
          ctx.restore();
@@ -40,7 +40,7 @@
   })
 
   const CustomLine = generateChart('custom-line', 'LineWithLine')
-  
+
   export default {
     name: 'Chart',
     extends: CustomLine,
@@ -54,8 +54,8 @@
       height: null,
       width: null,
       lineWidth: null,
-      stepped: 'none',
-      onlyLine: false
+      onlyLine: false,
+      stepped: false
     },
     data() {
       return {
@@ -87,7 +87,7 @@
       },
       options() {
         return {
-          aspectRatio: this.isMobile ? 2 : 4, 
+          aspectRatio: this.isMobile ? 2 : 4,
           height: null,
           width: null,
           legend: {
@@ -132,7 +132,7 @@
           } ,
           tooltips: {
             enabled: !this.onlyLine,
-            intersect: false, 
+            intersect: false,
             mode: "index",
             backgroundColor: '#6b70ed',
             titleFontFamily: 'Montserrat',
@@ -149,7 +149,7 @@
                 return label + ' AVAX';
               }
             }
-          }   
+          }
         }
       }
     },

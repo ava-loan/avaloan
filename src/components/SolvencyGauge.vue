@@ -6,13 +6,13 @@
     :value="solvency"
     :separator-step="0"
     :min="1200"
-    :max="10000"ą
+    :max="10000"
     :innerRadius="70"
     :gauge-color="[{ offset: 0, color: 'rgba(255, 0, 0, 0.6)'}, { offset: 100, color: 'rgba(0, 128, 0, 0.6)'}]"
     :scale-interval="0"
   >
     <div class="inner-text" :class="{'mobile': isMobile}">
-      {{solvency | percent}}
+      {{ solvency | percent }}
     </div>
   </VueSvgGauge>
 </template>
@@ -22,9 +22,13 @@ import { VueSvgGauge } from 'vue-svg-gauge'
 import { mapState } from "vuex";
 
 export default {
+  name: 'SolvencyGauge',
   props: {
   },
-  data () {
+  data() {
+    return {
+
+    }
   },
   computed: {
     ...mapState('loan', ['solvency'])

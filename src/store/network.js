@@ -1,6 +1,7 @@
 const ethers = require('ethers');
 let ethereum = window.ethereum;
 import config from "@/config";
+import Vue from "vue";
 
 export default {
   namespaced: true,
@@ -43,13 +44,12 @@ export default {
 
       let provider = state.provider;
       let accounts = await provider.listAccounts();
-      
+
       if (accounts.length > 0) {
         const mainAccount = accounts[0];
         commit('setAccount', mainAccount);
-        console.log("Connected account: " + mainAccount);
       } else {
-        console.log("No accounts available.")
+        Vue.$toast.error("No accounts available");
       }
     },
     async updateBalance({ state, commit }) {
