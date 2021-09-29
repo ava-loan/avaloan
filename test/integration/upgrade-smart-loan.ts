@@ -100,6 +100,17 @@ describe('Smart loan - upgrading', () => {
     });
 
 
+    it("should create and fund a loan", async () => {
+      await smartLoansFactory.connect(other).createAndFundLoan(toWei("2"), {value: toWei("10")});
+
+      const loan_proxy_address = await smartLoansFactory.getAccountForUser(other.address);
+      const second_loan = ((await new ethers.Contract(loan_proxy_address, SmartLoanArtifact.abi)) as SmartLoan).connect(other);
+      expect(fromWei(await second_loan.connect(other).getTotalValue())).to.be.equal(12);
+      expect(fromWei(await second_loan.connect(other).getDebt())).to.be.equal(2);
+      expect((await second_loan.connect(other).getSolvencyRatio()).toString()).to.be.equal("6000");
+    });
+
+
     it("should buy an asset", async () => {
       const estimatedAVAXPriceFor1USDToken = await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress);
       await priceProvider.connect(oracle).setPrice(toBytes32('USD'), estimatedAVAXPriceFor1USDToken);
