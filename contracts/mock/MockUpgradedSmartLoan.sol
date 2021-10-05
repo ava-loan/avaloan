@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
 /**
  * @title MockUpgradedSmartLoan
- * @dev A mock implementation of a SmartLoan to check if upgrade mechanism correctly update contrac logic
+ * @dev A mock implementation of a SmartLoan to check if upgrade mechanism correctly update contract logic
  */
 contract MockUpgradedSmartLoan is SmartLoan {
 

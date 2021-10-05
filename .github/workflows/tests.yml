@@ -10,4 +10,4 @@ jobs:
       - name: Build contracts
         run: yarn build:contracts:hardhat:force
       - name: Run tests
-        run: yarn test
+        run: yarn hardhat test test/local/*
