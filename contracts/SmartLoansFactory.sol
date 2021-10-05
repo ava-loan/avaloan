@@ -5,6 +5,8 @@ import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
+import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 /**
  * @title SmartLoansFactory
@@ -15,16 +17,22 @@ import "./IAssetsExchange.sol";
  */
 contract SmartLoansFactory is IBorrowersRegistry {
 
+  modifier oneLoanPerOwner {
+    require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed.");
+    _;
+  }
+
   event SmartLoanCreated(address indexed accountAddress, address indexed creator);
 
   Pool private pool;
   IPriceProvider private priceProvider;
   IAssetsExchange assetsExchange;
+  UpgradeableBeacon public upgradeableBeacon;
 
   uint256 private constant MAX_VAL = 2**256-1 ether;
 
-  mapping(address => SmartLoan) public creatorsToAccounts;
-  mapping(address => address) public accountsToCreators;
+  mapping(address => address) public ownersToLoans;
+  mapping(address => address) public loansToOwners;
 
   SmartLoan[] loans;
 
@@ -36,52 +44,57 @@ contract SmartLoansFactory is IBorrowersRegistry {
     pool = _pool;
     priceProvider = _priceProvider;
     assetsExchange = _assetsExchange;
+    SmartLoan smartLoanImplementation = new SmartLoan();
+    upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
+    upgradeableBeacon.transferOwnership(msg.sender);
   }
 
-  function createLoan() public returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan(priceProvider, assetsExchange, pool);
+  function createLoan() external oneLoanPerOwner returns(SmartLoan) {
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
+    SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(newAccount);
-    newAccount.transferOwnership(msg.sender);
+    updateRegistry(smartLoan);
+    smartLoan.transferOwnership(msg.sender);
 
-    return newAccount;
+    return smartLoan;
   }
 
-  function createAndFundLoan(uint256 _initialDebt) external payable returns(SmartLoan) {
-    SmartLoan newAccount = new SmartLoan(priceProvider, assetsExchange, pool);
+  function createAndFundLoan(uint256 _initialDebt) external oneLoanPerOwner payable returns(SmartLoan) {
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
+    SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
-    updateRegistry(newAccount);
+    updateRegistry(smartLoan);
 
     //Fund account with own funds and credit
-    newAccount.fund{value:msg.value}();
-    newAccount.borrow(_initialDebt);
-    require(newAccount.isSolvent());
+    smartLoan.fund{value:msg.value}();
+    smartLoan.borrow(_initialDebt);
+    require(smartLoan.isSolvent());
 
-    newAccount.transferOwnership(msg.sender);
+    smartLoan.transferOwnership(msg.sender);
 
-    return newAccount;
+    return smartLoan;
   }
 
   function updateRegistry(SmartLoan _newAccount) internal {
-    creatorsToAccounts[msg.sender] = _newAccount;
-    accountsToCreators[address(_newAccount)] = msg.sender;
+    ownersToLoans[msg.sender] = address(_newAccount);
+    loansToOwners[address(_newAccount)] = msg.sender;
     loans.push(_newAccount);
 
     emit SmartLoanCreated(address(_newAccount), msg.sender);
   }
 
   function canBorrow(address _account) external view override returns(bool) {
-    return accountsToCreators[_account] != address(0);
+    return loansToOwners[_account] != address(0);
   }
 
   function getAccountForUser(address _user) external view override returns(address) {
-    return address(creatorsToAccounts[_user]);
+    return address(ownersToLoans[_user]);
   }
 
   function getOwnerOfLoan(address _loan) external view override returns(address) {
-    return accountsToCreators[_loan];
+    return loansToOwners[_loan];
   }
 
   function getAllLoans() public view returns(SmartLoan[] memory) {

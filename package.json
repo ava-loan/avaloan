@@ -13,13 +13,14 @@
     "build": "yarn build:contracts:truffle && node scripts/build.js",
     "test-local": "yarn hardhat test",
     "forked-test-node": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc",
-    "test-integration": "yarn hardhat test test/local/smart-loan.test.ts test/integration/pangolin-exchange.test.ts --network hardhat-integration",
+    "test-integration": "yarn hardhat test test/integration/smart-loan.test.ts test/integration/pangolin-exchange.test.ts test/integration/pangolin-exchange.test.ts --network hardhat-integration",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci"
   },
   "dependencies": {
     "@growthbunker/vuetimeline": "^0.1.17",
     "@openzeppelin/contracts": "^4.1.0",
+    "@openzeppelin/contracts-upgradeable": "^4.2.0",
     "@pangolindex/exchange-contracts": "github:pangolindex/exchange-contracts",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "chart.js": "^2.9.4",

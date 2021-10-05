@@ -77,6 +77,17 @@ describe('Upgreadable pool', () => {
       expect(fromWei(await pool.getDeposits(depositor2.address))).to.be.closeTo(2, 0.000001);
     });
 
+    it("should allow owner-only functions after upgrade", async () => {
+      let ratesCalculatorV2 = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+
+      //Should prevent setting new value from non-owner
+      await expect(pool.connect(depositor).setRatesCalculator(ratesCalculatorV2.address))
+        .to.be.revertedWith("Ownable: caller is not the owner");
+
+      //Should allow setting new value
+      await pool.connect(owner).setRatesCalculator(ratesCalculatorV2.address);
+    });
+
   });
 
 });

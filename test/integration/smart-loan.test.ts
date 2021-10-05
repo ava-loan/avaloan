@@ -4,16 +4,21 @@ import {solidity} from "ethereum-waffle";
 
 import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
 import SimplePriceProviderArtifact from '../../artifacts/contracts/SimplePriceProvider.sol/SimplePriceProvider.json';
-import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toBytes32, toWei, formatUnits} from "../_helpers";
+import {
+  fromWei,
+  getFixedGasSigners,
+  toBytes32,
+  toWei,
+  formatUnits,
+  deployAndInitPangolinExchangeContract
+} from "../_helpers";
 import {
   FixedRatesCalculator,
   PangolinExchange,
   Pool,
-  SimplePriceProvider, SmartLoan
+  SimplePriceProvider, SmartLoan, SmartLoan__factory
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -47,32 +52,26 @@ describe('Smart loan', () => {
       usdTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber;
 
-    before("deploy the Smart Loan", async () => {
+    before("deploy provider, exchange and pool", async () => {
       [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-
-      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
-      await priceProvider.setOracle(oracle.address);
-
-      exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      await exchange.updateAssetAddress(toBytes32('USD'), usdTokenAddress);
-      await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
-      await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
-      await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
-
-      usdTokenDecimalPlaces = await usdTokenContract.decimals();
-    });
-
-    it("should deploy a pool", async () => {
       const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      await priceProvider.setOracle(oracle.address);
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
+    });
 
-      loan = (await deployContract(owner, SmartLoanArtifact, [priceProvider.address, exchange.address, pool.address])) as SmartLoan;
+    it("should deploy a smart loan", async () => {
+      loan = await (new SmartLoan__factory(owner).deploy());
+      await loan.initialize(priceProvider.address, exchange.address, pool.address);
     });
 
     it("should fund a loan", async () => {
@@ -176,33 +175,25 @@ describe('Smart loan', () => {
       usdTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber;
 
-    before("deploy the Smart Loan", async () => {
+    before("deploy provider, exchange and pool", async () => {
       [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-
-      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
-      await priceProvider.setOracle(oracle.address);
-
-      exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      await exchange.updateAssetAddress(toBytes32('USD'), usdTokenAddress);
-      await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
-      await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
-      await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
-
-      usdTokenDecimalPlaces = await usdTokenContract.decimals();
-    });
-
-
-    it("should deploy a pool", async () => {
       const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
 
+      await priceProvider.setOracle(oracle.address);
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
+    });
 
-      loan = (await deployContract(owner, SmartLoanArtifact, [priceProvider.address, exchange.address, pool.address])) as SmartLoan;
+    it("should deploy a smart loan", async () => {
+      loan = await (new SmartLoan__factory(owner).deploy());
+      await loan.initialize(priceProvider.address, exchange.address, pool.address);
     });
 
 
@@ -256,33 +247,25 @@ describe('Smart loan', () => {
       usdTokenDecimalPlaces: BigNumber;
 
 
-    before("deploy the Smart Loan", async () => {
+    before("deploy provider, exchange and pool", async () => {
       [owner, oracle, depositor, liquidator] = await getFixedGasSigners(10000000);
 
-      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-
-      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
-      await priceProvider.setOracle(oracle.address);
-
-      exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-      await exchange.updateAssetAddress(toBytes32('USD'), usdTokenAddress);
-      await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
-      await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
-      await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
-
-      usdTokenDecimalPlaces = await usdTokenContract.decimals();
-    });
-
-
-    it("should deploy a pool", async () => {
       const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+      priceProvider = (await deployContract(owner, SimplePriceProviderArtifact)) as SimplePriceProvider;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
 
+      await priceProvider.setOracle(oracle.address);
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
+    });
 
-      loan = (await deployContract(owner, SmartLoanArtifact, [priceProvider.address, exchange.address, pool.address])) as SmartLoan;
+    it("should deploy a smart loan", async () => {
+      loan = await (new SmartLoan__factory(owner).deploy());
+      await loan.initialize(priceProvider.address, exchange.address, pool.address);
     });
 
     it("should fund a loan", async () => {
@@ -302,10 +285,10 @@ describe('Smart loan', () => {
       await priceProvider.connect(oracle).setPrice(toBytes32('USD'), estimatedAVAXPriceFor1USDToken);
 
 
-      await loan.invest(toBytes32('USD'), toWei("1500", usdTokenDecimalPlaces));
+      await loan.invest(toBytes32('USD'), toWei("1700", usdTokenDecimalPlaces));
 
       const currentUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("1500", usdTokenDecimalPlaces));
+      expect(currentUSDTokenBalance).to.be.equal(toWei("1700", usdTokenDecimalPlaces));
     });
 
     it("should update valuation after price change", async () => {
