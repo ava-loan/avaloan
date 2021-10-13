@@ -19,23 +19,25 @@ import "redstone-flash-storage/lib/contracts/message-based/PriceAware.sol";
  */
 contract SmartLoan is OwnableUpgradeable, PriceAware {
 
-  uint256 private constant PERCENTAGE_PRECISION = 1000;
+  uint256 public constant PERCENTAGE_PRECISION = 1000;
   uint256 private constant MAX_SOLVENCY_RATIO = 10000;
 
   uint256 public constant LIQUIDATION_BONUS = 100;
   uint256 private constant LIQUIDATION_CAP = 200;
 
+  uint256 public constant minSolvencyRatio = 1200;
+
   SupportedAssets supportedAssets;
   IAssetsExchange public exchange;
   Pool pool;
-
-  uint256 public minSolvencyRatio = 1200;
 
   function initialize(SupportedAssets _supportedAssets, IAssetsExchange assetsExchange_, Pool pool_) external initializer {
     supportedAssets = _supportedAssets;
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
+
+    maxDelay = 180;
   }
 
 

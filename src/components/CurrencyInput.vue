@@ -1,29 +1,27 @@
 <template>
-  <div class="currency-input-wrapper" :style="{ 'flex-direction': flexDirection}">
-    <div class="input-wrapper" :style="{ 'margin-top': flexDirection == 'column-reverse' ? '40px' : '0'}">
-      <input type="number" v-model="value" step='0.01' placeholder="0" min="0" max="999999">
+  <div class="currency-input-wrapper">
+    <div class="input-wrapper"
+         :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
+          @click="$refs.input.focus()">
+      <input type="number" ref="input" v-model.number="value" step='0.01' placeholder="0" min="0" max="999999">
       <div class="converted" v-if="value && (value !== 0)">
-        ~ {{ (price ? price : 1) * toUSD(value) | usd}}
+        ~ {{ price * toUSD(value) | usd}}
       </div>
       <div class="logo-wrapper">
         <img :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.svg`"/>
         <span class="symbol">{{ symbol }}</span>
       </div>
     </div>
-    <button class="btn" :class="[waiting ? 'waiting' : '', color]" @click="emitValue(true)"
-      :style="{ 'margin-top': flexDirection == 'column' ? '40px' : '0'}">
-      <div v-if="!waiting">
-        {{label}}
-      </div>
-      <vue-loaders-ball-beat v-else color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
-    </button>
-    <button v-if="hasSecondButton" class="btn" :class="[waiting ? 'waiting' : '', color]" @click="emitValue(false)"
-      :style="{ 'margin-top': flexDirection == 'column' ? '40px' : '0'}">
-      <div v-if="!waiting">
-        {{secondLabel}}
-      </div>
-      <vue-loaders-ball-beat v-else color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
-    </button>
+    <div class="info"
+         :style="{'order': flexDirection === 'row' ? 1 : ''}">
+      <div
+        v-if="info && value && !isNaN(value)"
+        v-html="info(value)"></div>
+    </div>
+    <div class="error"
+         :style="{'order': flexDirection === 'row' ? 1 : ''}">
+      {{error}}
+    </div>
   </div>
 </template>
 
@@ -32,30 +30,42 @@
   export default {
     name: 'CurrencyInput',
     props: {
-      label: { type: String, default: '' },
-      price: { type: Number },
+      price: { type: Number, default: 1 },
       symbol: { type: String, default: 'AVAX' },
-      hasSecondButton: { type: Boolean, default: false },
-      secondLabel: { type: String, default: '' },
       color: { type: String, default: 'purple' },
       flexDirection: { type: String, default: 'column'},
-      waiting: { type: Boolean, default: false },
+      validators: {
+        type: Array, default: () => []
+      },
+      info: { type: Function, default: null },
+      defaultValue: null
     },
     data() {
       return {
+        error: '',
         value: null
       }
     },
-    methods: {
-      emitValue(isFirstButton) {
-        if (!this.waiting) {
-          if (!this.hasSecondButton) {
-            this.$emit('submitValue', this.value);
-          } else {
-            this.$emit('submitValue', { value: this.value, first: isFirstButton });
+    watch: {
+      value: function (newValue) {
+        this.error = '';
+
+        this.validators.find(
+          check => {
+            let value = typeof newValue === "number" ? newValue : 0;
+            if (!check.require(value)) {
+              this.error = check.message;
+              return true;
+            }
+            return false;
           }
-          this.value = null;
-        }
+        )
+
+        const hasError = this.error.length > 0;
+        this.$emit('newValue', {value: newValue, error: hasError});
+      },
+      defaultValue: function(newValue) {
+        this.value = newValue;
       }
     }
   }
@@ -63,11 +73,6 @@
 
 <style lang="scss" scoped>
 @import "~@/styles/variables";
-
-.currency-input-wrapper {
-  display: flex;
-  align-items: center;
-}
 
 .input-wrapper {
   display: flex;
@@ -125,11 +130,6 @@ input[type=number] {
   opacity: 0.6;
 }
 
-.waiting.btn {
-    opacity: 0.5;
-    cursor: initial;
-}
-
 .symbol {
   margin-left: 10px;
   font-family: 'Lato';
@@ -145,5 +145,14 @@ input[type=number] {
 img {
   height: 36px;
   width: 36px;
+}
+
+.error, .info {
+  height: 24px;
+  padding-top: 6px;
+  color: #7d7d7d;
+  font-size: 14px;
+  width: 100%;
+  text-align: end;
 }
 </style>

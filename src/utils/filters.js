@@ -25,12 +25,12 @@ export default function setupFilters() {
 
   Vue.filter("units", function (value) {
     if (!value) return "0";
-    return value.toFixed(3);
+    return value.toPrecision(3);
   });
 
   Vue.filter("percent", function (value) {
     if (!value) return "0%";
-    return (value * 100).toFixed(2) + "%";
+    return (value * 100).toFixed(1) + "%";
   });
 
   Vue.filter("tx", function (value) {

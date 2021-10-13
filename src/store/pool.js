@@ -149,7 +149,7 @@ export default {
       commit('setUserBorrowed', userBorrowed);
     },
     async sendDeposit({ state, rootState, dispatch, commit }, { amount }) {
-      const tx = await state.pool.deposit({gasLimit: 500000, value: ethers.utils.parseEther(amount)});
+      const tx = await state.pool.deposit({gasLimit: 500000, value: ethers.utils.parseEther(amount.toString())});
       await rootState.network.provider.waitForTransaction(tx.hash);
 
       dispatch('updateHistory');

@@ -1,6 +1,6 @@
 <script>
   import { Line } from 'vue-chartjs'
-  
+
   export default {
     name: 'SimpleChart',
     extends: Line,
@@ -47,7 +47,7 @@
           hover: {
             mode: null
           },
-          aspectRatio: this.isMobile ? 2 : 3, 
+          aspectRatio: this.isMobile ? 2 : 2,
           height: null,
           width: null,
           legend: {
@@ -84,7 +84,7 @@
           } ,
           tooltips: {
             enabled: false
-          }   
+          }
         }
       }
     },
@@ -101,9 +101,8 @@
         if (this.gradient === null) {
 
           let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-          gradient.addColorStop(0, 'rgba(255, 0, 0, 0.6)');
-          gradient.addColorStop(0.5, 'rgba(255, 216, 177, 0.8)');
-          gradient.addColorStop(1, 'rgba(0, 128, 0, 0.6)');
+          gradient.addColorStop(0, '#fa91bf');
+          gradient.addColorStop(1, '#babafe');
 
           return gradient;
         }

@@ -56,7 +56,7 @@
       await this.initNetwork();
       await this.initPrices();
       await this.initPool();
-      await this.initLoan();
+      await this.fetchLoan();
       await this.updatePoolData();
     },
     computed: {
@@ -65,7 +65,7 @@
     methods: {
       ...mapActions("network", ["initNetwork"]),
       ...mapActions("pool", ["initPool", "updatePoolData"]),
-      ...mapActions("loan", ["initLoan"]),
+      ...mapActions("loan", ["fetchLoan"]),
       ...mapActions("prices", ["initPrices"]),
       async checkConnectedChain() {
         const chainId = await ethereum.request({ method: 'eth_chainId' });

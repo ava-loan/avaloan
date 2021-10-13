@@ -3,14 +3,14 @@
     <ul class='tabs-header'>
       <li v-for='(tab, index) in tabs'
         :key='tab.title'
-        @click='selectTab(index)'
+        @click="selectedIndex = index"
         :class="{
-          'tab-selected': (index == selectedIndex),
-          'img-right': tab.imgPosition == 'right'}">
+          'tab-selected': (index === selectedIndex),
+          'img-right': tab.imgPosition === 'right'}">
         <div class="tab-button">
-          <img v-if="tab.img" :src="'src/assets/icons/' + (index == selectedIndex ? tab.imgActive : tab.img) + '.svg'"/>
+          <img v-if="tab.img" :src="'src/assets/icons/' + (index === selectedIndex ? tab.imgActive : tab.img) + '.svg'"/>
           <div :style="{'width': tab.titleWidth}">{{ tab.title }}</div>
-        </div>  
+        </div>
         <img v-if="index !== tabs.length - 1" src="src/assets/icons/slash.svg" class="slash">
       </li>
     </ul>
@@ -23,28 +23,38 @@ export default {
   props: {
     mode: {
       type: String
-    }
+    },
+    openTabIndex: {
+      type: Number,
+      default: 0
+    },
   },
   data () {
     return {
-      selectedIndex: 0,
-      tabs: []         
+      selectedIndex: this.openTabIndex,
+      tabs: []
     }
   },
   created () {
     this.tabs = this.$children
   },
   mounted () {
-    this.selectTab(0)
+    this.selectTab(this.openTabIndex)
   },
   methods: {
-    selectTab (i) {
-      this.selectedIndex = i
-
+    selectTab(i) {
       this.tabs.forEach((tab, index) => {
         tab.isActive = (index === i)
-      })
+      });
     }
+  },
+  watch: {
+    selectedIndex: function(value) {
+      this.selectTab(value)
+    },
+    openTabIndex: function(value) {
+      this.selectedIndex = value;
+    },
   }
 }
 </script>
@@ -93,7 +103,7 @@ export default {
       padding-right: 20px;
     }
   }
-  
+
   .tab-selected .tab-button {
     font-weight: bold;
   }

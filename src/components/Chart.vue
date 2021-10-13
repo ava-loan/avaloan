@@ -33,8 +33,7 @@
         ctx.closePath();
         ctx.fill();
 
-
-         ctx.restore();
+        ctx.restore();
       }
    }
   })
@@ -54,15 +53,13 @@
       height: null,
       width: null,
       lineWidth: null,
-      onlyLine: false,
       stepped: false
     },
     data() {
       return {
-        gradient: null
       }
     },
-    mounted () {
+    mounted() {
       this.renderChart(this.chartData, this.options)
     },
     computed: {
@@ -74,12 +71,13 @@
       },
       chartData() {
         return {
+          labels: ['a', 'b', 'c'],
           datasets: [
             {
               fill: false,
               steppedLine: this.stepped,
               data: this.dataPoints,
-              borderColor: (context) => this.borderColor(context),
+              borderColor: (context) => this.getColor(context, this.getLineGradient),
               borderWidth: this.lineWidth
             }
           ]
@@ -100,28 +98,36 @@
           },
           scales: {
             xAxes: [{
-              display: false,
               type: 'time',
               gridLines: {
-                  drawOnChartArea: false
+                drawOnChartArea: false,
+                tickMarkLength: 0,
+                lineWidth: 0,
               },
               ticks: {
-                display: false,
                 beginAtZero: false,
                 min: this.minX - (this.maxX - this.minX) / 50,
-                max: this.maxX + (this.maxX - this.minX) / 50
+                max: this.maxX + (this.maxX - this.minX) / 50,
+                maxTicksLimit: 1,
+                maxRotation: 0,
+                minRotation: 0,
+                align: 'center',
+                padding: 15,
+                fontFamily: 'Montserrat'
               }
             }],
             yAxes: [{
               gridLines: {
-                zeroLineWidth: this.onlyLine ? 0 : 0.5,
+                lineWidth: 1.5,
+                zeroLineWidth: 0.5,
                 borderDash: [8, 4],
-                drawOnChartArea: !this.onlyLine,
+                drawOnChartArea: true,
                 tickMarkLength: 0,
                 drawBorder: false,
+                // borderColor: this.getLineGradient,
               },
               ticks: {
-                display: !this.onlyLine,
+                display: true,
                 maxTicksLimit: 1,
                 min: this.minY,
                 max: this.maxY,
@@ -131,7 +137,7 @@
             }]
           } ,
           tooltips: {
-            enabled: !this.onlyLine,
+            enabled: true,
             intersect: false,
             mode: "index",
             backgroundColor: '#6b70ed',
@@ -146,7 +152,7 @@
                   label += ': ';
                 }
                 label += (Math.round(tooltipItem.yLabel * 100) / 100).toLocaleString('en-US');
-                return label + ' AVAX';
+                return '$' + label;
               }
             }
           }
@@ -162,27 +168,23 @@
       }
     },
     methods: {
-      getGradient(ctx, chartArea) {
-        if (this.gradient === null) {
+      getLineGradient(ctx, chartArea) {
+        let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+        gradient.addColorStop(0, '#fa91bf');
+        gradient.addColorStop(1, '#babafe');
 
-          let gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-          gradient.addColorStop(0, 'rgba(255, 0, 0, 0.6)');
-          gradient.addColorStop(0.5, 'rgba(255, 216, 177, 0.8)');
-          gradient.addColorStop(1, 'rgba(0, 128, 0, 0.6)');
-
-          return gradient;
-        }
+        return gradient;
       },
-      borderColor(context) {
-        const chart = context.chart;
-        const {ctx, chartArea} = chart;
+      getColor(context, fun) {
+        let chart = context.chart;
+        let {ctx, chartArea} = chart;
 
         if (!chartArea) {
           // This case happens on initial chart load
           return null;
         }
 
-        return this.getGradient(ctx, chartArea);
+        return fun(ctx, chartArea);
       }
     }
   }

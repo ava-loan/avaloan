@@ -16,10 +16,22 @@
     <Block class="block" :bordered="true">
       <Tabs>
         <Tab title="Deposit" imgActive="add-deposit-active" img="add-deposit" imgPosition="left" titleWidth="100px">
-          <CurrencyInput label="Deposit" v-on:submitValue="depositValue" :waiting="waitingForDeposit" flexDirection="column"/>
+          <CurrencyForm
+            label="Deposit"
+            v-on:submitValue="depositValue"
+            :waiting="waitingForDeposit"
+            flexDirection="column"
+            :validators="[{require: value => value <= balance, message: 'Deposit amount exceeds your account balance'}]"
+          />
         </Tab>
         <Tab title="Withdraw" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right" titleWidth="140px">
-          <CurrencyInput label="Withdraw" v-on:submitValue="withdrawValue" :waiting="waitingForWithdraw" flexDirection="column" />
+          <CurrencyForm
+            label="Withdraw"
+            v-on:submitValue="withdrawValue"
+            :waiting="waitingForWithdraw"
+            flexDirection="column"
+            :validators="[{require: value => value <= userDeposited, message: 'Withdraw amount exceeds your account deposit'}]"
+          />
         </Tab>
       </Tabs>
     </Block>
@@ -34,7 +46,7 @@
 </template>
 
 <script>
-  import CurrencyInput from "@/components/CurrencyInput.vue";
+  import CurrencyForm from "@/components/CurrencyForm.vue";
   import Tabs from "@/components/Tabs.vue";
   import Tab from "@/components/Tab.vue";
   import Value from "@/components/Value.vue";
@@ -43,12 +55,11 @@
   import HistoryList from "@/components/HistoryList.vue";
   import Chart from "@/components/Chart.vue";
   import { mapState, mapActions } from 'vuex';
-  import Vue from "vue";
 
   export default {
     name: 'Deposit',
     components: {
-      CurrencyInput,
+      CurrencyForm,
       Tabs,
       Tab,
       Value,
@@ -66,8 +77,9 @@
     },
     computed: {
       ...mapState('pool', ['userDeposited', 'depositRate', 'totalDeposited', 'history']),
+      ...mapState('network', ['balance']),
       chartPoints() {
-        if (this.history == null || this.history.length == 0) {
+        if (this.history == null || this.history.length === 0) {
           return [];
         }
 
@@ -76,7 +88,7 @@
 
         let dataPoints = this.history.slice().reverse().map(
           (e) => {
-            let value = e.type == "Deposit" ? e.value : -e.value;
+            let value = e.type === "Deposit" ? e.value : -e.value;
             currentDeposit += value;
 
             if (currentDeposit > maxDeposit) maxDeposit = currentDeposit;
@@ -103,10 +115,10 @@
     methods: {
       ...mapActions('pool', ['sendDeposit', 'withdraw']),
       async depositValue(value) {
-        await this.handleTransaction(this.sendDeposit, value, "waitingForDeposit");
+        await this.handleTransaction(this.sendDeposit, {amount: value}, "waitingForDeposit");
       },
       async withdrawValue(value) {
-        await this.handleTransaction(this.withdraw, value, "waitingForWithdraw");
+        await this.handleTransaction(this.withdraw, {amount: value}, "waitingForWithdraw");
       }
     }
   }

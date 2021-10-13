@@ -4,18 +4,25 @@ const ethers = require('ethers');
 import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import SUPPORTED_ASSETS from '@contracts/SupportedAssets.json'
-import { calculateCollateral, fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
+import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import { WrapperBuilder } from "redstone-flash-storage";
 
 export default {
   namespaced: true,
   state: {
     loan: null,
-    assets: [],
+    assets: [
+      {name: "AVAX", symbol: "AVAX", code: "avalanche-2", decimals: 18, price: 0, balance: 0, value: 0 , share: 0, native: true},
+      {name: "Ether", symbol: "ETH", code: "ethereum", decimals: 18, price: 0, balance: 0, value: 0 , share: 0},
+      {name: "Bitcoin", symbol: "BTC", code: "bitcoin", decimals: 8, price: 0, balance: 0, value: 0 , share: 0},
+      {name: "Link", symbol: "LINK", code: "link", decimals: 18, price: 0, balance: 0, value: 0 , share: 0}
+    ],
     isLoanAlreadyCreated: null,
     totalValue: null,
     debt: null,
-    solvency: null
+    solvency: null,
+    minSolvency: null,
+    loanBalance: null
   },
   mutations: {
     setLoan(state, loan) {
@@ -36,11 +43,15 @@ export default {
     setSolvency(state, solvency) {
       state.solvency = solvency;
     },
+    setMinSolvency(state, solvency) {
+      state.solvency = solvency;
+    },
     setSupportedAssets(state, assets) {
       state.supportedAssets = assets;
+    },
+    setLoanBalance(state, balance) {
+      state.loanBalance = balance;
     }
-  },
-  getters: {
   },
   actions: {
     async initSupportedAssets({ rootState, commit }) {
@@ -51,61 +62,51 @@ export default {
 
       commit('setSupportedAssets', supported);
     },
-    async initLoan({ state, rootState, dispatch, commit }) {
-      try {
-        dispatch('initSupportedAssets');
+    async fetchLoan({ state, rootState, dispatch, commit }) {
+      dispatch('initSupportedAssets');
 
-        const provider = rootState.network.provider;
-        const account = rootState.network.account;
-
-        const loanFactory = new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
-
-        const userLoan = await loanFactory.getAccountForUser(account);
-
-        commit('setIsLoanAlreadyCreated', userLoan != ethers.constants.AddressZero);
-
-        if (state.isLoanAlreadyCreated) {
-          const loan = new ethers.Contract(userLoan, LOAN.abi, provider.getSigner());
-
-          //only for test
-          await syncTime();
-
-          const wrappedLoan = WrapperBuilder
-            .wrapLite(loan)
-            .usingPriceFeed("redstone-rapid");
-
-          commit('setLoan', wrappedLoan);
-
-          dispatch('updateLoanStats');
-          dispatch('updateAssets');
-        }
-        return true;
-      } catch (e) {
-        console.log(e)
-        return false;
-      }
-    },
-    async updateAssets({ state, rootState, commit }) {
       const provider = rootState.network.provider;
+      const account = rootState.network.account;
+
+      const loanFactory = new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
+
+      const userLoan = await loanFactory.getAccountForUser(account);
+
+      commit('setIsLoanAlreadyCreated', userLoan !== ethers.constants.AddressZero);
+
+      if (state.isLoanAlreadyCreated) {
+        const loan = new ethers.Contract(userLoan, LOAN.abi, provider.getSigner());
+
+
+        const wrappedLoan = WrapperBuilder
+          .wrapLite(loan)
+          .usingPriceFeed("redstone-rapid");
+
+        commit('setLoan', wrappedLoan);
+
+        const minSolvencyRatio = (await wrappedLoan.minSolvencyRatio()) / (await wrappedLoan.PERCENTAGE_PRECISION())
+        commit('setMinSolvency', minSolvencyRatio);
+
+        dispatch('updateLoanStats');
+        dispatch('updateLoanBalance');
+        dispatch('updateAssets');
+      }
+      return true;
+    },
+    async updateAssets({ state, commit, getters }) {
       const loan = state.loan;
 
       const prices = await loan.getAllAssetsPrices();
       const balances = await loan.getAllAssetsBalances();
 
-      let assets = [
-        {name: "AVAX", symbol: "AVAX", code: "avalanche-2", decimals: 18, price: 0, balance: 0, value: 0 , share: 0, native: true},
-        {name: "Ether", symbol: "ETH", code: "ethereum", decimals: 18, price: 0, balance: 0, value: 0 , share: 0},
-        {name: "Bitcoin", symbol: "BTC", code: "bitcoin", decimals: 8, price: 0, balance: 0, value: 0 , share: 0},
-        {name: "Link", symbol: "LINK", code: "link", decimals: 18, price: 0, balance: 0, value: 0 , share: 0}
-      ];
-
+      let assets = state.assets;
       assets = assets.filter(
         asset => state.supportedAssets.includes(asset.symbol) || asset.native
       );
 
       for (let i = 0; i < prices.length; i++) {
-        if (i == 0) {
-          assets[0].balance = parseFloat(formatUnits(await provider.getBalance(loan.address), assets[0].decimals));
+        if (i === 0) {
+          assets[0].balance = state.loanBalance;
           assets[0].price = 1;
         } else {
           assets[i].price = fromWei(prices[i]);
@@ -126,25 +127,23 @@ export default {
       commit('setDebt', fromWei(status[1]));
       commit('setSolvency', status[2]/1000);
     },
-    async createNewLoan({ rootState, dispatch, commit }, { amount }) {
-      try {
-        const provider = rootState.network.provider;
+    async updateLoanBalance({ state, rootState, commit }) {
+      const provider = rootState.network.provider;
+      const balance = parseFloat(formatUnits(await provider.getBalance(state.loan.address), state.assets[0].decimals));
 
-        const collateral = calculateCollateral(amount);
+      commit('setLoanBalance', balance);
+    },
+    async createNewLoan({ rootState, dispatch, commit }, { amount, collateral }) {
+      const provider = rootState.network.provider;
 
-        const loanFactory = new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
+      const loanFactory = new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
 
-        //TODO: find optimal value of gas
-        const tx = await loanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 30000000});
+      //TODO: find optimal value of gas
+      const tx = await loanFactory.createAndFundLoan(toWei(amount.toString()), {value: toWei(collateral.toString()), gasLimit: 30000000});
 
-        await provider.waitForTransaction(tx.hash);
+      await provider.waitForTransaction(tx.hash);
 
-        dispatch('initLoan');
-      return true;
-      } catch (e) {
-        console.error(e)
-        return false;
-      }
+      dispatch('fetchLoan');
     },
     async borrow({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -154,7 +153,6 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
-      return true;
     },
     async repay({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -164,7 +162,6 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
-      return true;
     },
     async fund({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -174,7 +171,6 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
-      return true;
     },
     async withdraw({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -184,8 +180,6 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
-
-      return true;
     },
     async invest({ state, rootState, dispatch, commit }, { asset, amount, decimals }) {
       const provider = rootState.network.provider;
@@ -195,8 +189,8 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanBalance');
       dispatch('updateAssets');
-      return true;
     },
     async redeem({ state, rootState, dispatch, commit }, { asset, amount, decimals }) {
       const provider = rootState.network.provider;
@@ -206,6 +200,7 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanBalance');
       dispatch('updateAssets');
     }
   }
