@@ -1,28 +1,18 @@
 const config = require('./network/config-local.json');
 const fs = require('fs');
 const ethers = require('ethers');
-const utils = ethers.utils;
 const FACTORY = require('../build/contracts/SmartLoansFactory.json');
 const LOAN = require('../build/contracts/SmartLoan.json');
-const Web3 = require('web3');
-const contract = require('truffle-contract');;
-var HDWalletProvider = require("truffle-hdwallet-provider");
+const {WrapperBuilder} = require("redstone-flash-storage");
+const privateKey = fs.readFileSync("./.secret2").toString().trim();
+const mnemonicWallet = new ethers.Wallet(privateKey);
 
-const mnemonic = fs.readFileSync("./.secret2").toString().trim();
-let mnemonicWallet = ethers.Wallet.fromMnemonic(mnemonic);
-
-
-
-
-//let hdProvider = new HDWalletProvider(mnemonic, config['provider-url']);
-//let provider = new ethers.providers.Web3Provider(hdProvider);
 var provider;
 if (config['provider-url'] === "localhost") {
   provider = new ethers.providers.JsonRpcProvider();
-} else  {
+} else {
   provider = new ethers.providers.JsonRpcProvider(config['provider-url'], "unspecified");
 }
-
 
 
 let wallet = mnemonicWallet.connect(provider);
@@ -43,6 +33,9 @@ async function createLoan() {
 async function fundLoan(loanAddress, val) {
   console.log("Funding loan: " + val);
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
+  loan = WrapperBuilder
+    .wrapLite(loan)
+    .usingPriceFeed("redstone-rapid");
   let tx = await loan.fund({value: toWei(val.toString()), gasLimit: 3000000});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
@@ -79,10 +72,10 @@ async function getLoanStatus(loanAddress) {
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
   let rawStatus = await loan.getFullLoanStatus();
   let status = {
-    value : fromWei(rawStatus[0]),
-    debt : fromWei(rawStatus[1]),
-    solvencyRatio : parseFloat(rawStatus[2].toString()),
-    isSolvent : parseInt(rawStatus[3].toString()) == 1 ? true : false
+    value: fromWei(rawStatus[0]),
+    debt: fromWei(rawStatus[1]),
+    solvencyRatio: parseFloat(rawStatus[2].toString()),
+    isSolvent: parseInt(rawStatus[3].toString()) == 1 ? true : false
   };
   return status;
 }

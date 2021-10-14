@@ -26,6 +26,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
   uint256 private constant LIQUIDATION_CAP = 200;
 
   uint256 public constant minSolvencyRatio = 1200;
+  uint256 public constant selloutSolvencyRatio = 1050;
 
   SupportedAssets supportedAssets;
   IAssetsExchange public exchange;
@@ -71,7 +72,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
    * @param _amount to be bought
   **/
   function invest(bytes32 _asset, uint256 _amount) external onlyOwner {
-    exchange.buyAsset{value: address(this).balance}(_asset, _amount);
+    exchange.buyAsset{value : address(this).balance}(_asset, _amount);
 
     emit Invested(msg.sender, _asset, _amount, block.timestamp);
   }
@@ -113,12 +114,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
 
     require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
 
-    pool.repay{value:_amount}();
+    pool.repay{value : _amount}();
 
     emit Repaid(msg.sender, _amount, block.timestamp);
   }
-
-
 
 
   function liquidate(uint256 _amount) public remainsSolvent {
@@ -130,6 +129,26 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
     payable(msg.sender).transfer(bonus);
   }
 
+
+  function sellout() external {
+    require(isBelowSelloutTreshold(), "Cannot sellout a solvent account");
+    bytes32[] memory assets = supportedAssets.getAllAssets();
+
+    for (uint i = 0; i < assets.length; i++) {
+      uint256 balance = exchange.getBalance(address(this), assets[i]);
+      IERC20Metadata token = getERC20TokenInstance(assets[i]);
+      token.transfer(address(exchange), balance);
+      exchange.sellAsset(assets[i], balance);
+    }
+
+    uint256 debt = getDebt();
+    if (address(this).balance < debt) {
+      repay(address(this).balance);
+    } else {
+      repay(debt);
+    }
+  }
+
   receive() external payable {}
 
 
@@ -138,27 +157,27 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
   /**
     * Returns the current value of a loan including cash and investments
   **/
-  function getTotalValue() public virtual view returns(uint256) {
+  function getTotalValue() public virtual view returns (uint256) {
     uint256 total = address(this).balance;
 
     bytes32[] memory assets = supportedAssets.getAllAssets();
 
-    for(uint i = 0; i < assets.length; i++) {
+    for (uint i = 0; i < assets.length; i++) {
       total = total + getAssetValue(assets[i]);
     }
     return total;
   }
 
 
-  function getERC20TokenInstance(bytes32 _asset) internal view returns(IERC20Metadata) {
+  function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
     address assetAddress = supportedAssets.getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
   }
 
 
-  function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns(uint256) {
-    uint normalizedPrice = (getPriceFromMsg(_asset) * 10**18) / getPriceFromMsg(bytes32('AVAX'));
+  function getAssetPriceInAVAXWei(bytes32 _asset) internal view returns (uint256) {
+    uint normalizedPrice = (getPriceFromMsg(_asset) * 10 ** 18) / getPriceFromMsg(bytes32('AVAX'));
     return normalizedPrice;
   }
 
@@ -166,12 +185,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
   /**
     * Returns the current debt associated with the loan
   **/
-  function getDebt() public view returns(uint256) {
+  function getDebt() public view returns (uint256) {
     return pool.getBorrowed(address(this));
   }
 
 
-  function getSolvencyRatio() public view returns(uint256) {
+  function getSolvencyRatio() public view returns (uint256) {
     uint256 debt = getDebt();
     if (debt == 0) {
       return MAX_SOLVENCY_RATIO;
@@ -181,12 +200,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
   }
 
 
-  function getFullLoanStatus() public view returns(uint256[4] memory) {
+  function getFullLoanStatus() public view returns (uint256[4] memory) {
     return [
-      getTotalValue(),
-      getDebt(),
-      getSolvencyRatio(),
-      isSolvent() ? uint256(1) : uint256(0)
+    getTotalValue(),
+    getDebt(),
+    getSolvencyRatio(),
+    isSolvent() ? uint256(1) : uint256(0)
     ];
   }
 
@@ -196,8 +215,16 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
     * It means that the ratio between total value and debt is above save level,
     * which is parametrized by the minSolvencyRatio
   **/
-  function isSolvent() public view returns(bool) {
+  function isSolvent() public view returns (bool) {
     return getSolvencyRatio() >= minSolvencyRatio;
+  }
+
+
+  /**
+    * Checks if the loan is below the sellout solvency treshold.
+  **/
+  function isBelowSelloutTreshold() public view returns (bool) {
+    return getSolvencyRatio() < selloutSolvencyRatio;
   }
 
 
@@ -205,13 +232,13 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
     * Returns the value held on the loan contract in a given asset
     * @param _asset the code of the given asset
   **/
-  function getAssetValue(bytes32 _asset) public view returns(uint256) {
+  function getAssetValue(bytes32 _asset) public view returns (uint256) {
     IERC20Metadata token = getERC20TokenInstance(_asset);
 
     uint256 assetBalance = exchange.getBalance(address(this), _asset);
 
     if (assetBalance > 0) {
-      return getAssetPriceInAVAXWei(_asset) * assetBalance / 10**token.decimals();
+      return getAssetPriceInAVAXWei(_asset) * assetBalance / 10 ** token.decimals();
     } else {
       return 0;
     }
@@ -222,12 +249,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
     * Returns the balances of all assets served by the price provider
     * It could be used as a helper method for UI
   **/
-  function getAllAssetsBalances() public view returns(uint256[] memory) {
+  function getAllAssetsBalances() public view returns (uint256[] memory) {
     bytes32[] memory assets = supportedAssets.getAllAssets();
-    uint256[] memory balances = new uint256[] (assets.length);
+    uint256[] memory balances = new uint256[](assets.length);
 
 
-    for(uint i = 0; i< assets.length; i++) {
+    for (uint i = 0; i < assets.length; i++) {
       balances[i] = exchange.getBalance(address(this), assets[i]);
     }
 
@@ -239,12 +266,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
     * Returns the prices of all assets served by the price provider
     * It could be used as a helper method for UI
   **/
-  function getAllAssetsPrices() public view returns(uint256[] memory) {
+  function getAllAssetsPrices() public view returns (uint256[] memory) {
     bytes32[] memory assets = supportedAssets.getAllAssets();
-    uint256[] memory prices = new uint256[] (assets.length);
+    uint256[] memory prices = new uint256[](assets.length);
 
 
-    for(uint i = 0; i< assets.length; i++) {
+    for (uint i = 0; i < assets.length; i++) {
       prices[i] = getAssetPriceInAVAXWei(assets[i]);
     }
 
@@ -316,7 +343,6 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
   * @param time of the repayment
   **/
   event Repaid(address indexed borrower, uint amount, uint time);
-
 
 
 }
