@@ -4,27 +4,30 @@
     <CurrencyInput
       v-on:newValue="updateCollateral"
       :defaultValue="collateral"
+      :validators="[
+        {require: value => value <= balance, message: 'Collateral amount exceeds your account balance'},
+      ]"
     />
     <div class="title">Loan</div>
     <CurrencyInput
       v-on:newValue="updateLoan"
       :defaultValue="loan"
       :validators="[
-        {require: value => value <= totalDeposited, message: 'Loan amount exceeds amount available in the pool'},
-        {require: value => value <= balance, message: 'Deposit amount exceeds your account balance'},
+        {require: value => value <= totalDeposited, message: 'Loan amount exceeds amount available in the pool'}
       ]"
     />
     <div class="solvency">Solvency: <span class="solvency-value">{{calculatedSolvency | percent}}</span></div>
     <div class="solvency-slider">
       <Slider
-        :min="1.2"
+        :min="1.25"
         :max="2.0"
         :value="calculatedSolvency"
         :step="0.01"
         v-on:input="updateLoanFromSolvency"
         :validators="[
-          {require: function(value) { return value >= 1.2 }, message: 'Minimum solvency is 120%'},
+          {require: function(value) { return value >= 1.25 }, message: 'Minimum initial solvency is 125%'},
         ]"
+        :labels="['Riskier', 'Safer']"
       />
     </div>
     <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'waiting': '', 'purple']" @click="borrow()">
@@ -64,7 +67,7 @@
       ...mapState('pool', ['totalDeposited']),
       ...mapState('network', ['balance']),
       disabled() {
-        return this.waiting || this.errors.includes(true);
+        return this.waiting || this.errors.includes(true) || !this.loan || !this.collateral;
       },
       calculatedSolvency() {
         return (this.loan + this.collateral) / this.loan;
@@ -73,10 +76,11 @@
     methods: {
       ...mapActions('loan', ['createNewLoan']),
       updateLoan(result) {
-        this.userChangedLoan = true;
         this.loan = result.value;
         this.errors[0] = result.error;
         this.errors = [...this.errors];
+
+        this.checkSolvency(this.calculatedSolvency);
       },
       updateCollateral(result) {
         this.errors[1] = result.error;
@@ -84,9 +88,7 @@
 
         this.collateral = result.value;
 
-        if (!this.userChangedLoan) {
-          this.loan = this.defaultLoan(this.collateral)
-        }
+        this.loan = this.defaultLoan(this.collateral)
       },
       async borrow() {
         if (!this.disabled) {
@@ -100,9 +102,12 @@
         return (value && !isNaN(value)) ? value * 4 : 0;
       },
       updateLoanFromSolvency(value) {
-        this.errors[3] = value < 1.2;
-        this.errors = [...this.errors];
+        this.checkSolvency(value);
         this.loan = parseFloat((this.collateral / (value - 1)).toFixed(2));
+      },
+      checkSolvency(value) {
+        this.errors[3] = value < 1.25;
+        this.errors = [...this.errors];
       }
     }
   }

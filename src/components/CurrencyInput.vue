@@ -8,19 +8,24 @@
         ~ {{ price * toUSD(value) | usd}}
       </div>
       <div class="logo-wrapper">
-        <img :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.svg`"/>
+        <img class="logo" :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.svg`"/>
         <span class="symbol">{{ symbol }}</span>
       </div>
     </div>
     <div class="info"
+         v-if="!error"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
       <div
         v-if="info && value && !isNaN(value)"
         v-html="info(value)"></div>
     </div>
     <div class="error"
+         v-if="error"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
-      {{error}}
+      <span>
+        <img src="src/assets/icons/error.svg"/>
+        {{error}}
+      </span>
     </div>
   </div>
 </template>
@@ -154,5 +159,14 @@ img {
   font-size: 14px;
   width: 100%;
   text-align: end;
+}
+
+.error {
+  color: #f64254;
+
+  img {
+    width: 20px;
+    height: 20px;
+  }
 }
 </style>

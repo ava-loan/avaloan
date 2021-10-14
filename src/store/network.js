@@ -30,7 +30,7 @@ export default {
         await dispatch('initAccount');
         await dispatch('updateBalance');
     },
-    async initProvider({ commit, state }) {
+    async initProvider({ commit }) {
       await ethereum.request({ method: 'eth_requestAccounts' });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       window.provider = provider;

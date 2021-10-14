@@ -93,7 +93,7 @@ export default {
       }
       return true;
     },
-    async updateAssets({ state, commit, getters }) {
+    async updateAssets({ state, commit }) {
       const loan = state.loan;
 
       const prices = await loan.getAllAssetsPrices();

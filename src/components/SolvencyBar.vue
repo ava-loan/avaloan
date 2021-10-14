@@ -37,11 +37,11 @@ export default {
     },
     width() {
       if (this.solvency < 1.2) {
-        return this.solvency * 10 + '%';
+        return this.solvency * 40 + '%';
       } else if (this.solvency < 1.3) {
-        return (10 + (this.solvency - 1.2) * 100) + '%';
+        return (48 + (this.solvency - 1.2) * 100) + '%';
       } else {
-        return Math.min(20 + (this.solvency - 1.3) * 10, 80) + '%';
+        return Math.min(58 + (this.solvency - 1.3) * 20, 80) + '%';
       }
     }
   }
@@ -81,12 +81,16 @@ export default {
 
     .minimum-indicator {
       position: absolute;
-      margin-left: 11px;
+      margin-left: 51px;
       content: " ";
       transform: translateY(-19px);
       height: 21px;
       width: 1px;
       background-color: #7d7d7d;
+    }
+
+    .minimum-value {
+      margin-left: 38px;
     }
 
     .solvency-state {

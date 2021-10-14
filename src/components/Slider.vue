@@ -14,8 +14,14 @@
         >
       </div>
     </div>
+    <div class="labels" v-if="labels">
+      <div v-for="label in labels">{{label}}</div>
+    </div>
     <div class="error">
-      {{error}}
+      <span v-if="error">
+        <img src="src/assets/icons/error.svg"/>
+        {{error}}
+      </span>
     </div>
   </div>
 </template>
@@ -41,6 +47,9 @@ export default {
     },
     validators: {
       type: Array, default: () => []
+    },
+    labels : {
+      type: Array, default: null
     }
   },
   data(){
@@ -61,10 +70,10 @@ export default {
       if (value < this.min) {
         element.style.backgroundSize = '0% 100%';
       } else if (value < ((max - min) / 2 + min)) {
-        //1.01 and 0.99 fix graphical inconsistency between dot and background
-        element.style.backgroundSize = (value * 1.01 - min) * 100 / (max - min) + '% 100%'
+        //optimized to fix graphical inconsistency between dot and background
+        element.style.backgroundSize = (value * 1.02 - min - 0.015) * 100 / (max - min) + '% 100%'
       } else {
-        element.style.backgroundSize = (value * 0.99 - min) * 100 / (max - min) + '% 100%'
+        element.style.backgroundSize = (value * 0.98 - min + 0.03) * 100 / (max - min) + '% 100%'
       }
     },
     onChange(newValue) {
@@ -74,7 +83,6 @@ export default {
 
       this.validators.find(
         check => {
-          // let value = typeof newValue === "number" ? newValue : 0;
           let value = parseFloat(newValue);
           if (!check.require(value)) {
             this.error = check.message;
@@ -99,7 +107,7 @@ export default {
 
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .slider-component .slide-container {
   width: 100%;
 }
@@ -109,7 +117,7 @@ export default {
   appearance: none;
   width: 100%;
   outline: none;
-  opacity: 0.7;
+  //opacity: 0.7;
   -webkit-transition: .2s;
   transition: opacity .2s;
   height: 21px;
@@ -145,5 +153,23 @@ export default {
   border-radius: 50%;
   border: solid 3px #c0a6ff;
   background: #fff;
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  color: #7d7d7d;
+  font-weight: 500;
+}
+
+.error {
+  text-align: end;
+  height: 24px;
+  color: #f64254;
+
+  img {
+    width: 20px;
+    height: 20px;
+  }
 }
 </style>

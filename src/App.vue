@@ -53,6 +53,7 @@
         return;
       }
 
+      await this.metamaskChecks();
       await this.initNetwork();
       await this.initPrices();
       await this.initPool();
@@ -100,6 +101,11 @@
           }
           Vue.$toast.error("Error while switching network");
         }
+      },
+      async metamaskChecks() {
+        window.ethereum.on('accountsChanged', function () {
+          window.location.reload();
+        })
       }
     }
   }

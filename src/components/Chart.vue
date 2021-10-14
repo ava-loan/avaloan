@@ -118,7 +118,7 @@
             }],
             yAxes: [{
               gridLines: {
-                lineWidth: 1.5,
+                lineWidth: 2,
                 zeroLineWidth: 0.5,
                 borderDash: [8, 4],
                 drawOnChartArea: true,

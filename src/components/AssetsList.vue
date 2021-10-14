@@ -40,8 +40,7 @@
                   :dataPoints="asset.prices"
                   :lineWidth="1.5"/>
                 <img @click.stop="toggleChart(asset)"
-                     src="src/assets/icons/chevron-down.svg"
-                     :class="asset.showChart ? 'rotate' : ''"
+                     src="src/assets/icons/enlarge.svg"
                 />
               </td>
               <td class="right" data-label="Balance">{{ asset.balance | units }}</td>
@@ -54,8 +53,8 @@
               </td>
               <td v-else class="center">-</td>
               <td class="asset-input" v-if="asset.buyInput" @click.stop>
-                <div class="swap-token">
-                  <img @click="asset.buyInput = false; assetList = [...assetList]" src="src/assets/icons/cross.svg" class="cross" />
+                <SmallBlock
+                  v-on:close="() => { asset.buyInput = false; assetList = [...assetList] }">
                   <CurrencyForm
                     label="Buy"
                     :symbol="asset.symbol"
@@ -67,12 +66,13 @@
                     :validators="[
                       {require: value => assetList[0].balance >= asset.price * value, message: 'Requested asset value exceeds your available AVAX balance'},
                     ]"
+                    :info="(value) => `Amount in AVAX: <b>${(asset.price * value).toPrecision(2)}</b>`"
                   />
-                </div>
+                </SmallBlock>
               </td>
               <td class="asset-input" v-if="asset.sellInput" @click.stop>
-                <div class="swap-token">
-                  <img @click="asset.sellInput = false; assetList = [...assetList]" src="src/assets/icons/cross.svg" class="cross" />
+                <SmallBlock
+                  v-on:close="() => { asset.sellInput = false; assetList = [...assetList] }">
                   <CurrencyForm
                     label="Sell"
                     :symbol="asset.symbol"
@@ -84,13 +84,17 @@
                     :validators="[
                       {require: value => asset.balance >= value, message: 'Requested amount exceeds your asset balance'},
                     ]"
+                    :info="(value) => `Amount in AVAX: <b>${(asset.price * value).toPrecision(2)}</b>`"
                   />
-                </div>
+                </SmallBlock>
               </td>
               <td class="chart" v-if="(asset.showChart || isMobile) && asset.prices" @click.stop>
-                <Chart
-                :dataPoints="asset.prices"
-                :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
+                <SmallBlock
+                  v-on:close="() => { asset.showChart = false; assetList = [...assetList] }">
+                  <Chart
+                  :dataPoints="asset.prices"
+                  :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
+                </SmallBlock>
               </td>
             </tr>
           </tbody>
@@ -128,7 +132,7 @@
               <SimpleChart
                 :dataPoints="asset.prices"
                 :lineWidth="1.5"/>
-              <img @click.stop="toggleChart(asset)" src="src/assets/icons/chevron-down.svg" :class="asset.showChart ? 'rotate' : ''"/>
+              <img @click.stop="toggleChart(asset)" src="src/assets/icons/enlarge.svg"/>
             </td>
             <td data-label="Balance"></td>
             <td data-label="Share"></td>
@@ -137,8 +141,8 @@
               <img v-if="!asset.native" @click="showBuyInput(asset)" src="src/assets/icons/plus.svg" class="buy"/>
             </td>
             <td class="asset-input" v-if="asset.buyInput" @click.stop>
-              <div class="swap-token">
-                <img @click="asset.buyInput = false; assetList = [...assetList]" src="src/assets/icons/cross.svg" class="cross" />
+              <SmallBlock
+                v-on:close="() => { asset.buyInput = false; assetList = [...assetList] }">
                 <CurrencyForm
                   label="Buy"
                   :symbol="asset.symbol"
@@ -150,30 +154,17 @@
                   :validators="[
                     {require: value => assetList[0].balance >= asset.price * value, message: 'Requested asset value exceeds your available AVAX balance'},
                   ]"
+                  :info="(value) => `Amount in AVAX: <b>${(asset.price * value).toFixed(2)}</b>`"
                 />
-              </div>
-            </td>
-            <td class="asset-input" v-if="asset.sellInput" @click.stop>
-              <div class="swap-token">
-                <img @click="asset.sellInput = false; assetList = [...assetList]" src="src/assets/icons/cross.svg" class="cross" />
-                <CurrencyForm
-                  label="Sell"
-                  :symbol="asset.symbol"
-                  :price="asset.price"
-                  :hasSecondButton="true"
-                  v-on:submitValue="(value) => redeemValue(asset, value)"
-                  :waiting="waitingForRedeem"
-                  flexDirection="row"
-                  :validators="[
-                      {require: value => asset.balance >= value, message: 'Requested amount exceeds your asset balance'},
-                    ]"
-                />
-              </div>
+              </SmallBlock>
             </td>
             <td class="chart" v-if="(asset.showChart || isMobile) && asset.prices" @click.stop>
-              <Chart
-                :dataPoints="asset.prices"
-                :minY="asset.minPrice" :maxY="asset.maxPrice" :lineWidth="3"/>
+              <SmallBlock
+                v-on:close="() => { asset.showChart = false; assetList = [...assetList] }">
+                <Chart
+                  :dataPoints="asset.prices"
+                  :minY="asset.minPrice" :maxY="asset.maxPrice" :lineWidth="3"/>
+              </SmallBlock>
             </td>
           </tr>
           </tbody>
@@ -189,6 +180,7 @@
   import SimpleChart from "@/components/SimpleChart.vue";
   import Block from "@/components/Block.vue";
   import CurrencyForm from "@/components/CurrencyForm.vue";
+  import SmallBlock from "@/components/SmallBlock.vue";
   import { mapState, mapActions } from "vuex";
   import redstone from 'redstone-api';
 
@@ -199,7 +191,8 @@
       Chart,
       Block,
       CurrencyForm,
-      SimpleChart
+      SimpleChart,
+      SmallBlock
     },
     props: {
       assets: [],
@@ -410,13 +403,8 @@
   margin-left: 15px;
 
   img {
-    height: 12px;
+    height: 22px;
     margin-left: 5px;
-
-    &.rotate {
-      transform: rotate(180deg);
-      transition: 0.5s;
-    }
   }
 }
 
@@ -517,41 +505,6 @@ tbody tr {
    height: 180px;
 }
 
-.asset-input {
-  background-image: linear-gradient(117deg, #dfe0ff 39%, #ffe1c2 62%, #ffd3e0 82%);
-  border-radius: 25px;
-  padding: 2px;
-  box-shadow: 4px 4px 14px 0 rgba(191, 188, 255, 0.25);
-
-  .swap-token {
-    display: flex;
-    flex-direction: column;
-    background: white;
-    padding: 9px 16px;
-    border-radius: 23px;
-    height: 100%;
-
-    img {
-      align-self: flex-end;
-    }
-  }
-
-  @media screen and (max-width: $md) {
-    margin-top: 0;
-
-    .currency-input-wrapper {
-      margin-top: 1rem;
-    }
-  }
-}
-
-.cross {
-  margin-right: 3px;
-  margin-top: 5px;
-  align-self: flex-start;
-  cursor: pointer;
-}
-
 @media screen and (max-width: $md) {
   table {
     border: 0;
@@ -633,11 +586,15 @@ tbody tr {
 @import "~@/styles/variables";
 
 #investmentsTable, #optionsTable {
+  .small-block-wrapper {
+    height: 215px;
+  }
+
   .currency-form-wrapper {
     width: 100%;
     flex-wrap: wrap;
     align-items: flex-start;
-    margin-top: 25px;
+    margin-top: 42px;
 
     @media screen and (min-width: $md) {
       flex-wrap: nowrap;
@@ -654,7 +611,11 @@ tbody tr {
       width: 60%;
     }
 
-    img {
+    .error, .info {
+      text-align: left;
+    }
+
+    .logo {
       height: 30px;
     }
 
