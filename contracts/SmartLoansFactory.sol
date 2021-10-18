@@ -3,8 +3,8 @@ pragma solidity ^0.8.2;
 
 import "./SmartLoan.sol";
 import "./Pool.sol";
-import "./IPriceProvider.sol";
 import "./IAssetsExchange.sol";
+import "./SupportedAssets.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
@@ -25,9 +25,10 @@ contract SmartLoansFactory is IBorrowersRegistry {
   event SmartLoanCreated(address indexed accountAddress, address indexed creator);
 
   Pool private pool;
-  IPriceProvider private priceProvider;
+  SupportedAssets private supportedAssets;
   IAssetsExchange assetsExchange;
   UpgradeableBeacon public upgradeableBeacon;
+  address trustedPriceSigner;
 
   uint256 private constant MAX_VAL = 2**256-1 ether;
 
@@ -38,30 +39,33 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
   constructor(
     Pool _pool,
-    IPriceProvider _priceProvider,
-    IAssetsExchange _assetsExchange
+    SupportedAssets _supportedAssets,
+    IAssetsExchange _assetsExchange,
+    address _trustedPriceSigner
   ) {
     pool = _pool;
-    priceProvider = _priceProvider;
+    supportedAssets = _supportedAssets;
     assetsExchange = _assetsExchange;
     SmartLoan smartLoanImplementation = new SmartLoan();
     upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
     upgradeableBeacon.transferOwnership(msg.sender);
+    trustedPriceSigner = _trustedPriceSigner;
   }
 
   function createLoan() external oneLoanPerOwner returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
     updateRegistry(smartLoan);
+    smartLoan.authorizeSigner(trustedPriceSigner);
     smartLoan.transferOwnership(msg.sender);
 
     return smartLoan;
   }
 
   function createAndFundLoan(uint256 _initialDebt) external oneLoanPerOwner payable returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(priceProvider), address(assetsExchange), address(pool)));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
@@ -72,6 +76,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
     smartLoan.borrow(_initialDebt);
     require(smartLoan.isSolvent());
 
+    smartLoan.authorizeSigner(trustedPriceSigner);
     smartLoan.transferOwnership(msg.sender);
 
     return smartLoan;

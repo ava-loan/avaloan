@@ -3,83 +3,31 @@
 import Vue from 'vue'
 import App from './App'
 import router from './router'
-import VueMaterial from 'vue-material'
 import Vue2Filters from 'vue2-filters'
-import Toasted from 'vue-toasted';
-import AsyncComputed from 'vue-async-computed'
-import VueTimeline from "@growthbunker/vuetimeline";
+import store from './store';
+import globalMixin from './mixins/global';
+import setupFilters from './utils/filters';
+import 'vue-loaders/dist/vue-loaders.css';
+import VueLoadersBallBeat from 'vue-loaders/dist/loaders/ball-beat';
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
+import "./styles/overrides.scss";
 
-const CoinGecko = require('coingecko-api');
-const CoinGeckoClient = new CoinGecko();
+Vue.config.productionTip = false;
 
-Vue.use(Vue2Filters)
-Vue.config.productionTip = false
-Vue.use(VueMaterial)
-Vue.use(Toasted)
-Vue.use(AsyncComputed)
-Vue.use(VueTimeline);
+Vue.use(Vue2Filters);
+Vue.use(VueLoadersBallBeat);
+Vue.use(Toast);
 
-
-window.addEventListener('load', function () {
-  /* eslint-disable no-new */
-  new Vue({
-    el: '#app',
-    router,
-    template: '<App/>',
-    components: {App}
-  })
-})
-
-async function getAvaxPrice() {
-  let response = await CoinGeckoClient.simple.price({
-    ids: 'avalanche-2',
-    vs_currencies: "usd"
-  });
-  return response.data['avalanche-2'].usd;
-}
-
-async function setupFilters() {
-  let avaxPrice = await getAvaxPrice();
-  console.log("Current avax price: " + avaxPrice);
-
-  Vue.filter('usd', function (value) {
-    if (!value) return '$0';
-    let usd = value * avaxPrice;
-    return "$" + usd.toFixed(2);
-  });
-
-  Vue.filter('usd-precise', function (value) {
-    if (!value) return '$0'
-    return "$" + value.toFixed(12);
-  });
-
-  Vue.filter('avax', function (value) {
-    if (!value) return '0'
-    return value.toFixed(2) + ' AVAX';
-  });
-
-  Vue.filter('full', function (value) {
-    if (!value) return '';
-    let usd = value * avaxPrice;
-    return value.toFixed(2) + ' AVAX ($' + usd.toFixed(2) + ')';
-  });
-
-  Vue.filter('units', function (value) {
-    if (!value) return '0';
-    return value.toFixed(3);
-  });
-
-  Vue.filter('percent', function (value) {
-    if (!value) return '0%';
-    return (value * 100).toFixed(2) + "%";
-  });
-
-  Vue.filter('tx', function (value) {
-    if (!value) return '';
-    return value.substr(0, 6) + "..." + value.substr(value.length - 4);
-  })
-
-};
+Vue.mixin(globalMixin);
 
 setupFilters();
 
+/* eslint-disable no-new */
+new Vue({
+  el: '#app',
+  store,
+  router,
+  template: '<App/>',
+  components: {App}
+})

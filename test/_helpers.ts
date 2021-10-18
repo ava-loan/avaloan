@@ -10,6 +10,7 @@ export const formatUnits = (val: BigNumber, decimalPlaces: BigNumber) => parseFl
 export const fromWei = (val: BigNumber) => parseFloat(ethers.utils.formatEther(val));
 export const fromWeiS = (val: BigNumber) => ethers.utils.formatEther(val);
 export const toBytes32 = ethers.utils.formatBytes32String;
+export const fromBytes32 = ethers.utils.parseBytes32String;
 
 export type Second = number;
 
@@ -49,12 +50,12 @@ export const getFixedGasSigners = async function(gasLimit:number) {
   return signers;
 };
 
-export const deployAndInitPangolinExchangeContract = async function(owner:SignerWithAddress, pangolinRouterAddress:string) {
-  const exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
-  await exchange.updateAssetAddress(toBytes32('USD'), '0xc7198437980c041c805a1edcba50c1ce5db95118');
-  await exchange.updateAssetAddress(toBytes32('ETH'), '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab');
-  await exchange.updateAssetAddress(toBytes32('BTC'), '0x50b7545627a5162f82a992c33b87adc75187b218');
-  await exchange.updateAssetAddress(toBytes32('LINK'), '0x5947bb275c521040051d82396192181b413227a3');
+export const deployAndInitPangolinExchangeContract = async function(
+  owner:SignerWithAddress,
+  pangolinRouterAddress:string,
+  supportedAssetsContractAddress:string) {
+  const exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress, supportedAssetsContractAddress]) as PangolinExchange;
 
   return exchange
 };
+

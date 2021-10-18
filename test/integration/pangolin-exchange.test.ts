@@ -4,8 +4,9 @@ import {BigNumber, Contract} from 'ethers';
 import {solidity} from "ethereum-waffle";
 
 import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange.sol/PangolinExchange.json';
+import SupportedAssetsArtifact from '../../artifacts/contracts/SupportedAssets.sol/SupportedAssets.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {PangolinExchange} from '../../typechain';
+import {PangolinExchange, SupportedAssets} from '../../typechain';
 import {getFixedGasSigners, toBytes32} from "../_helpers";
 
 chai.use(solidity);
@@ -34,19 +35,19 @@ describe('PangolinExchange', () => {
     let sut: PangolinExchange,
       daiToken: Contract,
       pangolinRouter: Contract,
+      supportedAssets: SupportedAssets,
       owner: SignerWithAddress;
 
     before('Deploy the PangolinExchange contract', async () => {
       [owner] = await getFixedGasSigners(10000000);
-      sut = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
+
+      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
+
+      await supportedAssets.setAsset(toBytes32('DAI'), daiTokenAddress);
+
+      sut = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress, supportedAssets.address]) as PangolinExchange;
       daiToken = await new ethers.Contract(daiTokenAddress, ERC20Abi);
       pangolinRouter = await new ethers.Contract(pangolinRouterAddress, pangolinRouterAbi);
-      sut.updateAssetAddress(toBytes32('DAI'), daiTokenAddress);
-    });
-
-    it('should check if it is only possible to obtain assets address if it was previously set', async () => {
-      expect(await sut.getAssetAddress(toBytes32('DAI'))).to.be.equal(daiTokenAddress);
-      expect(sut.getAssetAddress(toBytes32('FOOBAR'))).to.be.revertedWith('This asset is not supported');
     });
 
 
@@ -66,7 +67,6 @@ describe('PangolinExchange', () => {
     it('should check if an erc20 tokens were purchased successfully', async () => {
       const daiTokenPurchaseAmount = 1e20;
       const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
-      const initialDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);
 
       await sut.buyAsset(toBytes32('DAI'), daiTokenPurchaseAmount.toString(), {value: estimatedAvax.toString()})

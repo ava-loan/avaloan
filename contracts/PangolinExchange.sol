@@ -5,6 +5,7 @@ import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IAssetsExchange.sol";
+import "./SupportedAssets.sol";
 
 /**
  * @title PangolinExchange
@@ -14,12 +15,13 @@ import "./IAssetsExchange.sol";
 contract PangolinExchange is Ownable, IAssetsExchange {
   /* ========= STATE VARIABLES ========= */
   IPangolinRouter pangolinRouter;
-  mapping(bytes32 => address) assetToAddressMapping;
+  SupportedAssets supportedAssets;
 
   /* ========= CONSTRUCTOR ========= */
 
-  constructor (address _pangolinRouter) {
+  constructor (address _pangolinRouter, SupportedAssets _supportedAssets) {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
+    supportedAssets = _supportedAssets;
   }
 
   /* ========= MODIFIERS ========= */
@@ -30,13 +32,6 @@ contract PangolinExchange is Ownable, IAssetsExchange {
       (bool success,) = msg.sender.call{value : address(this).balance}("");
       require(success, "Refund failed");
     }
-  }
-  /* ========== MUTATIVE FUNCTIONS ========== */
-
-  function updateAssetAddress(bytes32 _asset, address _address) external onlyOwner {
-    require(assetToAddressMapping[_asset] == address(0), "Cannot change an asset that has already been set");
-
-    assetToAddressMapping[_asset] = _address;
   }
 
 
@@ -49,8 +44,11 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   **/
   function buyAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
     require(_amount > 0, "Amount of tokens to buy has to be greater than 0");
-    address tokenAddress = getAssetAddress(_token);
+
+    address tokenAddress = supportedAssets.getAssetAddress(_token);
+
     uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, tokenAddress);
+
     require(msg.value >= amountIn, "Not enough funds provided");
 
     pangolinRouter.swapAVAXForExactTokens{value : msg.value}(_amount, getPathForAVAXtoToken(tokenAddress), msg.sender, block.timestamp);
@@ -67,7 +65,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   **/
   function sellAsset(bytes32 _token, uint256 _amount) external override RefundRemainder {
     require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
-    address tokenAddress = getAssetAddress(_token);
+    address tokenAddress = supportedAssets.getAssetAddress(_token);
     uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, tokenAddress);
 
     IERC20 token = IERC20(tokenAddress);
@@ -89,25 +87,17 @@ contract PangolinExchange is Ownable, IAssetsExchange {
     * @dev _user the address of queried user
   **/
   function getBalance(address _user, bytes32 _asset) external override view returns(uint256) {
-    IERC20 token = IERC20(getAssetAddress(_asset));
+    IERC20 token = IERC20(supportedAssets.getAssetAddress(_asset));
     return token.balanceOf(_user);
   }
 
-
-  /**
-     * Returns an address of a chosen asset given that it was previously set. Raises an error otherwise.
-     * @dev _asset the code of an asset
-  **/
-  function getAssetAddress(bytes32 asset) public override view returns(address) {
-    require(assetToAddressMapping[asset] != address(0), "This asset is not supported");
-    return assetToAddressMapping[asset];
-  }
 
   /**
      * Returns the minimum AVAX amount that is required to buy _amountOut of _token ERC20 token.
   **/
   function getEstimatedAVAXForERC20Token(uint256 _amountOut, address _token) public view returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
+
     return pangolinRouter.getAmountsIn(_amountOut, path)[0];
   }
 

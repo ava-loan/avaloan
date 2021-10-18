@@ -118,23 +118,44 @@ A user can reduce the liquidation risk adjusting amount of personal funds deposi
 
 * **SimpleAssetsExchange.sol** - an exchange contract that allows investing AVAX into other popular crypto-tokens. It's a simplified version that could be replaced by a full-fledged DEX or synthetic assets protocol.
 
-# Building
+# Building and running UI
 
-To build the application please install first all of the dependencies by running:
+1. To build the application please install first all of the dependencies by running:
 
-    npm install
+    yarn install
 
-Make sure that all of the smart-contracts are compiled before trying to deploy the dApp:
+2. Create a `.secret` file in the root of the project with a mnemonic phrase of your account. 
 
-    npx hardhat compile
+3. Make sure that all of the smart-contracts are compiled before trying to deploy the dApp:
 
-To deploy the front-end on your local machine please type in your command line:
+    npx truffle compile
 
-    npm run dev
+4. Setup your local network (e.g. like [here](#forked-test-node)) and migrate contracts
+
+5. <a id="configure-chainid"></a>  Depending on your environment set a proper `chainId` in `src/config.js`. It must match the chain id returned
+by the network and be set up in your Metamask configuration of network as well. 
+
+6. To deploy the front-end on your local machine please type in your command line:
+
+    yarn serve
+
+7. The application needs a Metamask plugin active and connected to a proper network. Remember to reset your account nonce if you restart or change your network.
+
+# Running forked test node <a id="forked-test-node"></a>
+
+1. Run a forked node
+
+    yarn forked-test-node
+
+2. Migrate contracts (in a separate terminal window)
+
+    npx truffle migrate --network local   
+
+Your default chain id is 31337. [Set it up](#configure-chainid) in the UI application and your Metamask account.
 
 # Testing
 
-Smart contracts test could be executed by typing:
+1. Smart contracts test could be executed by typing:
 
     npx hardhat test
 

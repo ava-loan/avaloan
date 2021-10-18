@@ -12,6 +12,11 @@ export default {
       blockGasLimit: 0x1fffffffffffff,
       allowUnlimitedContractSize: true,
       timeout: 1800000,
+      // for testing purposes
+      // mining: {
+      //   auto: false,
+      //   interval: 500
+      // }
     },
     'hardhat-integration': {
       timeout: 1800000,
