@@ -3,7 +3,7 @@ import Vue from "vue";
 
 export default {
   methods: {
-    toUSD(avax) {
+    avaxToUSD(avax) {
       if (this.avaxPrice) {
         return avax * this.avaxPrice;
       }
@@ -14,30 +14,21 @@ export default {
     toDec(hex) {
       return parseInt(hex, 16);
     },
-    async handleTransaction(fun, args, variable) {
-      this[variable] = true;
+    async handleTransaction(fun, args, nameOfWaitingVariable) {
+      this[nameOfWaitingVariable] = true;
 
-      return fun(args)
-        .then(() => {
-          Vue.$toast.success('Transaction success');
-        })
-        .catch(() => {
-          Vue.$toast.error('Transaction error');
-        })
-        .finally(() => {
-          this[variable] = false;
-        });
-    },
-    async check(fun, message) {
-      if (!fun()) {
-        Vue.$toast.error(message);
+      try {
+        await fun(args);
+        Vue.$toast.success('Transaction success');
+      } catch(error) {
+        Vue.$toast.error(error.message ? error.message : error);
+      } finally {
+        this[nameOfWaitingVariable] = false;
       }
     }
   },
   computed: {
-    ...mapState('prices', {
-      avaxPrice: state => state.avaxPrice,
-    }),
+    ...mapState('prices', ['avaxPrice']),
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }

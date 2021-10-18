@@ -1,5 +1,5 @@
 <template>
-  <div class="value-wrapper" :style="{ 'flex-direction': flexDirection}"> 
+  <div class="value-wrapper">
     <div class="label">{{label}}</div>
     <div class="values" v-if="primary.value !== null">
       <div class="value">
@@ -10,8 +10,8 @@
         <img class="logo" v-if="secondary.showIcon" :src="`src/assets/icons/${secondary.type}-icon.svg`"/>
         <div v-if="secondary.value">{{secondary.showIcon ? secondary.value : format(secondary.value, secondary.type)}}</div>
       </div>
-    </div>  
-    <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5" :style="{ 'margin-top': flexDirection == 'row' ? '8px' : '0'}"></vue-loaders-ball-beat>
+    </div>
+    <vue-loaders-ball-beat v-else color="#A6A3FF" scale="0.5"></vue-loaders-ball-beat>
   </div>
 </template>
 
@@ -21,10 +21,10 @@
     props: {
       label: String,
       primary: {},
-      secondary: {},
-      flexDirection: {
-        type: String,
-        default: "column"
+      secondary: {}
+    },
+    data() {
+      return {
       }
     },
     methods: {
@@ -40,15 +40,24 @@
 
 .value-wrapper {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 
   align-items: flex-start;
   justify-content: space-between;
 
   @media screen and (min-width: $md) {
+    flex-direction: column;
     align-items: center;
     justify-content: initial;
     width: 200px;
+  }
+
+  vue-loaders-ball-beat {
+    margin-top: 8px;
+
+    @media screen and (min-width: $md) {
+      margin-top: 0;
+    }
   }
 }
 

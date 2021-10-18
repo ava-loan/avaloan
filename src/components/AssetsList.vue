@@ -5,7 +5,7 @@
         <div class="title">Your investments</div>
         <div class="total">
           <span class="total-value-wrapper">
-            <span class="total-value">Total value: <span class="value">$ {{ toUSD(totalValue).toFixed(2) || usd }}</span></span>
+            <span class="total-value">Total value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span></span>
           </span>
         </div>
         <table id="investmentsTable">
@@ -21,9 +21,6 @@
             </tr>
           </thead>
           <tbody>
-            <div v-if="assetList && assetList.length === 0" class="chart-loader">
-              <vue-loaders-ball-beat color="#A6A3FF" scale="0.75"></vue-loaders-ball-beat>
-            </div>
             <tr v-for="asset in investments"
               v-bind:key="asset.symbol"
               @click="rowClicked(asset)"
@@ -34,63 +31,61 @@
                 </div>
                 <span class="token-name">{{ asset.name }}</span>
                 </td>
-              <td class="right" data-label="Price">{{ toUSD(asset.price) | usd }}</td>
+              <td class="right" data-label="Price">
+                <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
+              </td>
               <td class="chart-icon" v-if="!isMobile">
                 <SimpleChart
                   :dataPoints="asset.prices"
                   :lineWidth="1.5"/>
-                <img @click.stop="toggleChart(asset)"
+                <img @click.stop="toggleChart(asset.symbol)"
                      src="src/assets/icons/enlarge.svg"
                 />
               </td>
-              <td class="right" data-label="Balance">{{ asset.balance | units }}</td>
-              <td class="right" data-label="Share">{{ asset.share | percent }}</td>
-              <td class="right" data-label="Value">{{ toUSD(asset.value) | usd }}</td>
-              <td class="invest-buttons" @click.stop v-if="!asset.native">
-                <img @click="showBuyInput(asset)" src="src/assets/icons/plus.svg" class="buy"/>
+              <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance" :value="asset.balance.toFixed(2)"></LoadedValue></td>
+              <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
+              <td class="right" data-label="Value"><LoadedValue :value="avaxToUSD(asset.value) | usd"></LoadedValue>
+              <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
+                <img @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
                 <img src="src/assets/icons/slash-small.svg"/>
-                <img @click="showSellInput(asset)" src="src/assets/icons/minus.svg" class="sell"/>
+                <img @click="showSellInput(asset.symbol)" src="src/assets/icons/minus.svg" class="sell"/>
               </td>
               <td v-else class="center">-</td>
               <td class="asset-input" v-if="asset.buyInput" @click.stop>
                 <SmallBlock
-                  v-on:close="() => { asset.buyInput = false; assetList = [...assetList] }">
+                  v-on:close="() => { asset.buyInput = false; }">
                   <CurrencyForm
                     label="Buy"
                     :symbol="asset.symbol"
                     :price="asset.price"
                     :hasSecondButton="true"
-                    v-on:submitValue="(value) => investValue(asset, value)"
+                    v-on:submitValue="(value) => investValue(asset.symbol, value)"
                     :waiting="waitingForInvest"
                     flexDirection="row"
-                    :validators="[
-                      {require: value => assetList[0].balance >= asset.price * value, message: 'Requested asset value exceeds your available AVAX balance'},
-                    ]"
-                    :info="(value) => `Amount in AVAX: <b>${(asset.price * value).toPrecision(2)}</b>`"
+                    :validators="investValidators(asset)"
+                    :info="amountInfo(asset)"
                   />
                 </SmallBlock>
               </td>
               <td class="asset-input" v-if="asset.sellInput" @click.stop>
                 <SmallBlock
-                  v-on:close="() => { asset.sellInput = false; assetList = [...assetList] }">
+                  v-on:close="() => { asset.sellInput = false; }">
                   <CurrencyForm
                     label="Sell"
                     :symbol="asset.symbol"
                     :price="asset.price"
                     :hasSecondButton="true"
-                    v-on:submitValue="(value) => redeemValue(asset, value)"
+                    v-on:submitValue="(value) => redeemValue(asset.symbol, value)"
                     :waiting="waitingForRedeem"
                     flexDirection="row"
-                    :validators="[
-                      {require: value => asset.balance >= value, message: 'Requested amount exceeds your asset balance'},
-                    ]"
-                    :info="(value) => `Amount in AVAX: <b>${(asset.price * value).toPrecision(2)}</b>`"
+                    :validators="redeemValidators(asset)"
+                    :info="amountInfo(asset)"
                   />
                 </SmallBlock>
               </td>
               <td class="chart" v-if="(asset.showChart || isMobile) && asset.prices" @click.stop>
                 <SmallBlock
-                  v-on:close="() => { asset.showChart = false; assetList = [...assetList] }">
+                  v-on:close="() => { asset.showChart = false; }">
                   <Chart
                   :dataPoints="asset.prices"
                   :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
@@ -101,7 +96,7 @@
         </table>
       </div>
     </div>
-    <div class="list options" v-if="options && options.length > 0">
+    <div class="list options" v-if="investmentOptions && investmentOptions.length > 0">
       <div class="elements">
         <div class="title">Investment possibilities</div>
         <table id="optionsTable">
@@ -117,9 +112,9 @@
           </tr>
           </thead>
           <tbody>
-          <tr v-for="asset in options"
+          <tr v-for="asset in investmentOptions"
               v-bind:key="asset.symbol"
-              @click="rowClicked(asset)"
+              @click="rowClicked(asset.symbol)"
               :class="{'clickable': asset.buyInput || asset.showChart}">
             <td data-label="Asset">
               <div class="token-logo-wrapper">
@@ -127,40 +122,40 @@
               </div>
               <span class="token-name">{{ asset.name }}</span>
             </td>
-            <td class="right" data-label="Price">{{ toUSD(asset.price) | usd }}</td>
+            <td class="right" data-label="Price">
+              <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
+            </td>
             <td class="chart-icon" v-if="!isMobile">
               <SimpleChart
                 :dataPoints="asset.prices"
                 :lineWidth="1.5"/>
-              <img @click.stop="toggleChart(asset)" src="src/assets/icons/enlarge.svg"/>
+              <img @click.stop="toggleChart(asset.symbol)" src="src/assets/icons/enlarge.svg"/>
             </td>
             <td data-label="Balance"></td>
             <td data-label="Share"></td>
             <td data-label="Value"></td>
             <td class="invest-buttons" @click.stop>
-              <img v-if="!asset.native" @click="showBuyInput(asset)" src="src/assets/icons/plus.svg" class="buy"/>
+              <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
             </td>
             <td class="asset-input" v-if="asset.buyInput" @click.stop>
               <SmallBlock
-                v-on:close="() => { asset.buyInput = false; assetList = [...assetList] }">
+                v-on:close="() => { asset.buyInput = false;  }">
                 <CurrencyForm
                   label="Buy"
                   :symbol="asset.symbol"
                   :price="asset.price"
                   :hasSecondButton="true"
-                  v-on:submitValue="(value) => investValue(asset, value)"
+                  v-on:submitValue="(value) => investValue(asset.symbol, value)"
                   :waiting="waitingForInvest"
                   flexDirection="row"
-                  :validators="[
-                    {require: value => assetList[0].balance >= asset.price * value, message: 'Requested asset value exceeds your available AVAX balance'},
-                  ]"
-                  :info="(value) => `Amount in AVAX: <b>${(asset.price * value).toFixed(2)}</b>`"
+                  :validators="investValidators(asset)"
+                  :info="amountInfo(asset)"
                 />
               </SmallBlock>
             </td>
             <td class="chart" v-if="(asset.showChart || isMobile) && asset.prices" @click.stop>
               <SmallBlock
-                v-on:close="() => { asset.showChart = false; assetList = [...assetList] }">
+                v-on:close="() => { asset.showChart = false;  }">
                 <Chart
                   :dataPoints="asset.prices"
                   :minY="asset.minPrice" :maxY="asset.maxPrice" :lineWidth="3"/>
@@ -181,8 +176,11 @@
   import Block from "@/components/Block.vue";
   import CurrencyForm from "@/components/CurrencyForm.vue";
   import SmallBlock from "@/components/SmallBlock.vue";
+  import LoadedValue from "@/components/LoadedValue.vue";
   import { mapState, mapActions } from "vuex";
   import redstone from 'redstone-api';
+  import Vue from 'vue'
+  import config from "@/config";
 
 
   export default {
@@ -192,10 +190,10 @@
       Block,
       CurrencyForm,
       SimpleChart,
-      SmallBlock
+      SmallBlock,
+      LoadedValue
     },
     props: {
-      assets: [],
       fields: [
         'Asset',
         'Price',
@@ -203,78 +201,96 @@
         'Value',
         'Share',
         { key: 'actions', label: ''}
-      ],
+      ]
     },
     computed: {
-      ...mapState('loan', ['totalValue']),
+      ...mapState('loan', ['totalValue', 'assets']),
       investments() {
-        return this.assetList.filter(
+        return Object.values(this.list).filter(
           asset => {
-            return asset.balance > 0 || asset.native
+            return asset.balance > 0 || asset.symbol === this.nativeToken
           }
         )
       },
-      options() {
-        return this.assetList.filter(
+      investmentOptions() {
+        return Object.values(this.list).filter(
           asset => {
-            return asset.balance === 0 && !asset.native
+            return (!asset.balance || asset.balance === 0) && asset.symbol !== this.nativeToken
           }
         )
+      },
+      nativeToken() {
+        return config.nativeToken;
       }
     },
     data() {
       return {
-        assetList: [],
-        minimumValue: 0,
-        maximumValue: 0,
+        list: config.ASSETS_CONFIG,
         waitingForInvest: false,
         waitingForRedeem: false
       }
     },
     methods: {
       ...mapActions('loan', ['invest', 'redeem']),
-      toggleChart(asset) {
-        asset.showChart = !(asset.showChart === true);
-        asset.buyInput = false;
-        asset.sellInput = false;
-        this.assetList = [...this.assetList]
+      investValidators(asset) {
+        return [
+          {
+            require: value => this.list[this.nativeToken].balance * this.list[this.nativeToken].price
+                                >= asset.price * value,
+            message: 'Requested asset value exceeds your available AVAX balance'
+          }
+        ]
       },
-      showBuyInput(asset) {
-        asset.buyInput = true;
-        asset.sellInput = false;
-        asset.showChart = false;
-        this.assetList = [...this.assetList]
+      amountInfo(asset) {
+        return (value) => `Amount in AVAX: <b>${(asset.price * value).toPrecision(2)}</b>`
       },
-      showSellInput(asset) {
-        asset.sellInput = true;
-        asset.buyInput = false;
-        asset.showChart = false;
-        this.assetList = [...this.assetList]
+      redeemValidators(asset) {
+       return [
+         {
+           require: value => asset.balance >= value,
+           message: 'Requested amount exceeds your asset balance'
+         }
+       ]
       },
-      investValue(asset, value) {
-        this.handleTransaction(this.invest,{ asset: asset.symbol, decimals: asset.decimals, amount: value}, "waitingForInvest")
+      toggleChart(symbol) {
+        this.updateAsset(symbol, 'showChart', !this.list[symbol].showChart);
+        this.updateAsset(symbol, 'buyInput', false);
+        this.updateAsset(symbol, 'sellInput', false);
+      },
+      showBuyInput(symbol) {
+        this.updateAsset(symbol, 'buyInput', true);
+        this.updateAsset(symbol, 'sellInput', false);
+        this.updateAsset(symbol, 'showChart', false);
+      },
+      showSellInput(symbol) {
+        this.updateAsset(symbol, 'sellInput', true);
+        this.updateAsset(symbol, 'buyInput', false);
+        this.updateAsset(symbol, 'showChart', false);
+      },
+      investValue(symbol, value) {
+        this.handleTransaction(this.invest,{ asset: symbol, decimals: this.list[symbol].decimals, amount: value}, "waitingForInvest")
           .then(() => {
-            asset.sellInput = false;
-            asset.buyInput = false;
-            asset.showChart = false;
-            this.assetList = [...this.assetList]
+            this.updateAsset(symbol, 'sellInput', false);
+            this.updateAsset(symbol, 'buyInput', false);
+            this.updateAsset(symbol, 'showChart', false);
           });
       },
-      redeemValue(asset, value) {
-        this.handleTransaction(this.redeem,{ asset: asset.symbol, decimals: asset.decimals, amount: value}, "waitingForRedeem")
+      redeemValue(symbol, value) {
+        this.handleTransaction(this.redeem,{ asset: symbol, decimals: this.list[symbol].decimals, amount: value}, "waitingForRedeem")
           .then(() => {
-            asset.sellInput = false;
-            asset.buyInput = false;
-            asset.showChart = false;
-            this.assetList = [...this.assetList]
+            this.updateAsset(symbol, 'sellInput', false);
+            this.updateAsset(symbol, 'buyInput', false);
+            this.updateAsset(symbol, 'showChart', false);
           });
       },
-      rowClicked(asset) {
-        asset.showRemoveInput = false;
-        asset.buyInput = false;
-        asset.sellInput = false;
-        asset.showChart = false;
-        this.assetList = [...this.assetList]
+      rowClicked(symbol) {
+        this.updateAsset(symbol, 'showRemoveInput', false);
+        this.updateAsset(symbol, 'sellInput', false);
+        this.updateAsset(symbol, 'buyInput', false);
+        this.updateAsset(symbol, 'showChart', false);
+      },
+      updateAsset(symbol, key, value) {
+        Vue.set(this.list[symbol], key, value);
       },
       chartPoints(points) {
         if (points == null || points.length === 0) {
@@ -301,28 +317,23 @@
         return [dataPoints, minValue, maxValue ];
       },
       async updateAssets(list) {
-        let newList = await Promise.all(list.map(
-          async (asset) => {
+        this.list = list;
 
-            const priceResponse = await redstone.getHistoricalPrice(asset.symbol, {
-              startDate: Date.now() - 3600 * 1000,
-              interval: 1,
-              endDate: Date.now()
-            })
+        for (const symbol of Object.keys(list)) {
+          const priceResponse = await redstone.getHistoricalPrice(symbol, {
+            startDate: Date.now() - 3600 * 1000,
+            interval: 1,
+            endDate: Date.now()
+          })
 
-            const [ prices, minPrice, maxPrice ] = this.chartPoints(
-              priceResponse
-            );
+          const [prices, minPrice, maxPrice] = this.chartPoints(
+            priceResponse
+          );
 
-            asset.prices = prices;
-            asset.minPrice = minPrice;
-            asset.maxPrice = maxPrice;
-
-            return asset;
-          }
-        ));
-
-        this.assetList = newList;
+          this.updateAsset(symbol, 'prices', prices);
+          this.updateAsset(symbol, 'minPrice', minPrice);
+          this.updateAsset(symbol, 'maxPrice', maxPrice);
+        }
       },
       share(asset) {
         return asset.price * asset.balance;
@@ -330,7 +341,6 @@
     },
     watch: {
       assets: {
-        immediate: true,
         handler(newVal) {
           this.updateAssets(newVal);
         }
@@ -397,7 +407,6 @@
 }
 
 .chart-icon {
-  cursor: pointer;
   text-align: right;
   margin-right: 15px;
   margin-left: 15px;
@@ -405,6 +414,7 @@
   img {
     height: 22px;
     margin-left: 5px;
+    cursor: pointer;
   }
 }
 
@@ -628,10 +638,6 @@ tbody tr {
       margin-left: 20px;
       font-size: 17px;
       display: flex;
-
-      .ball-beat {
-        height: 24px;
-      }
     }
 
     .value-wrapper .label {

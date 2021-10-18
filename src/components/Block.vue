@@ -1,5 +1,5 @@
 <template>
-  <div class="block-wrapper" :style="{ background: background }" :class="{ bordered: bordered}"> 
+  <div class="block-wrapper" :style="{ background }" :class="{ bordered }">
     <slot></slot>
   </div>
 </template>

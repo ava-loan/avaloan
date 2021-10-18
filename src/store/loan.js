@@ -1,22 +1,16 @@
-import {syncTime} from "../../tools/helpers";
-
 const ethers = require('ethers');
 import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import SUPPORTED_ASSETS from '@contracts/SupportedAssets.json'
 import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
+import config from "@/config";
 import { WrapperBuilder } from "redstone-flash-storage";
 
 export default {
   namespaced: true,
   state: {
     loan: null,
-    assets: [
-      {name: "AVAX", symbol: "AVAX", code: "avalanche-2", decimals: 18, price: 0, balance: 0, value: 0 , share: 0, native: true},
-      {name: "Ether", symbol: "ETH", code: "ethereum", decimals: 18, price: 0, balance: 0, value: 0 , share: 0},
-      {name: "Bitcoin", symbol: "BTC", code: "bitcoin", decimals: 8, price: 0, balance: 0, value: 0 , share: 0},
-      {name: "Link", symbol: "LINK", code: "link", decimals: 18, price: 0, balance: 0, value: 0 , share: 0}
-    ],
+    assets: null,
     isLoanAlreadyCreated: null,
     totalValue: null,
     debt: null,
@@ -94,28 +88,35 @@ export default {
       return true;
     },
     async updateAssets({ state, commit }) {
+
       const loan = state.loan;
 
       const prices = await loan.getAllAssetsPrices();
       const balances = await loan.getAllAssetsBalances();
 
-      let assets = state.assets;
-      assets = assets.filter(
-        asset => state.supportedAssets.includes(asset.symbol) || asset.native
+
+      const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
+
+      let assets = {};
+      assets[nativeToken[0]] = nativeToken[1];
+      state.supportedAssets.forEach(
+        asset => assets[asset] = config.ASSETS_CONFIG[asset]
       );
 
-      for (let i = 0; i < prices.length; i++) {
-        if (i === 0) {
-          assets[0].balance = state.loanBalance;
-          assets[0].price = 1;
-        } else {
-          assets[i].price = fromWei(prices[i]);
-          assets[i].balance = parseFloat(formatUnits(balances[i].toString(), assets[i].decimals));
+      Object.entries(assets).forEach(
+        (asset, i) => {
+          const symbol = asset[0];
+          if (symbol === config.nativeToken) {
+            assets[symbol].balance = state.loanBalance;
+            assets[symbol].price = 1;
+          } else {
+            assets[symbol].price = fromWei(prices[i - 1]);
+            assets[symbol].balance = parseFloat(formatUnits(balances[i - 1].toString(), assets[symbol].decimals));
+          }
+          assets[symbol].value = assets[symbol].balance * assets[symbol].price;
+          assets[symbol].share = assets[symbol].value / state.totalValue;
         }
-
-        assets[i].value = assets[i].balance * assets[i].price;
-        assets[i].share = assets[i].value / state.totalValue;
-      }
+      )
 
       commit('setAssets', assets);
     },
@@ -129,7 +130,7 @@ export default {
     },
     async updateLoanBalance({ state, rootState, commit }) {
       const provider = rootState.network.provider;
-      const balance = parseFloat(formatUnits(await provider.getBalance(state.loan.address), state.assets[0].decimals));
+      const balance = parseFloat(formatUnits(await provider.getBalance(state.loan.address), config.ASSETS_CONFIG[config.nativeToken].decimals));
 
       commit('setLoanBalance', balance);
     },

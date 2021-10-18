@@ -5,7 +5,7 @@
           @click="$refs.input.focus()">
       <input type="number" ref="input" v-model.number="value" step='0.01' placeholder="0" min="0" max="999999">
       <div class="converted" v-if="value && (value !== 0)">
-        ~ {{ price * toUSD(value) | usd}}
+        ~ {{ price * avaxToUSD(value) | usd}}
       </div>
       <div class="logo-wrapper">
         <img class="logo" :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.svg`"/>

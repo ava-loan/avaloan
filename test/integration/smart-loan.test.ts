@@ -25,7 +25,7 @@ import {
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
-import { syncTime } from "../../tools/helpers";
+import { syncTime } from "../../src/utils/blockchain";
 import {BigNumber, Contract} from "ethers";
 
 chai.use(solidity);
@@ -135,7 +135,7 @@ describe('Smart loan', () => {
       const expectedAssetValue = fromWei(toWei(usdPrice.toString()).div(MOCK_AVAX_PRICE).mul(BigNumber.from(investedAmount)));
 
       expect(fromWei(await wrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(expectedAssetValue, 0.0001);
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.00001);
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.0001);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
     });

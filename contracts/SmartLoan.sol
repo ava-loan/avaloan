@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./IAssetsExchange.sol";
 import "./SupportedAssets.sol";
 import "./Pool.sol";
-import "redstone-flash-storage/lib/contracts/message-based/PriceAware.sol";
+import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 
 
 /**
@@ -17,7 +17,7 @@ import "redstone-flash-storage/lib/contracts/message-based/PriceAware.sol";
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is OwnableUpgradeable, PriceAware {
+contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
 
   uint256 public constant PERCENTAGE_PRECISION = 1000;
   uint256 private constant MAX_SOLVENCY_RATIO = 10000;
@@ -36,8 +36,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAware {
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
-
-    maxDelay = 180;
+    __PriceAware_init();
   }
 
 

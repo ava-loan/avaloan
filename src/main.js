@@ -4,7 +4,6 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import Vue2Filters from 'vue2-filters'
-import AsyncComputed from 'vue-async-computed'
 import store from './store';
 import globalMixin from './mixins/global';
 import setupFilters from './utils/filters';
@@ -17,7 +16,6 @@ import "./styles/overrides.scss";
 Vue.config.productionTip = false;
 
 Vue.use(Vue2Filters);
-Vue.use(AsyncComputed);
 Vue.use(VueLoadersBallBeat);
 Vue.use(Toast);
 

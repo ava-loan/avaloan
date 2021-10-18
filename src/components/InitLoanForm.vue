@@ -4,29 +4,23 @@
     <CurrencyInput
       v-on:newValue="updateCollateral"
       :defaultValue="collateral"
-      :validators="[
-        {require: value => value <= balance, message: 'Collateral amount exceeds your account balance'},
-      ]"
+      :validators="collateralValidators"
     />
     <div class="title">Loan</div>
     <CurrencyInput
       v-on:newValue="updateLoan"
       :defaultValue="loan"
-      :validators="[
-        {require: value => value <= totalDeposited, message: 'Loan amount exceeds amount available in the pool'}
-      ]"
+      :validators="loanValidators"
     />
     <div class="solvency">Solvency: <span class="solvency-value">{{calculatedSolvency | percent}}</span></div>
     <div class="solvency-slider">
       <Slider
-        :min="1.25"
+        :min="minInitialSolvency"
         :max="2.0"
         :value="calculatedSolvency"
         :step="0.01"
         v-on:input="updateLoanFromSolvency"
-        :validators="[
-          {require: function(value) { return value >= 1.25 }, message: 'Minimum initial solvency is 125%'},
-        ]"
+        :validators="solvencyValidators"
         :labels="['Riskier', 'Safer']"
       />
     </div>
@@ -46,6 +40,7 @@
   import {mapState, mapActions} from "vuex";
   import {calculateCollateral} from "../utils/calculate";
 
+  const MIN_INITIAL_SOLVENCY = 1.25;
   export default {
     name: 'InitLoanForm',
     props: {
@@ -57,10 +52,29 @@
     data() {
       return {
         loan: { type: Number, default: null },
+        minInitialSolvency: MIN_INITIAL_SOLVENCY,
         collateral: null,
         waiting: false,
         userChangedLoan: false,
-        errors: [false, false]
+        errors: [false, false],
+        collateralValidators: [
+          {
+            require: value => value <= this.balance,
+            message: 'Collateral amount exceeds your account balance'
+          },
+        ],
+        loanValidators: [
+          {
+            require: value => value <= this.totalDeposited,
+            message: 'Loan amount exceeds amount available in the pool'
+          }
+        ],
+        solvencyValidators: [
+          {
+            require: function(value) { return value >= MIN_INITIAL_SOLVENCY },
+            message: 'Minimum initial solvency is 125%'
+          }
+        ]
       }
     },
     computed: {
@@ -106,7 +120,7 @@
         this.loan = parseFloat((this.collateral / (value - 1)).toFixed(2));
       },
       checkSolvency(value) {
-        this.errors[3] = value < 1.25;
+        this.errors[3] = value < this.minInitialSolvency;
         this.errors = [...this.errors];
       }
     }
@@ -142,6 +156,7 @@
     .btn-label {
       visibility: hidden;
       height: 0;
+      width: 0;
     }
 
     .ball-beat {

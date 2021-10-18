@@ -4,10 +4,8 @@
       <Bar>
         <Value label="Available in pool"
           :primary="{value: getAvailable, type: 'avax', showIcon: true}"
-          :secondary="{value: toUSD(getAvailable), type: 'usd'}"
-          :flexDirection="isMobile ? 'row' : 'column'" />
-        <Value label="Current APY" :primary="{value: borrowingRate, type: 'percent'}"
-          :flexDirection="isMobile ? 'row' : 'column'" />
+          :secondary="{value: avaxToUSD(getAvailable), type: 'usd'}" />
+        <Value label="Current APY" :primary="{value: borrowingRate, type: 'percent'}" />
       </Bar>
       <div class="info-bubble-wrapper">
         <div class="info-bubble">

@@ -1,4 +1,4 @@
-import { getAvaxPrice } from "@/api/coingecko"
+import redstone from 'redstone-api';
 
 export default {
   namespaced: true,
@@ -19,7 +19,7 @@ export default {
       ])
     },
     async updateAvaxPrice({ commit }) {
-        const avaxPrice = await getAvaxPrice();
+      const avaxPrice = (await redstone.getPrice("AVAX")).value;
         commit('setAvaxPrice', avaxPrice);
     }
   }

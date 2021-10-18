@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="labels" v-if="labels">
-      <div v-for="label in labels">{{label}}</div>
+      <div v-for="label in labels" :key="label">{{label}}</div>
     </div>
     <div class="error">
       <span v-if="error">

@@ -4,8 +4,7 @@
       <div>
         <Value label="Loan"
           :primary="{value: debt, type: 'avax', showIcon: true}"
-          :secondary="{value: toUSD(debt), type: 'usd'}"
-          :flexDirection="isMobile ? 'row' : 'column'" />
+          :secondary="{value: avaxToUSD(debt), type: 'usd'}" />
           <div class="borrow-buttons">
             <img @click="showBorrowBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>
             <img src="src/assets/icons/slash-small.svg"/>
@@ -23,8 +22,7 @@
       <div>
         <Value label="Collateral"
           :primary="{value: collateral, type: 'avax', showIcon: true}"
-          :secondary="{value: toUSD(collateral), type: 'usd'}"
-          :flexDirection="isMobile ? 'row' : 'column'" />
+          :secondary="{value: avaxToUSD(collateral), type: 'usd'}" />
           <div class="fund-buttons">
             <img @click="showCollateralBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>
             <img src="src/assets/icons/slash-small.svg"/>
@@ -42,11 +40,8 @@
             :waiting="waitingForBorrow"
             flexDirection="column"
             :style="{'width': '490px'}"
-            :validators="[
-              {require: value => value <= getAvailable, message: 'Borrow amount exceeds amount available in the pool'},
-              {require: value => calculateSolvency(0, value) >= 1.2, message: 'New solvency ratio is below acceptable level'},
-            ]"
-            :info="value => `New solvency ratio: <b>${(calculateSolvency(0, value) * 100).toFixed(1)}%</b>`"
+            :validators="borrowValidators"
+            :info="borrowSolvencyInfo"
           />
         </Tab>
         <Tab title="Repay" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right">
@@ -56,10 +51,8 @@
             :waiting="waitingForRepay"
             flexDirection="column"
             :style="{'width': '490px'}"
-            :validators="[
-              {require: (value) => value <= debt, message: 'Repay amount exceeds borrowed amount'}
-            ]"
-            :info="value => `New solvency ratio: <b>${(calculateSolvency(0, -value) * 100).toFixed(1)}%</b>`"
+            :validators="repayValidators"
+            :info="repaySolvencyInfo"
           />
         </Tab>
       </Tabs>
@@ -74,10 +67,8 @@
             :waiting="waitingForFund"
             flexDirection="column"
             :style="{'width': '490px'}"
-            :validators="[
-              {require: (value) => value <= balance, message: 'Repay amount exceeds user balance'}
-            ]"
-            :info="value => `New solvency ratio: <b>${(calculateSolvency(value, 0) * 100).toFixed(1)}%</b>`"
+            :validators="fundValidators"
+            :info="fundSolvencyInfo"
           />
         </Tab>
         <Tab title="Reduce collateral" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right">
@@ -87,16 +78,14 @@
             :waiting="waitingForWithdraw"
             flexDirection="column"
             :style="{'width': '490px'}"
-            :validators="[
-              {require: value => calculateSolvency(-value, 0) >= 1.2, message: 'New solvency ratio is below acceptable level'},
-            ]"
-            :info="value => `New solvency ratio: <b>${(calculateSolvency(-value, 0) * 100).toFixed(1)}%</b>`"
+            :validators="withdrawValidators"
+            :info="withdrawSolvencyInfo"
           />
         </Tab>
       </Tabs>
     </Block>
     <Block class="block" :bordered="true" >
-      <AssetsList :assets="assets" class="assets-list"/>
+      <AssetsList class="assets-list"/>
     </Block>
   </div>
 </template>
@@ -123,7 +112,39 @@
       waitingForWithdraw: false,
       waitingForFund: false,
       waitingForBorrow: false,
-      waitingForRepay: false
+      waitingForRepay: false,
+      borrowValidators: [
+        {
+          require: value => value <= this.getAvailable,
+          message: 'Borrow amount exceeds amount available in the pool'
+        },
+        {
+          require: value => this.calculateSolvency(0, value) >= 1.2,
+          message: 'New solvency ratio is below acceptable level'
+        }
+      ],
+      borrowSolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(0, value) * 100).toFixed(1)}%</b>`,
+      repayValidators: [
+        {
+          require: (value) => value <= this.debt,
+          message: 'Repay amount exceeds borrowed amount'
+        }
+      ],
+      repaySolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(0, -value) * 100).toFixed(1)}%</b>`,
+      fundValidators: [
+        {
+          require: (value) => value <= this.balance,
+          message: 'Repay amount exceeds user balance'
+        }
+      ],
+      fundSolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(value, 0) * 100).toFixed(1)}%</b>`,
+      withdrawValidators: [
+        {
+          require: value => this.calculateSolvency(-value, 0) >= 1.2,
+          message: 'New solvency ratio is below acceptable level'
+        }
+      ],
+      withdrawSolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(-value, 0) * 100).toFixed(1)}%</b>`,
     }
   },
   components: {

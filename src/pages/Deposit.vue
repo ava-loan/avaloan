@@ -3,15 +3,12 @@
     <Bar>
       <Value label="Your deposits"
         :primary="{value: userDeposited, type: 'avax', showIcon: true}"
-        :secondary="{value: toUSD(userDeposited), type: 'usd'}"
-        :flexDirection="isMobile ? 'row' : 'column'" />
+        :secondary="{value: avaxToUSD(userDeposited), type: 'usd'}" />
       <Value label="Current APR"
-        :primary="{value: depositRate, type: 'percent'}"
-        :flexDirection="isMobile ? 'row' : 'column'" />
+        :primary="{value: depositRate, type: 'percent'}"/>
       <Value label="All deposits"
         :primary="{value: totalDeposited, type: 'avax', showIcon: true}"
-        :secondary="{value: toUSD(totalDeposited), type: 'usd'}"
-        :flexDirection="isMobile ? 'row' : 'column'" />
+        :secondary="{value: avaxToUSD(totalDeposited), type: 'usd'}" />
     </Bar>
     <Block class="block" :bordered="true">
       <Tabs>
@@ -21,7 +18,7 @@
             v-on:submitValue="depositValue"
             :waiting="waitingForDeposit"
             flexDirection="column"
-            :validators="[{require: value => value <= balance, message: 'Deposit amount exceeds your account balance'}]"
+            :validators="depositValidators"
           />
         </Tab>
         <Tab title="Withdraw" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right" titleWidth="140px">
@@ -30,7 +27,7 @@
             v-on:submitValue="withdrawValue"
             :waiting="waitingForWithdraw"
             flexDirection="column"
-            :validators="[{require: value => value <= userDeposited, message: 'Withdraw amount exceeds your account deposit'}]"
+            :validators="withdrawValidators"
           />
         </Tab>
       </Tabs>
@@ -72,7 +69,19 @@
       return {
         maximumDeposit: 0,
         waitingForDeposit: false,
-        waitingForWithdraw: false
+        waitingForWithdraw: false,
+        depositValidators: [
+          {
+            require: value => value <= this.balance,
+            message: 'Deposit amount exceeds your account balance'
+          }
+        ],
+        withdrawValidators: [
+          {
+            require: value => value <= this.userDeposited,
+            message: 'Withdraw amount exceeds your account deposit'
+          }
+        ]
       }
     },
     computed: {
