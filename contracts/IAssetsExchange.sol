@@ -38,7 +38,7 @@ interface IAssetsExchange {
 
   /**
    * Transfers the current balance of the _token held by exchange contract to the msg.sender
-   * @dev _asset the address of an asset
+   * @dev _asset the asset code of an asset
   **/
   function TransferBack(bytes32 _asset) external;
 

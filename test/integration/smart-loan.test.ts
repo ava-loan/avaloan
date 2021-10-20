@@ -555,6 +555,7 @@ describe('Smart loan', () => {
     });
 
     it("should sellout one asset covering part of the debt", async () => {
+      const poolAvaxValue = await provider.getBalance(pool.address);
       await wrappedLoan.setMinimalSolvencyRatio("1350");
       expect(await wrappedLoan.getSolvencyRatio()).to.be.closeTo(BigNumber.from(1330), 1);
       expect(await wrappedLoan.isSolvent()).to.be.false;
@@ -562,6 +563,7 @@ describe('Smart loan', () => {
       await wrappedLoan.sellout();
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
+      expect((await provider.getBalance(pool.address)).gt(poolAvaxValue)).to.be.true;
 
       let balances = await wrappedLoan.getAllAssetsBalances();
 
@@ -572,6 +574,7 @@ describe('Smart loan', () => {
     });
 
     it("should sellout all assets covering whole the debt", async () => {
+      const poolAvaxValue = await provider.getBalance(pool.address);
       await wrappedLoan.setMinimalSolvencyRatio("5000");
       let totalValue = await wrappedLoan.getTotalValue();
       let debt = await wrappedLoan.getDebt();
@@ -583,6 +586,7 @@ describe('Smart loan', () => {
       await wrappedLoan.sellout();
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
+      expect((await provider.getBalance(pool.address)).gt(poolAvaxValue)).to.be.true;
 
       let balances = await wrappedLoan.getAllAssetsBalances();
 
