@@ -9,7 +9,7 @@
       </div>
       <div class="logo-wrapper">
         <img class="logo" :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.svg`"/>
-        <span class="symbol">{{ symbol }}</span>
+        <span v-if="!isMobile" class="symbol">{{ symbol }}</span>
       </div>
     </div>
     <div class="info"
@@ -88,7 +88,7 @@
   height: 68px;
   border-radius: 15px;
   padding-left: 10px;
-  padding-right: 5px;
+  padding-right: 10px;
   border: none;
   width: 100%;
 
@@ -106,6 +106,12 @@ input {
   font-size: 24px;
   padding-top: 0;
   padding-bottom: 0;
+  max-width: 40%;
+
+  @media screen and (min-width: $md) {
+    padding-right: 30px;
+    max-width: none;
+  }
 }
 
 input:focus{
@@ -148,8 +154,14 @@ input[type=number] {
 }
 
 img {
-  height: 36px;
-  width: 36px;
+  height: 24px;
+  width: 24px;
+  min-width: 24px;
+
+  @media screen and (min-width: $md) {
+    height: 36px;
+    width: 36px;
+  }
 }
 
 .error, .info {

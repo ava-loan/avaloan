@@ -38,9 +38,13 @@ export default function setupFilters() {
     return (value * 100).toFixed(1) + "%";
   });
 
-  Vue.filter("tx", function (value) {
+  Vue.filter("tx", function (value, short) {
     if (value == null) return null;
-    return value.substr(0, 6) + "..." + value.substr(value.length - 4);
+    if (short) {
+      return value.substr(0, 3) + "..." + value.substr(value.length - 2);
+    } else {
+      return value.substr(0, 6) + "..." + value.substr(value.length - 4);
+    }
   });
 
   Vue.filter("date", function (value) {

@@ -22,9 +22,7 @@
           </thead>
           <tbody>
             <tr v-for="asset in investments"
-              v-bind:key="asset.symbol"
-              @click="rowClicked(asset)"
-              :class="{'clickable': asset.buyInput || asset.showChart}">
+              v-bind:key="asset.symbol">
               <td data-label="Asset">
                 <div class="token-logo-wrapper">
                   <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.svg`" class="token-logo"/>
@@ -34,8 +32,9 @@
               <td class="right" data-label="Price">
                 <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
               </td>
-              <td class="chart-icon" v-if="!isMobile">
+              <td class="chart-icon" data-label="Chart">
                 <SimpleChart
+                  class="simple-chart"
                   :dataPoints="asset.prices"
                   :lineWidth="1.5"/>
                 <img @click.stop="toggleChart(asset.symbol)"
@@ -61,7 +60,7 @@
                     :hasSecondButton="true"
                     v-on:submitValue="(value) => investValue(asset.symbol, value)"
                     :waiting="waitingForInvest"
-                    flexDirection="row"
+                    :flexDirection="isMobile ? 'column' : 'row'"
                     :validators="investValidators(asset)"
                     :info="amountInfo(asset)"
                   />
@@ -77,17 +76,18 @@
                     :hasSecondButton="true"
                     v-on:submitValue="(value) => redeemValue(asset.symbol, value)"
                     :waiting="waitingForRedeem"
-                    flexDirection="row"
+                    :flexDirection="isMobile ? 'column' : 'row'"
                     :validators="redeemValidators(asset)"
                     :info="amountInfo(asset)"
                   />
                 </SmallBlock>
               </td>
-              <td class="chart" v-if="(asset.showChart || isMobile) && asset.prices" @click.stop>
+              <td class="chart" v-if="asset.showChart && asset.prices" @click.stop>
                 <SmallBlock
                   v-on:close="() => { asset.showChart = false; }">
                   <Chart
                   :dataPoints="asset.prices"
+                  dateFormat="HH:mm"
                   :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
                 </SmallBlock>
               </td>
@@ -113,9 +113,7 @@
           </thead>
           <tbody>
           <tr v-for="asset in investmentOptions"
-              v-bind:key="asset.symbol"
-              @click="rowClicked(asset.symbol)"
-              :class="{'clickable': asset.buyInput || asset.showChart}">
+              v-bind:key="asset.symbol">
             <td data-label="Asset">
               <div class="token-logo-wrapper">
                 <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.svg`" class="token-logo"/>
@@ -125,15 +123,15 @@
             <td class="right" data-label="Price">
               <LoadedValue :check="() => asset.price != null" :value="avaxToUSD(asset.price) | usd"></LoadedValue>
             </td>
-            <td class="chart-icon" v-if="!isMobile">
+            <td class="chart-icon" data-label="Chart">
               <SimpleChart
                 :dataPoints="asset.prices"
                 :lineWidth="1.5"/>
               <img @click.stop="toggleChart(asset.symbol)" src="src/assets/icons/enlarge.svg"/>
             </td>
-            <td data-label="Balance"></td>
-            <td data-label="Share"></td>
-            <td data-label="Value"></td>
+            <td v-if="!isMobile"></td>
+            <td v-if="!isMobile"></td>
+            <td v-if="!isMobile"></td>
             <td class="invest-buttons" @click.stop>
               <img v-if="asset.symbol !== nativeToken" @click="showBuyInput(asset.symbol)" src="src/assets/icons/plus.svg" class="buy"/>
             </td>
@@ -147,13 +145,13 @@
                   :hasSecondButton="true"
                   v-on:submitValue="(value) => investValue(asset.symbol, value)"
                   :waiting="waitingForInvest"
-                  flexDirection="row"
+                  :flexDirection="isMobile ? 'column' : 'row'"
                   :validators="investValidators(asset)"
                   :info="amountInfo(asset)"
                 />
               </SmallBlock>
             </td>
-            <td class="chart" v-if="(asset.showChart || isMobile) && asset.prices" @click.stop>
+            <td class="chart" v-if="asset.showChart && asset.prices" @click.stop>
               <SmallBlock
                 v-on:close="() => { asset.showChart = false;  }">
                 <Chart
@@ -282,12 +280,6 @@
             this.updateAsset(symbol, 'buyInput', false);
             this.updateAsset(symbol, 'showChart', false);
           });
-      },
-      rowClicked(symbol) {
-        this.updateAsset(symbol, 'showRemoveInput', false);
-        this.updateAsset(symbol, 'sellInput', false);
-        this.updateAsset(symbol, 'buyInput', false);
-        this.updateAsset(symbol, 'showChart', false);
       },
       updateAsset(symbol, key, value) {
         Vue.set(this.list[symbol], key, value);
@@ -515,7 +507,7 @@ tbody tr {
    height: 180px;
 }
 
-@media screen and (max-width: $md) {
+@media screen and (max-width: $md - 1) {
   table {
     border: 0;
   }
@@ -555,6 +547,12 @@ tbody tr {
     content: attr(data-label);
     float: left;
     font-weight: bold;
+
+    &.chart-icon {
+      flex: 50% 0 0;
+      text-align: left;
+      width: 100%;
+    }
   }
 
   table td:last-child {
@@ -565,10 +563,6 @@ tbody tr {
     display: inline-block;
     border-bottom: none;
     text-align: start;
-  }
-
-  .chart-icon {
-    width: 30%;
   }
 
   .invest-buttons {
@@ -603,16 +597,20 @@ tbody tr {
   .currency-form-wrapper {
     width: 100%;
     flex-wrap: wrap;
-    align-items: flex-start;
     margin-top: 42px;
+    align-items: center;
 
     @media screen and (min-width: $md) {
       flex-wrap: nowrap;
+      align-items: flex-start;
     }
 
     .input-wrapper {
       height: 50px;
-      width: 80%;
+
+      @media screen and (min-width: $md) {
+        width: 80%;
+      }
     }
 
     input {
