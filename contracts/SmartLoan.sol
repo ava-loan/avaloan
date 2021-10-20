@@ -48,6 +48,27 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   }
 
 
+  function sellout() external {
+    require(!isSolvent(), "Cannot sellout a solvent account");
+    bytes32[] memory assets = supportedAssets.getAllAssets();
+    uint256 debt;
+
+    for (uint i = 0; i < assets.length; i++) {
+      IERC20Metadata token = getERC20TokenInstance(assets[i]);
+      uint256 balance = token.balanceOf(address(this));
+      token.transfer(address(exchange), balance);
+      exchange.sellAsset(assets[i], balance);
+
+      debt = getDebt();
+      if (address(this).balance < debt) {
+        repay(address(this).balance);
+      } else {
+        repay(debt);
+        break;
+      }
+    }
+
+
   /**
    * Withdraws an amount from the loan
    * This method could be used to cash out profits from investments
