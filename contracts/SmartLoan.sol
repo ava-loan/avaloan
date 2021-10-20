@@ -59,10 +59,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
       token.transfer(address(exchange), balance);
 
       (bool success,) = address(exchange).call{value: 0}(
-        abi.encodeWithSignature("sellAsset(bytes32 _token,uint256 _amount)", assets[i], balance)
+        abi.encodeWithSignature("sellAsset(bytes32,uint256)", assets[i], balance)
       );
       if (!success) {
-        exchange.TransferBack(address(this));
+        exchange.TransferBack(assets[i]);
       }
 
       debt = getDebt();
@@ -70,6 +70,8 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
         repay(address(this).balance);
       } else {
         repay(debt);
+      }
+      if(isSolvent()){
         break;
       }
     }

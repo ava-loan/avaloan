@@ -99,7 +99,7 @@ describe('PangolinExchange', () => {
       daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       expect(daiTokenBalance).to.be.equal("0");
 
-      await sut.TransferBack(daiTokenAddress);
+      await sut.TransferBack(toBytes32("DAI"));
       daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       expect(daiTokenBalance).to.be.equal(initialDAITokenBalance);
     });
