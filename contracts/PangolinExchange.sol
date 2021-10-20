@@ -35,6 +35,12 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   }
 
 
+  function transfer_back(address _token) public {
+    IERC20 token = IERC20(_token);
+    token.transfer(msg.sender, token.balanceOf(address(this)));
+  }
+
+
   /**
    * Buys selected ERC20 token with AVAX using the Pangolin DEX
    * Refunds unused AVAX to the msg.sender
