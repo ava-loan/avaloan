@@ -15,11 +15,11 @@
         <div class="label">
           Solvency
         </div>
-        <div class="solvency-gauge">
+        <div class="solvency-bar">
           <SolvencyBar />
         </div>
       </div>
-      <div>
+      <div class="collateral">
         <Value label="Collateral"
           :primary="{value: collateral, type: 'avax', showIcon: true}"
           :secondary="{value: avaxToUSD(collateral), type: 'usd'}" />
@@ -219,7 +219,7 @@
   margin-top: 10px;
   justify-content: flex-end;
   position: absolute;
-  transform: translate(117px, -83px);
+  transform: translate(155px, -27px);
 
   @media screen and (min-width: $md) {
     justify-content: center;
@@ -242,25 +242,23 @@
 
 .solvency-value {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 30px;
 
   @media screen and (min-width: $md) {
     display: block;
+    align-items: center;
+    margin-top: 0;
   }
 
-  .solvency-gauge {
+  .solvency-bar {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 12px;
 
-    .gauge {
-      width: 80px;
-
-        @media screen and (min-width: $md) {
-          width: 120px;
-      }
+    @media screen and (min-width: $md) {
+      margin-top: 12px;
     }
   }
 }
@@ -277,6 +275,14 @@
     border-radius: 3px;
     border-style: solid;
     border-width: 4px 0 0 4px;
+  }
+}
+
+.collateral {
+  margin-top: 30px;
+
+  @media screen and (min-width: $md) {
+    margin-top: 0;
   }
 }
 
@@ -306,14 +312,15 @@
 @import "~@/styles/variables";
 .smart-loan {
   .currency-input-wrapper {
-    margin-top: 2rem;
     justify-content: space-between;
 
-    .input-wrapper {
-      margin-bottom: 24px;
+    @media screen and (min-width: $md) {
+      margin-top: 2rem;
+    }
 
+    .input-wrapper {
       @media screen and (min-width: $md) {
-        margin-bottom: 0;
+        margin-bottom: 24px;
       }
     }
 

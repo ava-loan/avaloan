@@ -48,6 +48,9 @@
         type: Array,
         default: () => [],
       },
+      dateFormat: {
+        default: 'HH:mm DD/MM/YYYY'
+      },
       minY: 0,
       maxY: null,
       height: null,
@@ -71,7 +74,6 @@
       },
       chartData() {
         return {
-          labels: ['a', 'b', 'c'],
           datasets: [
             {
               fill: false,
@@ -99,6 +101,11 @@
           scales: {
             xAxes: [{
               type: 'time',
+              time: {
+                displayFormats: {
+                  minute: this.dateFormat
+                }
+              },
               gridLines: {
                 drawOnChartArea: false,
                 tickMarkLength: 0,

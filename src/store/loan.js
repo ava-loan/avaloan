@@ -37,8 +37,8 @@ export default {
     setSolvency(state, solvency) {
       state.solvency = solvency;
     },
-    setMinSolvency(state, solvency) {
-      state.solvency = solvency;
+    setMinSolvency(state, minSolvency) {
+      state.minSolvency = minSolvency;
     },
     setSupportedAssets(state, assets) {
       state.supportedAssets = assets;

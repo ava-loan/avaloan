@@ -1,6 +1,8 @@
 <template>
   <div class="wrapper">
-    <div class="solvency-value">{{ solvency | percent }}</div>
+    <div class="solvency-value">
+      <LoadedValue :value="solvency | percent"></LoadedValue>
+    </div>
     <div class="bar-wrapper">
       <div class="solvency-info">{{info}}</div>
       <div class="bar">
@@ -15,9 +17,13 @@
 
 <script>
 import { mapState } from "vuex";
+import LoadedValue from "@/components/LoadedValue.vue";
 
 export default {
   name: 'SolvencyBar',
+  components: {
+    LoadedValue
+  },
   props: {
   },
   data() {
@@ -49,11 +55,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~@/styles/variables";
 
 .wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
+
+  @media screen and (min-width: $md) {
+    align-items: center;
+  }
 
   .solvency-value {
     font-size: 23px;
@@ -69,7 +80,11 @@ export default {
 .bar-wrapper {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
+
+  @media screen and (min-width: $md) {
+    align-items: center;
+  }
 
   .bar {
     position: relative;

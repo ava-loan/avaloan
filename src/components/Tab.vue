@@ -24,9 +24,16 @@ export default {
 }
 </script>
 
-<style lang="css">
+<style lang="scss">
+@import "~@/styles/variables";
+
 .tab {
   display: flex;
   justify-content: center;
+  margin-top: 20px;
+
+  @media screen and (min-width: $md) {
+    margin-top: 0;
+  }
 }
 </style>

@@ -159,7 +159,11 @@
 
 .deposit {
   .currency-input-wrapper {
-    width: 490px;
+    width: 100%;
+
+    @media screen and (min-width: $md) {
+      width: 490px;
+    }
   }
 }
 </style>
