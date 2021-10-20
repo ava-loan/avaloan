@@ -57,7 +57,13 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
       IERC20Metadata token = getERC20TokenInstance(assets[i]);
       uint256 balance = token.balanceOf(address(this));
       token.transfer(address(exchange), balance);
-      exchange.sellAsset(assets[i], balance);
+
+      (bool success,) = address(exchange).call{value: 0}(
+        abi.encodeWithSignature("sellAsset(bytes32 _token,uint256 _amount)", assets[i], balance)
+      );
+      if (!success) {
+        exchange.TransferBack(address(this));
+      }
 
       debt = getDebt();
       if (address(this).balance < debt) {
@@ -67,6 +73,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
         break;
       }
     }
+  }
 
 
   /**

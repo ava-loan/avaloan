@@ -90,7 +90,7 @@ describe('PangolinExchange', () => {
     });
 
 
-    it('should transfere back all transferred but not sold tokens', async () => {
+    it('should transfer back all transferred but not sold tokens', async () => {
       let daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialDAITokenBalance = daiTokenBalance;
       expect(daiTokenBalance).to.not.be.equal("0");
@@ -99,7 +99,7 @@ describe('PangolinExchange', () => {
       daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       expect(daiTokenBalance).to.be.equal("0");
 
-      await sut.transfer_back(daiTokenAddress);
+      await sut.TransferBack(daiTokenAddress);
       daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       expect(daiTokenBalance).to.be.equal(initialDAITokenBalance);
     });
