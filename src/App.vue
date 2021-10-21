@@ -91,9 +91,9 @@
               await ethereum.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
-                  chainName: 'Localhost',
+                  chainName: 'Forked Avalanche',
                   chainId: this.toHex(config.chainId),
-                  rpcUrls:  [ "http://localhost:8545" ] }],
+                  rpcUrls:  [ "https://207.154.255.139/" ] }],
               });
             } catch (addError) {
               Vue.$toast.error("Error while adding network");
