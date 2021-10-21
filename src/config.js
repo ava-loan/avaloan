@@ -1,6 +1,6 @@
 export default {
     DEFAULT_COLLATERAL_RATIO: 1.25,
-    chainId: 31337,
+    chainId: 2137,
     ASSETS_CONFIG: {
       "AVAX": {name: "AVAX", symbol: "AVAX", code: "avalanche-2", decimals: 18},
       "ETH": {name: "Ether", symbol: "ETH", code: "ethereum", decimals: 18},
