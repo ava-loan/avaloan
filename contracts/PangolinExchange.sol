@@ -35,7 +35,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   }
 
 
-  function TransferBack(bytes32 _asset) external override {
+  function transferBack(bytes32 _asset) external override {
     address tokenAddress = supportedAssets.getAssetAddress(_asset);
     IERC20 token = IERC20(tokenAddress);
     token.transfer(msg.sender, token.balanceOf(address(this)));

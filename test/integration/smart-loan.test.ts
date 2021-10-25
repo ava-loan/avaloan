@@ -22,8 +22,6 @@ import {
   Pool,
   SupportedAssets,
   SmartLoan,
-  MockSmartLoan,
-  MockSmartLoan__factory,
   SmartLoan__factory
 } from "../../typechain";
 
@@ -99,7 +97,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      await loan.initialize(supportedAssets.address, exchange.address, pool.address);
+      await loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -274,7 +272,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(supportedAssets.address, exchange.address, pool.address);
+      loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -371,7 +369,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(supportedAssets.address, exchange.address, pool.address);
+      loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -455,7 +453,7 @@ describe('Smart loan', () => {
   describe('A loan with sellout', () => {
     let supportedAssets: SupportedAssets,
       exchange: PangolinExchange,
-      loan: MockSmartLoan,
+      loan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
@@ -507,8 +505,8 @@ describe('Smart loan', () => {
     });
 
     it("should deploy a smart loan", async () => {
-      loan = await (new MockSmartLoan__factory(owner).deploy());
-      loan.initialize(supportedAssets.address, exchange.address, pool.address);
+      loan = await (new SmartLoan__factory(owner).deploy());
+      loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -536,7 +534,6 @@ describe('Smart loan', () => {
     });
 
     it("should invest", async () => {
-
       await wrappedLoan.invest(toBytes32('USD'), toWei("3000", usdTokenDecimalPlaces));
       await wrappedLoan.invest(toBytes32('LINK'), toWei("300", linkTokenDecimalPlaces));
 
@@ -554,7 +551,11 @@ describe('Smart loan', () => {
       await expect(wrappedLoan.sellout()).to.be.revertedWith('Cannot sellout a solvent account')
     });
 
-    it("should sellout one asset covering part of the debt", async () => {
+    it("should check if only governor can change the minimal solvency level", async () => {
+      await expect(wrappedLoan.connect(depositor).setMinimalSolvencyRatio("900")).to.be.revertedWith("Only the governor account can change the minimal solvency ratio");
+    });
+
+    it("should sellout assets covering whole debt", async () => {
       const poolAvaxValue = await provider.getBalance(pool.address);
       await wrappedLoan.setMinimalSolvencyRatio("1350");
       expect(await wrappedLoan.getSolvencyRatio()).to.be.closeTo(BigNumber.from(1330), 1);
@@ -570,31 +571,9 @@ describe('Smart loan', () => {
       const currentUSDTokenBalance = balances[0];
       const currentLINKTokenBalance = balances[1];
       expect(currentUSDTokenBalance).to.be.equal(toWei("0", usdTokenDecimalPlaces));
-      expect(currentLINKTokenBalance).to.be.equal(toWei("300", linkTokenDecimalPlaces));
-    });
-
-    it("should sellout all assets covering whole the debt", async () => {
-      const poolAvaxValue = await provider.getBalance(pool.address);
-      await wrappedLoan.setMinimalSolvencyRatio("5000");
-      let totalValue = await wrappedLoan.getTotalValue();
-      let debt = await wrappedLoan.getDebt();
-      let expectedSolvencyRatio = Math.round(totalValue/debt*1000);
-
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.closeTo(BigNumber.from(expectedSolvencyRatio), 1);
-      expect(await wrappedLoan.isSolvent()).to.be.false;
-
-      await wrappedLoan.sellout();
-
-      expect(await wrappedLoan.isSolvent()).to.be.true;
-      expect((await provider.getBalance(pool.address)).gt(poolAvaxValue)).to.be.true;
-
-      let balances = await wrappedLoan.getAllAssetsBalances();
-
-      const currentUSDTokenBalance = balances[0];
-      const currentLINKTokenBalance = balances[1];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("0", usdTokenDecimalPlaces));
       expect(currentLINKTokenBalance).to.be.equal(toWei("0", linkTokenDecimalPlaces));
     });
+
 
   });
 

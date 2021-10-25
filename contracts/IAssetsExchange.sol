@@ -38,9 +38,10 @@ interface IAssetsExchange {
 
   /**
    * Transfers the current balance of the _token held by exchange contract to the msg.sender
+   * This method can be used to obtain tokens already sent to the exchange contract in case selling those tokens failed.
    * @dev _asset the asset code of an asset
   **/
-  function TransferBack(bytes32 _asset) external;
+  function transferBack(bytes32 _asset) external;
 
 
 }

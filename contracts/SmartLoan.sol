@@ -29,13 +29,15 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   SupportedAssets supportedAssets;
   IAssetsExchange public exchange;
   Pool pool;
+  address private governor;
 
-  function initialize(SupportedAssets _supportedAssets, IAssetsExchange assetsExchange_, Pool pool_) external initializer {
+  function initialize(SupportedAssets _supportedAssets, IAssetsExchange assetsExchange_, Pool pool_, address _governor) external initializer {
     supportedAssets = _supportedAssets;
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
     __PriceAware_init();
+    governor = _governor;
   }
 
 
@@ -48,10 +50,16 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   }
 
 
+  function setMinimalSolvencyRatio(uint256 _newRatio) public {
+    require(msg.sender == governor, "Only the governor account can change the minimal solvency ratio");
+    minSolvencyRatio = _newRatio;
+  }
+
+
   function sellout() external {
     require(!isSolvent(), "Cannot sellout a solvent account");
     bytes32[] memory assets = supportedAssets.getAllAssets();
-    uint256 debt;
+    uint256 debt = getDebt();
 
     for (uint i = 0; i < assets.length; i++) {
       IERC20Metadata token = getERC20TokenInstance(assets[i]);
@@ -62,18 +70,16 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
         abi.encodeWithSignature("sellAsset(bytes32,uint256)", assets[i], balance)
       );
       if (!success) {
-        exchange.TransferBack(assets[i]);
+        exchange.transferBack(assets[i]);
       }
-
-      debt = getDebt();
-      if (address(this).balance < debt) {
-        repay(address(this).balance);
-      } else {
-        repay(debt);
-      }
-      if(isSolvent()){
+      if(address(this).balance >= debt){
         break;
       }
+    }
+    if (address(this).balance < debt) {
+      repay(address(this).balance);
+    } else {
+      repay(debt);
     }
   }
 

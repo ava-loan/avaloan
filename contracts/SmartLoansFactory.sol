@@ -53,7 +53,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createLoan() external oneLoanPerOwner returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool)));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool), msg.sender));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
@@ -65,7 +65,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createAndFundLoan(uint256 _initialDebt) external oneLoanPerOwner payable returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool)));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool), msg.sender));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
