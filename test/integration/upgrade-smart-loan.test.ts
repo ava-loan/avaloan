@@ -34,16 +34,17 @@ const ZERO = ethers.constants.AddressZero;
 const PRICE_SIGNER = "0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9"; //redstone-rapid
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
+const PRICE_SIGNER = "0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9"; //redstone-rapid
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
   'function approve(address _spender, uint256 _value) public returns (bool success)',
   'function allowance(address owner, address spender) public view returns (uint256)'
 ]
+const MOCK_AVAX_PRICE = 100000;
 
 describe('Smart loan - upgrading', () => {
   function getMockPrices(usdPrice: BigNumber): Array<{symbol: string, value: number}> {
-    const MOCK_AVAX_PRICE = 100000;
     return [
       {
         symbol: 'USD',
@@ -135,6 +136,11 @@ describe('Smart loan - upgrading', () => {
 
       const mockPrices = getMockPrices(estimatedAVAXPriceFor1USDToken);
 
+      const investedAmount = 100;
+
+      const slippageTolerance = 0.03;
+      const requiredAvaxAmount = mockPrices[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
+
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
         .using(
@@ -148,7 +154,11 @@ describe('Smart loan - upgrading', () => {
 
       await syncTime(); // recommended for hardhat test
 
-      await wrappedLoan.invest(toBytes32('USD'), toWei("100", usdTokenDecimalPlaces));
+      await wrappedLoan.invest(
+        toBytes32('USD'),
+        toWei("100", usdTokenDecimalPlaces),
+        toWei(requiredAvaxAmount.toString())
+      );
 
       //wrapping again to get a new timestamp for data
       const rewrappedLoan: any = WrapperBuilder

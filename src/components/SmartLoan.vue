@@ -318,12 +318,6 @@
       margin-top: 2rem;
     }
 
-    .input-wrapper {
-      @media screen and (min-width: $md) {
-        margin-bottom: 24px;
-      }
-    }
-
     @media screen and (min-width: $md) {
       margin-top: 0px;
       width: 500px;

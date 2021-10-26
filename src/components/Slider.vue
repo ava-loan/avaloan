@@ -127,7 +127,7 @@ export default {
 
 
   background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
-  background-size: 50% 100%;
+  background-size: 0% 100%;
   background-repeat: no-repeat;
 }
 

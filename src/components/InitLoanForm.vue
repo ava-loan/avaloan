@@ -51,7 +51,7 @@
     },
     data() {
       return {
-        loan: { type: Number, default: null },
+        loan: null,
         minInitialSolvency: MIN_INITIAL_SOLVENCY,
         collateral: null,
         waiting: false,
@@ -84,7 +84,11 @@
         return this.waiting || this.errors.includes(true) || !this.loan || !this.collateral;
       },
       calculatedSolvency() {
-        return (this.loan + this.collateral) / this.loan;
+        if (this.loan && this.collateral) {
+          return (this.loan + this.collateral) / this.loan;
+        } else {
+          return 0;
+        }
       }
     },
     methods: {
