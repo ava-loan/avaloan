@@ -61,7 +61,6 @@ contract PangolinExchange is Ownable, IAssetsExchange {
    * Sells selected ERC20 token for AVAX
    * @dev _token ERC20 token's address
    * @dev _amount amount of the ERC20 token to be sold
-   * TODO: Implement slippage % tolerance and add as a require check
   **/
   function sellAsset(bytes32 _token, uint256 _amount) external override RefundRemainder {
     require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
@@ -105,7 +104,8 @@ contract PangolinExchange is Ownable, IAssetsExchange {
      * Returns the maximum AVAX amount that will be obtained in the event os selling _amountIn of _token ERC20 token.
   **/
   function getEstimatedERC20TokenForAVAX(uint256 _amountIn, address _token) public view returns (uint256) {
-    address[] memory path = getPathForTokenToAVAX(_token);
+    address[] memory path = getPathForAVAXtoToken(_token);
+
     return pangolinRouter.getAmountsOut(_amountIn, path)[1];
   }
 

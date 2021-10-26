@@ -130,7 +130,13 @@ describe('Smart loan', () => {
       const usdPrice = MOCK_PRICES.find((token: any) => token.symbol == 'USD').value;
       const investedAmount = 100;
 
-      await wrappedLoan.invest(toBytes32('USD'), toWei(investedAmount.toString(), usdTokenDecimalPlaces));
+      const slippageTolerance = 0.03;
+      const requiredAvaxAmount = MOCK_PRICES[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
+      await wrappedLoan.invest(
+        toBytes32('USD'),
+        toWei(investedAmount.toString(), usdTokenDecimalPlaces),
+        toWei(requiredAvaxAmount.toString())
+      );
 
       const expectedAssetValue = fromWei(toWei(usdPrice.toString()).div(MOCK_AVAX_PRICE).mul(BigNumber.from(investedAmount)));
 
@@ -377,7 +383,14 @@ describe('Smart loan', () => {
     });
 
     it("should invest", async () => {
-      await wrappedLoan.invest(toBytes32('USD'), toWei("1800", usdTokenDecimalPlaces));
+      const investedAmount = 1800;
+
+      const slippageTolerance = 0.03;
+      const requiredAvaxAmount = MOCK_PRICES[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
+      await wrappedLoan.invest(
+        toBytes32('USD'),
+        toWei(investedAmount.toString(), usdTokenDecimalPlaces),
+        toWei(requiredAvaxAmount.toString()));
 
       const currentUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
       expect(currentUSDTokenBalance).to.be.equal(toWei("1800", usdTokenDecimalPlaces));

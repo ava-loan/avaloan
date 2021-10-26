@@ -19,6 +19,13 @@
         v-if="info && value && !isNaN(value)"
         v-html="info(value)"></div>
     </div>
+    <div class="warning"
+         v-if="!error && warning">
+      <span>
+        <img src="src/assets/icons/warning.svg"/>
+        {{warning}}
+      </span>
+    </div>
     <div class="error"
          v-if="error"
          :style="{'order': flexDirection === 'row' ? 1 : ''}">
@@ -32,6 +39,8 @@
 
 
 <script>
+  import Vue from 'vue';
+
   export default {
     name: 'CurrencyInput',
     props: {
@@ -42,17 +51,58 @@
       validators: {
         type: Array, default: () => []
       },
+      warnings: {
+        type: Array, default: () => []
+      },
+      //TODO: make an array like in validators
       info: { type: Function, default: null },
-      defaultValue: null
+      defaultValue: null,
+      waiting: false
     },
     data() {
       return {
         error: '',
+        warning: '',
         value: null
       }
     },
     watch: {
       value: function (newValue) {
+        this.runChecks(newValue);
+      },
+      defaultValue: function(newValue) {
+        this.value = newValue;
+      },
+      warnings: function() {
+        this.checkWarnings(this.value);
+      },
+      errors: function() {
+        this.checkErrors(this.value);
+      },
+    },
+    methods: {
+      runChecks(value) {
+        this.checkErrors(value);
+        this.checkWarnings(value);
+
+        const hasError = this.error.length > 0;
+        this.$emit('newValue', {value: value, error: hasError});
+      },
+      checkWarnings(newValue) {
+        this.warning = '';
+
+        this.warnings.find(
+          check => {
+            let value = typeof newValue === "number" ? newValue : 0;
+            if (!check.require(value)) {
+              this.warning = check.message;
+              return true;
+            }
+            return false;
+          }
+        )
+      },
+      checkErrors(newValue) {
         this.error = '';
 
         this.validators.find(
@@ -65,12 +115,6 @@
             return false;
           }
         )
-
-        const hasError = this.error.length > 0;
-        this.$emit('newValue', {value: newValue, error: hasError});
-      },
-      defaultValue: function(newValue) {
-        this.value = newValue;
       }
     }
   }
@@ -164,7 +208,7 @@ img {
   }
 }
 
-.error, .info {
+.error, .info, .warning {
   height: 24px;
   padding-top: 6px;
   color: #7d7d7d;
@@ -173,12 +217,17 @@ img {
   text-align: end;
 }
 
+.warning {
+  color: #FFD166;
+}
+
+.error, .warning {
+  img {
+    width: 22px;
+    height: 22px;
+  }
+}
 .error {
   color: #f64254;
-
-  img {
-    width: 20px;
-    height: 20px;
-  }
 }
 </style>

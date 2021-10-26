@@ -41,7 +41,7 @@
                      src="src/assets/icons/enlarge.svg"
                 />
               </td>
-              <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance" :value="asset.balance.toFixed(2)"></LoadedValue></td>
+              <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance != null" :value="asset.balance.toFixed(2)"></LoadedValue></td>
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
               <td class="right" data-label="Value"><LoadedValue :value="avaxToUSD(asset.value) | usd"></LoadedValue>
               <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
@@ -58,10 +58,12 @@
                     :symbol="asset.symbol"
                     :price="asset.price"
                     :hasSecondButton="true"
-                    v-on:submitValue="(value) => investValue(asset.symbol, value)"
-                    :waiting="waitingForInvest"
+                    v-on:submitValue="(value) => investValue(asset, value)"
+                    v-on:changedValue="(value) => checkSlippage(asset, value)"
+                    :waiting="asset.checkingSlippage || waitingForInvest"
                     :flexDirection="isMobile ? 'column' : 'row'"
                     :validators="investValidators(asset)"
+                    :warnings="investWarnings(asset.currentSlippage)"
                     :info="amountInfo(asset)"
                   />
                 </SmallBlock>
@@ -143,10 +145,12 @@
                   :symbol="asset.symbol"
                   :price="asset.price"
                   :hasSecondButton="true"
-                  v-on:submitValue="(value) => investValue(asset.symbol, value)"
-                  :waiting="waitingForInvest"
+                  v-on:submitValue="(value) => investValue(asset, value)"
+                  v-on:changedValue="(value) => checkSlippage(asset, value)"
+                  :waiting="asset.checkingSlippage || waitingForInvest"
                   :flexDirection="isMobile ? 'column' : 'row'"
                   :validators="investValidators(asset)"
+                  :warnings="investWarnings(asset.currentSlippage)"
                   :info="amountInfo(asset)"
                 />
               </SmallBlock>
@@ -239,8 +243,20 @@
           }
         ]
       },
+      investWarnings(slippage) {
+        return [
+          {
+            require: () => slippage == null || slippage <= .03,
+            message: 'Current slippage above 3%'
+          }
+        ]
+      },
+      //TODO: add optional chaining
       amountInfo(asset) {
-        return (value) => `Amount in AVAX: <b>${(asset.price * value).toPrecision(2)}</b>`
+        return (value) =>
+        `Because of <b>${asset.currentSlippage ? (asset.currentSlippage * 100).toPrecision(4) : 0}%</b>
+         slippage you will have to pay around <b>${((1 + asset.currentSlippage) * asset.price * value).toPrecision(6)}</b>
+         AVAX`
       },
       redeemValidators(asset) {
        return [
@@ -265,12 +281,20 @@
         this.updateAsset(symbol, 'buyInput', false);
         this.updateAsset(symbol, 'showChart', false);
       },
-      investValue(symbol, value) {
-        this.handleTransaction(this.invest,{ asset: symbol, decimals: this.list[symbol].decimals, amount: value}, "waitingForInvest")
+      investValue(asset, value) {
+        this.handleTransaction(
+          this.invest,
+          { asset: asset.symbol,
+            decimals: asset.decimals,
+            amount: value,
+            avaxAmount: asset.price * value,
+            slippage: asset.currentSlippage
+          },
+          "waitingForInvest")
           .then(() => {
-            this.updateAsset(symbol, 'sellInput', false);
-            this.updateAsset(symbol, 'buyInput', false);
-            this.updateAsset(symbol, 'showChart', false);
+            this.updateAsset(asset.symbol, 'sellInput', false);
+            this.updateAsset(asset.symbol, 'buyInput', false);
+            this.updateAsset(asset.symbol, 'showChart', false);
           });
       },
       redeemValue(symbol, value) {
@@ -329,6 +353,15 @@
       },
       share(asset) {
         return asset.price * asset.balance;
+      },
+      async checkSlippage(asset, expectedAmount) {
+        this.updateAsset(asset.symbol, 'checkingSlippage', true);
+
+        const slippage =
+          await this.calculateSlippage(asset.symbol, asset.price, asset.decimals, asset.address, expectedAmount);
+
+        this.updateAsset(asset.symbol, 'currentSlippage', slippage);
+        this.updateAsset(asset.symbol, 'checkingSlippage', false);
       }
     },
     watch: {
@@ -619,7 +652,7 @@ tbody tr {
       width: 60%;
     }
 
-    .error, .info {
+    .error, .info, .warning {
       text-align: left;
     }
 

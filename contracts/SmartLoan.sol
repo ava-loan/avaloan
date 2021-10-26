@@ -66,12 +66,15 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   /**
    * Invests an amount to buy an asset
    * @param _asset to code of the asset
-   * @param _amount to be bought
+   * @param _assetAmount amount of asset to swap
+  * @param _maxAvaxAmount maximum amount of AVAX to swap
   **/
-  function invest(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent{
-    exchange.buyAsset{value: address(this).balance}(_asset, _amount);
+  function invest(bytes32 _asset, uint256 _assetAmount, uint256 _maxAvaxAmount) external onlyOwner remainsSolvent {
+    require(address(this).balance >= _maxAvaxAmount, "Not enough funds available");
 
-    emit Invested(msg.sender, _asset, _amount, block.timestamp);
+    exchange.buyAsset{value: _maxAvaxAmount}(_asset, _assetAmount);
+
+    emit Invested(msg.sender, _asset, _assetAmount, block.timestamp);
   }
 
 

@@ -94,7 +94,6 @@ export default {
       const prices = await loan.getAllAssetsPrices();
       const balances = await loan.getAllAssetsBalances();
 
-
       const nativeToken = Object.entries(config.ASSETS_CONFIG).find(asset => asset[0] === config.nativeToken);
 
       let assets = {};
@@ -182,11 +181,18 @@ export default {
 
       dispatch('updateLoanStats');
     },
-    async invest({ state, rootState, dispatch, commit }, { asset, amount, decimals }) {
+    async invest({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      let tx = await loan.invest(ethers.utils.formatBytes32String(asset), parseUnits(amount.toString(), decimals), {gasLimit: 3000000});
+      const maxAvaxAmount = (1 + slippage * (1 + config.SLIPPAGE_CHANGE_TOLERANCE)) * avaxAmount;
+
+      let tx = await loan.invest(
+        ethers.utils.formatBytes32String(asset),
+        parseUnits(amount.toString(), decimals),
+        toWei(maxAvaxAmount.toString()),
+      {gasLimit: 3000000});
+
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');

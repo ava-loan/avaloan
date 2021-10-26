@@ -8,6 +8,8 @@
       :symbol="symbol"
       :color="color"
       :validators="validators"
+      :warnings="warnings"
+      :waiting="waiting"
       :info="info"
       v-on:newValue="updateValue"
     />
@@ -37,6 +39,9 @@
       validators: {
         type: Array, default: () => []
       },
+      warnings: {
+        type: Array, default: () => []
+      },
       info: { type: Function, default: null }
     },
     components: {
@@ -57,6 +62,7 @@
       updateValue(result) {
         this.value = result.value;
         this.error = result.error;
+        this.$emit('changedValue', this.value);
       },
       emitValue() {
         if (!this.disabled) {
@@ -91,6 +97,7 @@
     .btn-label {
       visibility: hidden;
       height: 0;
+      width: 0;
     }
 
     .ball-beat {
