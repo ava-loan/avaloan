@@ -66,27 +66,28 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   /**
    * Invests an amount to buy an asset
    * @param _asset to code of the asset
-   * @param _assetAmount amount of asset to swap
-  * @param _maxAvaxAmount maximum amount of AVAX to swap
+   * @param _amount exact amount of asset to buy
+   * @param _maxAvaxAmount maximum amount of AVAX to sell
   **/
-  function invest(bytes32 _asset, uint256 _assetAmount, uint256 _maxAvaxAmount) external onlyOwner remainsSolvent {
+  function invest(bytes32 _asset, uint256 _amount, uint256 _maxAvaxAmount) external onlyOwner remainsSolvent {
     require(address(this).balance >= _maxAvaxAmount, "Not enough funds available");
 
-    exchange.buyAsset{value: _maxAvaxAmount}(_asset, _assetAmount);
+    exchange.buyAsset{value: _maxAvaxAmount}(_asset, _amount);
 
-    emit Invested(msg.sender, _asset, _assetAmount, block.timestamp);
+    emit Invested(msg.sender, _asset, _amount, block.timestamp);
   }
 
 
   /**
    * Redeem an investment by selling an asset
-   * @param _asset to code of the asset
-   * @param _amount to sell
+   * @param _asset code of the asset
+   * @param _amount exact amount of token to sell
+   * @param _minAvaxAmount minimum amount of the AVAX token to buy
   **/
-  function redeem(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent {
+  function redeem(bytes32 _asset, uint256 _amount, uint256 _minAvaxAmount) external onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
     token.transfer(address(exchange), _amount);
-    exchange.sellAsset(_asset, _amount);
+    exchange.sellAsset(_asset, _amount, _minAvaxAmount);
 
     emit Redeemed(msg.sender, _asset, _amount, block.timestamp);
   }

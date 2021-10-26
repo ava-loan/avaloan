@@ -40,14 +40,13 @@ contract PangolinExchange is Ownable, IAssetsExchange {
    * Refunds unused AVAX to the msg.sender
    * @dev _token ERC20 token's address
    * @dev _amount amount of the ERC20 token to be bought
-   * TODO: Implement slippage % tolerance and add as a require check
   **/
   function buyAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
     require(_amount > 0, "Amount of tokens to buy has to be greater than 0");
 
     address tokenAddress = supportedAssets.getAssetAddress(_token);
 
-    uint256 amountIn = getEstimatedAVAXForERC20Token(_amount, tokenAddress);
+    uint256 amountIn = getMinimumAVAXForERC20Token(_amount, tokenAddress);
 
     require(msg.value >= amountIn, "Not enough funds provided");
 
@@ -61,15 +60,15 @@ contract PangolinExchange is Ownable, IAssetsExchange {
    * Sells selected ERC20 token for AVAX
    * @dev _token ERC20 token's address
    * @dev _amount amount of the ERC20 token to be sold
+   * @dev _minAmountAvax minimum amount of the AVAX token to be bought
   **/
-  function sellAsset(bytes32 _token, uint256 _amount) external override RefundRemainder {
+  function sellAsset(bytes32 _token, uint256 _amount, uint256 _minAmountAvax) external override RefundRemainder {
     require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
     address tokenAddress = supportedAssets.getAssetAddress(_token);
-    uint256 minAmountOut = getEstimatedERC20TokenForAVAX(_amount, tokenAddress);
 
     IERC20 token = IERC20(tokenAddress);
     token.approve(address(pangolinRouter), _amount);
-    pangolinRouter.swapExactTokensForAVAX(_amount, minAmountOut, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp);
+    pangolinRouter.swapExactTokensForAVAX(_amount, _minAmountAvax, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp);
 
     emit TokenSell(msg.sender, _amount, block.timestamp);
   }
@@ -94,20 +93,21 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   /**
      * Returns the minimum AVAX amount that is required to buy _amountOut of _token ERC20 token.
   **/
-  function getEstimatedAVAXForERC20Token(uint256 _amountOut, address _token) public view returns (uint256) {
+  function getMinimumAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
 
-    return pangolinRouter.getAmountsIn(_amountOut, path)[0];
+    return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
   }
 
   /**
-     * Returns the maximum AVAX amount that will be obtained in the event os selling _amountIn of _token ERC20 token.
+   * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
   **/
-  function getEstimatedERC20TokenForAVAX(uint256 _amountIn, address _token) public view returns (uint256) {
-    address[] memory path = getPathForAVAXtoToken(_token);
+  function getMaximumAVAXFromERC20Token(uint256 _amountIn, address _token) public view returns (uint256) {
+    address[] memory path = getPathForTokenToAVAX(_token);
 
     return pangolinRouter.getAmountsOut(_amountIn, path)[1];
   }
+
 
   /**
    * Returns a path containing WAVAX token's address and chosen ERC20 token's address

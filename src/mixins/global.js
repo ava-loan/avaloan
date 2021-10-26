@@ -29,21 +29,47 @@ export default {
         this[nameOfWaitingVariable] = false;
       }
     },
-    async calculateSlippage(symbol, price, tokenDecimals, tokenAddress, expectedAmount) {
-      if (expectedAmount > 0) {
+    async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {
+      if (amount > 0) {
         const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
 
-        const amountFromDex =
-          parseFloat(
-            formatUnits(
-              await exchange.getEstimatedERC20TokenForAVAX(
-                parseUnits((expectedAmount * price).toString(), 18), tokenAddress
-              ),
-              tokenDecimals)
+        const expectedAvax = amount * price;
+
+        let checkedAvax =
+          await exchange.getMinimumAVAXForERC20Token(
+            parseUnits((amount).toString(), tokenDecimals), tokenAddress
           );
+
+        checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
+
         let slippage = 0;
-        if (amountFromDex < expectedAmount) {
-          slippage = (expectedAmount - amountFromDex) / expectedAmount;
+
+        if (checkedAvax > expectedAvax) {
+          slippage = (checkedAvax - expectedAvax) / expectedAvax;
+        }
+
+        return slippage;
+      } else {
+        return 0;
+      }
+    },
+    async calculateSlippageForSell(symbol, price, tokenDecimals, tokenAddress, amount) {
+      if (amount > 0) {
+        const exchange = new Contract(EXCHANGE.networks[this.chainId].address, EXCHANGE.abi, provider.getSigner());
+
+        const expectedAvax = amount * price;
+
+        let checkedAvax =
+          await exchange.getMaximumAVAXFromERC20Token(
+            parseUnits((amount).toString(), tokenDecimals), tokenAddress
+          );
+
+        checkedAvax = parseFloat(formatUnits(checkedAvax, 18));
+
+        let slippage = 0;
+
+        if (checkedAvax < expectedAvax) {
+          slippage = (expectedAvax - checkedAvax) / expectedAvax;
         }
 
         return slippage;

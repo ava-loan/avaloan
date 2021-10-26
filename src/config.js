@@ -10,5 +10,5 @@ export default {
       "LINK": {name: "Link", symbol: "LINK",  code: "link", decimals: 18, address: addresses.LINK}
     },
     nativeToken: "AVAX",
-    SLIPPAGE_CHANGE_TOLERANCE: 0.05
+    SLIPPAGE_TOLERANCE: 0.03
 }

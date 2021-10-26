@@ -7,6 +7,18 @@ export function calculateCollateral(amount) {
     }
 }
 
+export function maximumSlippage(currentSlippage) {
+    return currentSlippage + config.SLIPPAGE_TOLERANCE;
+}
+
+export function maxAvaxToBeSold(amount, currentSlippage) {
+  return (1 + maximumSlippage(currentSlippage)) * amount;
+}
+
+export function minAvaxToBeBought(amount, currentSlippage) {
+  return amount / (1 + maximumSlippage(currentSlippage));
+}
+
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;
 export const parseUnits = ethers.utils.parseUnits;
