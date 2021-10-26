@@ -23,8 +23,9 @@ interface IAssetsExchange {
    * Sells selected asset for AVAX
    * @dev _asset asset code
    * @dev _amount amount to be bought
+   * @dev _minAmountAvax minimum amount of the AVAX token to be bought
   **/
-  function sellAsset(bytes32 _asset, uint256 _amount) external;
+  function sellAsset(bytes32 _asset, uint256 _amount, uint256 _minAmountAvax) external;
 
 
   /**

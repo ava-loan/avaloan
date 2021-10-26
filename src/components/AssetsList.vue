@@ -5,7 +5,7 @@
         <div class="title">Your investments</div>
         <div class="total">
           <span class="total-value-wrapper">
-            <span class="total-value">Total value: <span class="value">$ {{ avaxToUSD(totalValue).toFixed(2) || usd }}</span></span>
+            <span class="total-value">Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span></span>
           </span>
         </div>
         <table id="investmentsTable">
@@ -41,7 +41,7 @@
                      src="src/assets/icons/enlarge.svg"
                 />
               </td>
-              <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance != null" :value="asset.balance.toFixed(2)"></LoadedValue></td>
+              <td class="right" data-label="Balance"><LoadedValue :check="() => asset.balance != null" :value="asset.balance ? asset.balance.toFixed(2) : ''"></LoadedValue></td>
               <td class="right" data-label="Share"><LoadedValue :value="asset.share | percent"></LoadedValue></td>
               <td class="right" data-label="Value"><LoadedValue :value="avaxToUSD(asset.value) | usd"></LoadedValue>
               <td class="invest-buttons" @click.stop v-if="asset.symbol !== nativeToken">
@@ -59,12 +59,12 @@
                     :price="asset.price"
                     :hasSecondButton="true"
                     v-on:submitValue="(value) => investValue(asset, value)"
-                    v-on:changedValue="(value) => checkSlippage(asset, value)"
+                    v-on:changedValue="(value) => checkBuySlippage(asset, value)"
                     :waiting="asset.checkingSlippage || waitingForInvest"
                     :flexDirection="isMobile ? 'column' : 'row'"
                     :validators="investValidators(asset)"
-                    :warnings="investWarnings(asset.currentSlippage)"
-                    :info="amountInfo(asset)"
+                    :warnings="investWarnings(asset.buySlippage)"
+                    :info="buySlippageInfo(asset)"
                   />
                 </SmallBlock>
               </td>
@@ -76,11 +76,12 @@
                     :symbol="asset.symbol"
                     :price="asset.price"
                     :hasSecondButton="true"
-                    v-on:submitValue="(value) => redeemValue(asset.symbol, value)"
+                    v-on:submitValue="(value) => redeemValue(asset, value)"
+                    v-on:changedValue="(value) => checkSellSlippage(asset, value)"
                     :waiting="waitingForRedeem"
                     :flexDirection="isMobile ? 'column' : 'row'"
                     :validators="redeemValidators(asset)"
-                    :info="amountInfo(asset)"
+                    :info="sellSlippageInfo(asset)"
                   />
                 </SmallBlock>
               </td>
@@ -146,12 +147,12 @@
                   :price="asset.price"
                   :hasSecondButton="true"
                   v-on:submitValue="(value) => investValue(asset, value)"
-                  v-on:changedValue="(value) => checkSlippage(asset, value)"
+                  v-on:changedValue="(value) => checkBuySlippage(asset, value)"
                   :waiting="asset.checkingSlippage || waitingForInvest"
                   :flexDirection="isMobile ? 'column' : 'row'"
                   :validators="investValidators(asset)"
-                  :warnings="investWarnings(asset.currentSlippage)"
-                  :info="amountInfo(asset)"
+                  :warnings="investWarnings(asset.buySlippage)"
+                  :info="buySlippageInfo(asset)"
                 />
               </SmallBlock>
             </td>
@@ -183,6 +184,8 @@
   import redstone from 'redstone-api';
   import Vue from 'vue'
   import config from "@/config";
+  import {maxAvaxToBeSold} from "../utils/calculate";
+  import {minAvaxToBeBought} from "../utils/calculate";
 
 
   export default {
@@ -252,11 +255,17 @@
         ]
       },
       //TODO: add optional chaining
-      amountInfo(asset) {
+      buySlippageInfo(asset) {
         return (value) =>
-        `Because of <b>${asset.currentSlippage ? (asset.currentSlippage * 100).toPrecision(4) : 0}%</b>
-         slippage you will have to pay around <b>${((1 + asset.currentSlippage) * asset.price * value).toPrecision(6)}</b>
-         AVAX`
+        `Because of <b>${asset.buySlippage ? (asset.buySlippage * 100).toPrecision(4) : 0}%</b>
+        (+/- ${config.SLIPPAGE_TOLERANCE * 100}%) slippage you will pay at most <b>
+        ${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)}</b> of AVAX`
+      },
+      sellSlippageInfo(asset) {
+        return (value) =>
+          `Because of <b>${asset.sellSlippage ? (asset.sellSlippage * 100).toPrecision(4) : 0}%</b>
+        (+/- ${config.SLIPPAGE_TOLERANCE * 100}%) slippage you will get at least <b>
+        ${(minAvaxToBeBought(asset.price * value, asset.sellSlippage)).toPrecision(6)}</b> of AVAX`
       },
       redeemValidators(asset) {
        return [
@@ -288,7 +297,7 @@
             decimals: asset.decimals,
             amount: value,
             avaxAmount: asset.price * value,
-            slippage: asset.currentSlippage
+            slippage: asset.buySlippage
           },
           "waitingForInvest")
           .then(() => {
@@ -297,12 +306,19 @@
             this.updateAsset(asset.symbol, 'showChart', false);
           });
       },
-      redeemValue(symbol, value) {
-        this.handleTransaction(this.redeem,{ asset: symbol, decimals: this.list[symbol].decimals, amount: value}, "waitingForRedeem")
+      redeemValue(asset, value) {
+        this.handleTransaction(
+          this.redeem,
+          { asset: asset.symbol,
+            decimals: asset.decimals,
+            amount: value,
+            avaxAmount: asset.price * value,
+            slippage: asset.sellSlippage
+          }, "waitingForRedeem")
           .then(() => {
-            this.updateAsset(symbol, 'sellInput', false);
-            this.updateAsset(symbol, 'buyInput', false);
-            this.updateAsset(symbol, 'showChart', false);
+            this.updateAsset(asset.symbol, 'sellInput', false);
+            this.updateAsset(asset.symbol, 'buyInput', false);
+            this.updateAsset(asset.symbol, 'showChart', false);
           });
       },
       updateAsset(symbol, key, value) {
@@ -354,13 +370,22 @@
       share(asset) {
         return asset.price * asset.balance;
       },
-      async checkSlippage(asset, expectedAmount) {
+      async checkBuySlippage(asset, amount) {
         this.updateAsset(asset.symbol, 'checkingSlippage', true);
 
         const slippage =
-          await this.calculateSlippage(asset.symbol, asset.price, asset.decimals, asset.address, expectedAmount);
+          await this.calculateSlippageForBuy(asset.symbol, asset.price, asset.decimals, asset.address, amount);
 
-        this.updateAsset(asset.symbol, 'currentSlippage', slippage);
+        this.updateAsset(asset.symbol, 'buySlippage', slippage);
+        this.updateAsset(asset.symbol, 'checkingSlippage', false);
+      },
+      async checkSellSlippage(asset, amount) {
+        this.updateAsset(asset.symbol, 'checkingSlippage', true);
+
+        const slippage =
+          await this.calculateSlippageForSell(asset.symbol, asset.price, asset.decimals, asset.address, amount);
+
+        this.updateAsset(asset.symbol, 'sellSlippage', slippage);
         this.updateAsset(asset.symbol, 'checkingSlippage', false);
       }
     },

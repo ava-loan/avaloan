@@ -4,6 +4,7 @@ import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import SUPPORTED_ASSETS from '@contracts/SupportedAssets.json'
 import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import config from "@/config";
+import { maxAvaxToBeSold, minAvaxToBeBought } from "../utils/calculate";
 import { WrapperBuilder } from "redstone-flash-storage";
 
 export default {
@@ -185,13 +186,14 @@ export default {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      const maxAvaxAmount = (1 + slippage * (1 + config.SLIPPAGE_CHANGE_TOLERANCE)) * avaxAmount;
+      const maxAvaxAmount = maxAvaxToBeSold(avaxAmount, slippage);
 
       let tx = await loan.invest(
         ethers.utils.formatBytes32String(asset),
         parseUnits(amount.toString(), decimals),
         toWei(maxAvaxAmount.toString()),
-      {gasLimit: 3000000});
+        {gasLimit: 3000000}
+      );
 
       await provider.waitForTransaction(tx.hash);
 
@@ -199,11 +201,18 @@ export default {
       dispatch('updateLoanBalance');
       dispatch('updateAssets');
     },
-    async redeem({ state, rootState, dispatch, commit }, { asset, amount, decimals }) {
+    async redeem({ state, rootState, dispatch, commit }, { asset, amount, avaxAmount, slippage, decimals }) {
       const provider = rootState.network.provider;
       const loan = state.loan;
 
-      let tx = await loan.redeem(ethers.utils.formatBytes32String(asset), parseUnits(amount.toString(), decimals), {gasLimit: 3000000});
+      const minAvaxAmount = minAvaxToBeBought(avaxAmount, slippage);
+
+      let tx = await loan.redeem(
+        ethers.utils.formatBytes32String(asset),
+        parseUnits(amount.toString(), decimals),
+        toWei(minAvaxAmount.toString()),
+        {gasLimit: 3000000}
+      );
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
