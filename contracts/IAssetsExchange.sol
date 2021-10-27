@@ -44,4 +44,9 @@ interface IAssetsExchange {
   function transferBack(bytes32 _asset) external;
 
 
+  /**
+     * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
+  **/
+  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) external returns(uint256);
+
 }

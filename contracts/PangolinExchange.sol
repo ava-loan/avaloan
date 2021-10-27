@@ -109,7 +109,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   /**
    * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
   **/
-  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) public view returns (uint256) {
+  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) public view override returns (uint256) {
     address[] memory path = getPathForTokenToAVAX(_token);
 
     return pangolinRouter.getAmountsOut(_amountIn, path)[1];
