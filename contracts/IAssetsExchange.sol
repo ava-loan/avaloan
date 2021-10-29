@@ -14,18 +14,18 @@ interface IAssetsExchange {
   /**
    * Buys selected asset with AVAX
    * @dev _asset asset code
-   * @dev _amount amount to be bought
+   * @dev _exactERC20AmountOut exact amount of asset to be bought
   **/
-  function buyAsset(bytes32 _asset, uint256 _amount) payable external;
+  function buyAsset(bytes32 _asset, uint256 _exactERC20AmountOut) payable external;
 
 
   /**
    * Sells selected asset for AVAX
    * @dev _asset asset code
-   * @dev _amount amount to be bought
-   * @dev _minAmountAvax minimum amount of the AVAX token to be bought
+   * @dev _exactERC20AmountIn amount to be bought
+   * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
   **/
-  function sellAsset(bytes32 _asset, uint256 _amount, uint256 _minAmountAvax) external;
+  function sellAsset(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external;
 
 
   /**
