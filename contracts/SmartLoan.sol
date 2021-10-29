@@ -65,31 +65,31 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
 
   /**
    * Invests an amount to buy an asset
-   * @param _asset to code of the asset
-   * @param _amount exact amount of asset to buy
-   * @param _maxAvaxAmount maximum amount of AVAX to sell
+   * @param _asset code of the asset
+   * @param _exactERC20AmountOut exact amount of asset to buy
+   * @param _maxAvaxAmountIn maximum amount of AVAX to sell
   **/
-  function invest(bytes32 _asset, uint256 _amount, uint256 _maxAvaxAmount) external onlyOwner remainsSolvent {
-    require(address(this).balance >= _maxAvaxAmount, "Not enough funds available");
+  function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner remainsSolvent {
+    require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds available");
 
-    exchange.buyAsset{value: _maxAvaxAmount}(_asset, _amount);
+    exchange.buyAsset{value: _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
 
-    emit Invested(msg.sender, _asset, _amount, block.timestamp);
+    emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
 
 
   /**
    * Redeem an investment by selling an asset
    * @param _asset code of the asset
-   * @param _amount exact amount of token to sell
-   * @param _minAvaxAmount minimum amount of the AVAX token to buy
+   * @param _exactERC20AmountIn exact amount of token to sell
+   * @param _minAvaxAmountOut minimum amount of the AVAX token to buy
   **/
-  function redeem(bytes32 _asset, uint256 _amount, uint256 _minAvaxAmount) external onlyOwner remainsSolvent {
+  function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    token.transfer(address(exchange), _amount);
-    exchange.sellAsset(_asset, _amount, _minAvaxAmount);
+    token.transfer(address(exchange), _exactERC20AmountIn);
+    exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
 
-    emit Redeemed(msg.sender, _asset, _amount, block.timestamp);
+    emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }
 
 

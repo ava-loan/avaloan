@@ -39,38 +39,38 @@ contract PangolinExchange is Ownable, IAssetsExchange {
    * Buys selected ERC20 token with AVAX using the Pangolin DEX
    * Refunds unused AVAX to the msg.sender
    * @dev _token ERC20 token's address
-   * @dev _amount amount of the ERC20 token to be bought
+   * @dev _exactERC20AmountOut amount of the ERC20 token to be bought
   **/
-  function buyAsset(bytes32 _token, uint256 _amount) payable external override RefundRemainder {
-    require(_amount > 0, "Amount of tokens to buy has to be greater than 0");
+  function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut) payable external override RefundRemainder {
+    require(_exactERC20AmountOut > 0, "Amount of tokens to buy has to be greater than 0");
 
     address tokenAddress = supportedAssets.getAssetAddress(_token);
 
-    uint256 amountIn = getMinimumAVAXForERC20Token(_amount, tokenAddress);
+    uint256 amountIn = getMinimumAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
 
     require(msg.value >= amountIn, "Not enough funds provided");
 
-    pangolinRouter.swapAVAXForExactTokens{value : msg.value}(_amount, getPathForAVAXtoToken(tokenAddress), msg.sender, block.timestamp);
+    pangolinRouter.swapAVAXForExactTokens{value : msg.value}(_exactERC20AmountOut, getPathForAVAXtoToken(tokenAddress), msg.sender, block.timestamp);
 
-    emit TokenPurchase(msg.sender, _amount, block.timestamp);
+    emit TokenPurchase(msg.sender, _exactERC20AmountOut, block.timestamp);
   }
 
 
   /**
    * Sells selected ERC20 token for AVAX
    * @dev _token ERC20 token's address
-   * @dev _amount amount of the ERC20 token to be sold
-   * @dev _minAmountAvax minimum amount of the AVAX token to be bought
+   * @dev _exactERC20AmountIn amount of the ERC20 token to be sold
+   * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
   **/
-  function sellAsset(bytes32 _token, uint256 _amount, uint256 _minAmountAvax) external override RefundRemainder {
-    require(_amount > 0, "Amount of tokens to sell has to be greater than 0");
+  function sellAsset(bytes32 _token, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external override RefundRemainder {
+    require(_exactERC20AmountIn > 0, "Amount of tokens to sell has to be greater than 0");
     address tokenAddress = supportedAssets.getAssetAddress(_token);
 
     IERC20 token = IERC20(tokenAddress);
-    token.approve(address(pangolinRouter), _amount);
-    pangolinRouter.swapExactTokensForAVAX(_amount, _minAmountAvax, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp);
+    token.approve(address(pangolinRouter), _exactERC20AmountIn);
+    pangolinRouter.swapExactTokensForAVAX(_exactERC20AmountIn, _minAvaxAmountOut, getPathForTokenToAVAX(tokenAddress), msg.sender, block.timestamp);
 
-    emit TokenSell(msg.sender, _amount, block.timestamp);
+    emit TokenSell(msg.sender, _exactERC20AmountIn, block.timestamp);
   }
 
   /* ========== RECEIVE AVAX FUNCTION ========== */
@@ -91,7 +91,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
 
 
   /**
-     * Returns the minimum AVAX amount that is required to buy _amountOut of _token ERC20 token.
+     * Returns the minimum AVAX amount that is required to buy _exactAmountOut of _token ERC20 token.
   **/
   function getMinimumAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
