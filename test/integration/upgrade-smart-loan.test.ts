@@ -25,12 +25,13 @@ import {MockUpgradedSmartLoan__factory} from "../../typechain";
 import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-flash-storage";
-import { syncTime } from "../../tools/helpers";
+import { syncTime } from "../../src/utils/blockchain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
+const PRICE_SIGNER = "0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9"; //redstone-rapid
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const erc20ABI = [
@@ -79,7 +80,7 @@ describe('Smart loan - upgrading', () => {
       await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, supportedAssets.address, exchange.address]) as SmartLoansFactory;
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, supportedAssets.address, exchange.address, PRICE_SIGNER]) as SmartLoansFactory;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
