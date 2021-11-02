@@ -1,26 +1,20 @@
 <template>
   <div class="invest container">
-    <div v-if="!isLoanAlreadyCreated">
+    <div v-if="isLoanAlreadyCreated === false">
       <Bar>
         <Value label="Available in pool"
           :primary="{value: getAvailable, type: 'avax', showIcon: true}"
           :secondary="{value: avaxToUSD(getAvailable), type: 'usd'}" />
         <Value label="Current APY" :primary="{value: borrowingRate, type: 'percent'}" />
       </Bar>
-      <div class="info-bubble-wrapper">
-        <div class="info-bubble">
-          <img src="src/assets/icons/info.svg"/>
-          <div>
-            Create a loan to start your investment adventure. <br/>
-            Remember that initial solvency cannot be less than <b>125%</b>.
-          </div>
-        </div>
-      </div>
+      <InfoBubble
+        :text="bubbleText" />
       <Block class="block" :bordered="true">
         <InitLoanForm />
       </Block>
     </div>
-    <SmartLoan v-else/>
+    <SmartLoan v-if="isLoanAlreadyCreated === true"/>
+    <vue-loaders-ball-beat v-if="isLoanAlreadyCreated === null" color="#A6A3FF" scale="2" class="loader"></vue-loaders-ball-beat>
   </div>
 </template>
 
@@ -32,10 +26,13 @@
   import Bar from "@/components/Bar.vue";
   import Block from "@/components/Block.vue";
   import Value from "@/components/Value.vue";
+  import InfoBubble from "../components/InfoBubble";
+  import config from "@/config";
 
   export default {
     name: 'Invest',
     components: {
+      InfoBubble,
       InitLoanForm,
       SmartLoan,
       Bar,
@@ -44,6 +41,8 @@
     },
     data() {
       return {
+        bubbleText: `Create a loan to start your investment adventure. <br/>
+        Remember that initial LTV cannot exceed than <b>${config.DEFAULT_LTV}%</b>.`
       }
     },
     computed: {
@@ -70,28 +69,12 @@
   width: 47.5%;
 }
 
-.info-bubble-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
-
-  .info-bubble {
-    background-image: url("../assets/icons/bubble.svg");
-    background-repeat: no-repeat;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 23px 50px 45px 50px;
-    font-weight: 500;
-    color: #7d7d7d;
-    line-height: 24px;
-
-    img {
-      margin-right: 20px;
-    }
-  }
+.loader {
+  margin-top: 30%;
 }
 
+.invest {
+  text-align: center;
+}
 </style>
 

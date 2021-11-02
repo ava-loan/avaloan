@@ -1,8 +1,8 @@
 <template>
-  <div class="navbar"> 
+  <div class="navbar">
     <div class="links-wrapper" :class="{'mobile': isMobile}">
-      <router-link to="/deposit"><span title="Deposit">Deposit</span></router-link>
-      <router-link to="/invest"><span title="Invest">Invest</span></router-link>
+      <router-link to="/pool"><span title="Pool">Pool</span></router-link>
+      <router-link to="/loan"><span title="Loan">Loan</span></router-link>
     </div>
   </div>
 </template>

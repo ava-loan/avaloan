@@ -5,35 +5,30 @@
       }">
     <CurrencyInput
       :price="price"
+      :max="max"
       :symbol="symbol"
-      :color="color"
       :validators="validators"
       :warnings="warnings"
       :waiting="waiting"
       :info="info"
       v-on:newValue="updateValue"
     />
-    <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'waiting': '', color]" @click="emitValue(true)"
-      :style="{ 'margin-top': flexDirection === 'column' ? '15px' : '0'}">
-      <div class="btn-label">
-        {{label}}
-      </div>
-      <vue-loaders-ball-beat color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
-    </button>
+    <Button :label="label" :disabled="disabled" :waiting="waiting" class="form-button" v-on:click="emitValue(true)"/>
   </div>
 </template>
 
 
 <script>
   import CurrencyInput from "./CurrencyInput";
+  import Button from "./Button";
 
   export default {
     name: 'CurrencyForm',
     props: {
       label: { type: String, default: '' },
       price: { type: Number },
+      max: { type: Number, default: null },
       symbol: { type: String, default: 'AVAX' },
-      color: { type: String, default: 'purple' },
       flexDirection: { type: String, default: 'column'},
       waiting: { type: Boolean, default: false },
       validators: {
@@ -45,12 +40,13 @@
       info: { type: Function, default: null }
     },
     components: {
-      CurrencyInput
+      CurrencyInput,
+      Button
     },
     data() {
       return {
-        value: { type: Number, default: null },
-        error: { type: Boolean, default: false }
+        value: null,
+        error: false
       }
     },
     computed: {
@@ -83,28 +79,9 @@
   width: 100%;
 }
 
-.btn {
-  .ball-beat {
-    display: none;
-  }
-
-  &.disabled {
-    opacity: 0.5;
-    cursor: initial;
-  }
-
-  &.waiting {
-    .btn-label {
-      visibility: hidden;
-      height: 0;
-      width: 0;
-    }
-
-    .ball-beat {
-      display: block;
-      margin-top: 7px;
-      margin-bottom: 8px;
-    }
-  }
+.form-button {
+  margin-top: 1px;
 }
+</style>
+<style lang="scss">
 </style>

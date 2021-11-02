@@ -6,9 +6,11 @@
           :primary="{value: debt, type: 'avax', showIcon: true}"
           :secondary="{value: avaxToUSD(debt), type: 'usd'}" />
           <div class="borrow-buttons">
-            <img @click="showBorrowBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>
-            <img src="src/assets/icons/slash-small.svg"/>
-            <img @click="showBorrowBlock(1)" src="src/assets/icons/minus.svg" class="minus"/>
+<!--            <img @click="showBorrowBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>-->
+            <span @click="showBorrowBlock(0)">Borrow</span>
+            <span @click="showBorrowBlock(1)">Repay</span>
+<!--            <img src="src/assets/icons/slash-small.svg"/>-->
+<!--            <img @click="showBorrowBlock(1)" src="src/assets/icons/minus.svg" class="minus"/>-->
           </div>
       </div>
       <div class="solvency-value">
@@ -24,36 +26,23 @@
           :primary="{value: collateral, type: 'avax', showIcon: true}"
           :secondary="{value: avaxToUSD(collateral), type: 'usd'}" />
           <div class="fund-buttons">
-            <img @click="showCollateralBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>
-            <img src="src/assets/icons/slash-small.svg"/>
-            <img @click="showCollateralBlock(1)" src="src/assets/icons/minus.svg" class="minus"/>
+<!--            <img @click="showCollateralBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>-->
+<!--            <img src="src/assets/icons/slash-small.svg"/>-->
+<!--            <img @click="showCollateralBlock(1)" src="src/assets/icons/minus.svg" class="minus"/>-->
+            <span @click="showCollateralBlock(0)">Add</span>
+            <span @click="showCollateralBlock(1)">Reduce</span>
           </div>
       </div>
     </Bar>
+    <InfoBubble v-if="!borrowBlock && !collateralBlock" :text="loanInfo" />
     <Block v-if="borrowBlock" class="block borrow-block" :bordered="true">
       <img @click="borrowBlock = false" src="src/assets/icons/cross.svg" class="cross" />
       <Tabs :openTabIndex="tabIndex">
         <Tab title="Borrow" imgActive="add-deposit-active" img="add-deposit" imgPosition="left">
-          <CurrencyForm
-            label="Borrow"
-            v-on:submitValue="borrowValue"
-            :waiting="waitingForBorrow"
-            flexDirection="column"
-            :style="{'width': '490px'}"
-            :validators="borrowValidators"
-            :info="borrowSolvencyInfo"
-          />
+          <BorrowForm/>
         </Tab>
         <Tab title="Repay" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right">
-          <CurrencyForm
-            label="Repay"
-            v-on:submitValue="repayValue"
-            :waiting="waitingForRepay"
-            flexDirection="column"
-            :style="{'width': '490px'}"
-            :validators="repayValidators"
-            :info="repaySolvencyInfo"
-          />
+          <RepayForm/>
         </Tab>
       </Tabs>
     </Block>
@@ -61,26 +50,10 @@
       <img @click="collateralBlock = false" src="src/assets/icons/cross.svg" class="cross" />
       <Tabs :openTabIndex="tabIndex">
         <Tab title="Add collateral" imgActive="add-deposit-active" img="add-deposit" imgPosition="left">
-          <CurrencyForm
-            label="Add"
-            v-on:submitValue="fundValue"
-            :waiting="waitingForFund"
-            flexDirection="column"
-            :style="{'width': '490px'}"
-            :validators="fundValidators"
-            :info="fundSolvencyInfo"
-          />
+          <FundForm/>
         </Tab>
         <Tab title="Reduce collateral" imgActive="withdraw-deposit-active" img="withdraw-deposit" imgPosition="right">
-          <CurrencyForm
-            label="Reduce"
-            v-on:submitValue="withdrawValue"
-            :waiting="waitingForWithdraw"
-            flexDirection="column"
-            :style="{'width': '490px'}"
-            :validators="withdrawValidators"
-            :info="withdrawSolvencyInfo"
-          />
+          <WithdrawForm/>
         </Tab>
       </Tabs>
     </Block>
@@ -100,7 +73,13 @@
   import Tab from "@/components/Tab.vue";
   import SolvencyBar from "@/components/SolvencyBar.vue";
   import CurrencyForm from "@/components/CurrencyForm.vue";
-  import {mapState, mapActions, mapGetters} from "vuex";
+  import {mapState} from "vuex";
+  import RepayForm from "./RepayForm";
+  import BorrowForm from "./BorrowForm";
+  import FundForm from "./FundForm";
+  import WithdrawForm from "./WithdrawForm";
+  import InfoBubble from "./InfoBubble";
+  import config from "@/config";
 
   export default {
   name: 'SmartLoan',
@@ -109,45 +88,15 @@
       borrowBlock: false,
       collateralBlock: false,
       tabIndex: 0,
-      waitingForWithdraw: false,
-      waitingForFund: false,
-      waitingForBorrow: false,
-      waitingForRepay: false,
-      borrowValidators: [
-        {
-          require: value => value <= this.getAvailable,
-          message: 'Borrow amount exceeds amount available in the pool'
-        },
-        {
-          require: value => this.calculateSolvency(0, value) >= 1.2,
-          message: 'New solvency ratio is below acceptable level'
-        }
-      ],
-      borrowSolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(0, value) * 100).toFixed(1)}%</b>`,
-      repayValidators: [
-        {
-          require: (value) => value <= this.debt,
-          message: 'Repay amount exceeds borrowed amount'
-        }
-      ],
-      repaySolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(0, -value) * 100).toFixed(1)}%</b>`,
-      fundValidators: [
-        {
-          require: (value) => value <= this.balance,
-          message: 'Repay amount exceeds user balance'
-        }
-      ],
-      fundSolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(value, 0) * 100).toFixed(1)}%</b>`,
-      withdrawValidators: [
-        {
-          require: value => this.calculateSolvency(-value, 0) >= 1.2,
-          message: 'New solvency ratio is below acceptable level'
-        }
-      ],
-      withdrawSolvencyInfo: value => `New solvency ratio: <b>${(this.calculateSolvency(-value, 0) * 100).toFixed(1)}%</b>`,
+      loanInfo: `Invest in assets using AVAX from both loan and collateral. <br/>
+      Remember to keep LTV below <b>${config.DEFAULT_LTV * 100}%</b>.`
     }
   },
   components: {
+    BorrowForm,
+    RepayForm,
+    FundForm,
+    WithdrawForm,
     Bar,
     Value,
     AssetsList,
@@ -158,16 +107,14 @@
     SolvencyBar
   },
   computed: {
-    ...mapState('loan', ['loan', 'debt', 'totalValue', 'solvency', 'assets']),
+    ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
     ...mapState('pool', ['userDeposited']),
     ...mapState('network', ['balance']),
-    ...mapGetters('pool', ['getAvailable']),
     collateral() {
       return this.totalValue - this.debt;
     }
   },
   methods: {
-    ...mapActions('loan', ['fund', 'withdraw', 'borrow', 'repay']),
     showBorrowBlock(tabIndex) {
       this.tabIndex = tabIndex;
       this.collateralBlock = false;
@@ -177,22 +124,6 @@
       this.tabIndex = tabIndex;
       this.borrowBlock = false;
       this.collateralBlock = true;
-    },
-    async fundValue(value) {
-      await this.handleTransaction(this.fund, {amount: value}, "waitingForFund");
-    },
-    async withdrawValue(value) {
-      await this.handleTransaction(this.withdraw, {amount: value}, "waitingForWithdraw");
-    },
-    async borrowValue(value) {
-      await this.handleTransaction(this.borrow, {amount: value}, "waitingForBorrow");
-    },
-    async repayValue(value) {
-      await this.handleTransaction(this.repay, {amount: value}, "waitingForRepay");
-    },
-    calculateSolvency(collateral, debt) {
-      return (this.totalValue + (!isNaN(collateral) ? collateral : 0) + (!isNaN(debt) ? debt : 0))
-          / (this.debt + (!isNaN(debt) ? debt : 0));
     }
   }
 }
@@ -227,17 +158,27 @@
     transform: initial;
   }
 
-  .plus, .minus {
-    height: 24px;
+  span {
+    color: #6B70ED;
+    font-weight: 500;
     cursor: pointer;
-    opacity: 0.7;
-    transition: transform .4s ease-in-out;
 
-    &:hover {
-      opacity: 1;
-      transform: scale(1.05);
+    &:first-of-type {
+      margin-right: 15px;
     }
   }
+  //
+  //.plus, .minus {
+  //  height: 24px;
+  //  cursor: pointer;
+  //  opacity: 0.7;
+  //  transition: transform .4s ease-in-out;
+  //
+  //  &:hover {
+  //    opacity: 1;
+  //    transform: scale(1.05);
+  //  }
+  //}
 }
 
 .solvency-value {
