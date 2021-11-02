@@ -118,9 +118,7 @@ describe('Smart loan - upgrading', () => {
 
 
     it("should create and fund a loan", async () => {
-      console.log('Before loan creation');
       await smartLoansFactory.connect(other).createAndFundLoan(toWei("2"), {value: toWei("10")});
-      console.log('After loan creation');
 
       const loan_proxy_address = await smartLoansFactory.getAccountForUser(other.address);
       const second_loan = ((await new ethers.Contract(loan_proxy_address, SmartLoanArtifact.abi)) as SmartLoan).connect(other);

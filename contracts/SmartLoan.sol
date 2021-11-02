@@ -203,7 +203,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   /**
     * Checks if the loan is solvent.
     * It means that the ratio between debt and collateral is below safe level,
-    * which is parametrized by the MAX_LTV_RATIO
+    * which is parametrized by the MAX_LTV
   **/
   function isSolvent() public view returns(bool) {
     return getLTV() < MAX_LTV;
