@@ -113,6 +113,7 @@ export default {
 }
 
 .slider-component .slide-container .slider {
+  cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -126,7 +127,7 @@ export default {
   background-color: rgba(191, 188, 255, 0.2);
 
 
-  background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
+  //background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
   background-size: 0% 100%;
   background-repeat: no-repeat;
 }

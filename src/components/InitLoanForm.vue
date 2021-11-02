@@ -24,12 +24,7 @@
         :labels="['Riskier', 'Safer']"
       />
     </div>
-    <button class="btn" :class="[disabled ? 'disabled': '', waiting ? 'waiting': '', 'purple']" @click="borrow()">
-      <div class="btn-label">
-        Create loan
-      </div>
-      <vue-loaders-ball-beat color="#FFFFFF" scale="0.5"></vue-loaders-ball-beat>
-    </button>
+    <Button label="Create loan" :disabled="disabled" :waiting="waiting" v-on:click="borrow()"/>
   </div>
 </template>
 
@@ -37,8 +32,9 @@
 <script>
   import CurrencyInput from "./CurrencyInput";
   import Slider from "./Slider";
+  import Button from "./Button";
   import {mapState, mapActions} from "vuex";
-  import {calculateCollateral} from "../utils/calculate";
+  import config from "@/config";
 
   const MIN_INITIAL_SOLVENCY = 1.25;
   export default {
@@ -47,7 +43,8 @@
     },
     components: {
       CurrencyInput,
-      Slider
+      Slider,
+      Button
     },
     data() {
       return {
@@ -110,11 +107,14 @@
       },
       async borrow() {
         if (!this.disabled) {
-          await this.handleTransaction(this.createNewLoan, {amount: this.loan, collateral: this.collateral}, "waiting");
+          this.waiting = true;
+          this.handleTransaction(this.createNewLoan, {amount: this.loan, collateral: this.collateral})
+          .then(
+            () => {
+              this.waiting = false;
+            }
+          );
         }
-      },
-      defaultCollateral(value) {
-        return (value && !isNaN(value)) ? calculateCollateral(value) : 0;
       },
       defaultLoan(value) {
         return (value && !isNaN(value)) ? value * 4 : 0;

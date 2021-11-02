@@ -1,5 +1,6 @@
 import { mapState } from 'vuex';
 import Vue from "vue";
+import config from "@/config";
 import { Contract } from "ethers";
 import EXCHANGE from '@contracts/PangolinExchange.json'
 import {parseUnits, formatUnits} from "../utils/calculate";
@@ -17,16 +18,12 @@ export default {
     toDec(hex) {
       return parseInt(hex, 16);
     },
-    async handleTransaction(fun, args, nameOfWaitingVariable) {
-      this[nameOfWaitingVariable] = true;
-
+    async handleTransaction(fun, args) {
       try {
         await fun(args);
         Vue.$toast.success('Transaction success');
       } catch(error) {
         Vue.$toast.error(error.message ? error.message : error);
-      } finally {
-        this[nameOfWaitingVariable] = false;
       }
     },
     async calculateSlippageForBuy(symbol, price, tokenDecimals, tokenAddress, amount) {

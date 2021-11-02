@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Deposit from '@/pages/Deposit'
-import Invest from '@/pages/Invest'
+import Pool from '@/pages/Pool'
+import Loan from '@/pages/Loan'
 
 
 Vue.use(Router)
@@ -10,18 +10,18 @@ Vue.use(Router)
 export default new Router({
   routes: [
     {
-      path: '/deposit',
-      name: 'Deposit',
-      component: Deposit
+      path: '/pool',
+      name: 'Pool',
+      component: Pool
     },
     {
-      path: '/invest',
-      name: 'Invest',
-      component: Invest
+      path: '/loan',
+      name: 'Loan',
+      component: Loan
     },
     {
       path: '*',
-      redirect: { name: 'Deposit' }
+      redirect: { name: 'Pool' }
     },
   ]
 })

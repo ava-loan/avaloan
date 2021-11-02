@@ -4,8 +4,13 @@
          :style="{ 'margin-top': flexDirection === 'column-reverse' ? '40px' : '0'}"
           @click="$refs.input.focus()">
       <input type="number" ref="input" v-model.number="value" step='0.01' placeholder="0" min="0" max="999999">
-      <div class="converted" v-if="value && (value !== 0)">
-        ~ {{ price * avaxToUSD(value) | usd}}
+      <div class="converted">
+        <div v-if="value && (value !== 0)">
+          ~ {{ price * avaxToUSD(value) | usd}}
+        </div>
+      </div>
+      <div v-if="max" class="max-wrapper" @click.stop="value = max">
+        MAX
       </div>
       <div class="logo-wrapper">
         <img class="logo" :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.svg`"/>
@@ -45,8 +50,8 @@
     name: 'CurrencyInput',
     props: {
       price: { type: Number, default: 1 },
+      max: { type: Number, default: null },
       symbol: { type: String, default: 'AVAX' },
-      color: { type: String, default: 'purple' },
       flexDirection: { type: String, default: 'column'},
       validators: {
         type: Array, default: () => []
@@ -76,7 +81,7 @@
       warnings: function() {
         this.checkWarnings(this.value);
       },
-      errors: function() {
+      validators: function() {
         this.checkErrors(this.value);
       },
     },
@@ -137,8 +142,8 @@
   width: 100%;
 
   @media screen and (min-width: $md) {
-    padding-left: 40px;
-    padding-right: 30px;
+    padding-left: 30px;
+    padding-right: 20px;
   }
 }
 
@@ -153,7 +158,7 @@ input {
   max-width: 40%;
 
   @media screen and (min-width: $md) {
-    padding-right: 30px;
+    padding-right: 5px;
     max-width: none;
   }
 }
@@ -197,10 +202,15 @@ input[type=number] {
   align-items: center;
 }
 
+.max-wrapper {
+  cursor: pointer;
+  width: 35px;
+  min-width: 35px;
+}
+
 img {
   height: 24px;
   width: 24px;
-  min-width: 24px;
 
   @media screen and (min-width: $md) {
     height: 36px;
@@ -209,7 +219,7 @@ img {
 }
 
 .error, .info, .warning {
-  height: 24px;
+  min-height: 30px;
   padding-top: 6px;
   color: #7d7d7d;
   font-size: 14px;
@@ -223,8 +233,9 @@ img {
 
 .error, .warning {
   img {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+    transform: translateY(-1px);
   }
 }
 .error {

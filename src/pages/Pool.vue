@@ -10,6 +10,9 @@
         :primary="{value: totalDeposited, type: 'avax', showIcon: true}"
         :secondary="{value: avaxToUSD(totalDeposited), type: 'usd'}" />
     </Bar>
+    <InfoBubble
+      text="Deposit your AVAX in a pool and get interest rates. <br/>
+        Your deposits will be available for others to borrow." />
     <Block class="block" :bordered="true">
       <Tabs>
         <Tab title="Deposit" imgActive="add-deposit-active" img="add-deposit" imgPosition="left" titleWidth="100px">
@@ -27,6 +30,7 @@
             v-on:submitValue="withdrawValue"
             :waiting="waitingForWithdraw"
             flexDirection="column"
+            :max="userDeposited"
             :validators="withdrawValidators"
           />
         </Tab>
@@ -50,6 +54,7 @@
   import Block from "@/components/Block.vue";
   import Bar from "@/components/Bar.vue";
   import HistoryList from "@/components/HistoryList.vue";
+  import InfoBubble from "@/components/InfoBubble.vue";
   import Chart from "@/components/Chart.vue";
   import { mapState, mapActions } from 'vuex';
 
@@ -63,7 +68,8 @@
       Block,
       Bar,
       HistoryList,
-      Chart
+      Chart,
+      InfoBubble
     },
     data() {
       return {
@@ -124,10 +130,22 @@
     methods: {
       ...mapActions('pool', ['sendDeposit', 'withdraw']),
       async depositValue(value) {
-        await this.handleTransaction(this.sendDeposit, {amount: value}, "waitingForDeposit");
+        this.waitingForDeposit = true;
+        this.handleTransaction(this.sendDeposit, {amount: value})
+        .then(
+          () => {
+            this.waitingForDeposit = false;
+          }
+        );
       },
       async withdrawValue(value) {
-        await this.handleTransaction(this.withdraw, {amount: value}, "waitingForWithdraw");
+        this.waitingForWithdraw = true;
+        this.handleTransaction(this.withdraw, {amount: value})
+        .then(
+          () => {
+            this.waitingForWithdraw = false;
+          }
+        );
       }
     }
   }
