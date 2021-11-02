@@ -3,7 +3,7 @@ const ethers = require('ethers');
 
 export function calculateCollateral(amount) {
     if (amount) {
-        return config.DEFAULT_COLLATERAL_RATIO * amount - amount;
+        return config.DEFAULT_LTV * amount - amount;
     }
 }
 
@@ -12,11 +12,11 @@ export function maximumSlippage(currentSlippage) {
 }
 
 export function maxAvaxToBeSold(amount, currentSlippage) {
-  return (1 + maximumSlippage(currentSlippage)) * amount;
+  return (1 + maximumSlippage(currentSlippage ? currentSlippage : 0)) * amount;
 }
 
 export function minAvaxToBeBought(amount, currentSlippage) {
-  return amount / (1 + maximumSlippage(currentSlippage));
+  return amount / (1 + maximumSlippage(currentSlippage ? currentSlippage : 0));
 }
 
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));

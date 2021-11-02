@@ -13,12 +13,12 @@
 <!--            <img @click="showBorrowBlock(1)" src="src/assets/icons/minus.svg" class="minus"/>-->
           </div>
       </div>
-      <div class="solvency-value">
+      <div class="ltv-value">
         <div class="label">
-          Solvency
+          LTV
         </div>
-        <div class="solvency-bar">
-          <SolvencyBar />
+        <div class="ltv-bar">
+          <LTVBar />
         </div>
       </div>
       <div class="collateral">
@@ -71,7 +71,7 @@
   import Block from "@/components/Block.vue";
   import Tabs from "@/components/Tabs.vue";
   import Tab from "@/components/Tab.vue";
-  import SolvencyBar from "@/components/SolvencyBar.vue";
+  import LTVBar from "@/components/LTVBar.vue";
   import CurrencyForm from "@/components/CurrencyForm.vue";
   import {mapState} from "vuex";
   import RepayForm from "./RepayForm";
@@ -104,7 +104,8 @@
     CurrencyForm,
     Tab,
     Tabs,
-    SolvencyBar
+    LTVBar,
+    InfoBubble
   },
   computed: {
     ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
@@ -181,7 +182,7 @@
   //}
 }
 
-.solvency-value {
+.ltv-value {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -193,7 +194,7 @@
     margin-top: 0;
   }
 
-  .solvency-bar {
+  .ltv-bar {
     display: flex;
     flex-direction: column;
     align-items: center;
