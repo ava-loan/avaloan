@@ -80,6 +80,19 @@ export default {
     ...mapState('network', ['chainId', 'provider']),
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    },
+    maxLTV() {
+      return config.MAX_LTV;
+    }
+  },
+  data() {
+    return {
+      ltvValidators: [
+        {
+          require: function(value) { return value <= config.MAX_LTV },
+          message: `Ltv should not exceed ${config.MAX_LTV * 100}%`
+        }
+      ]
     }
   }
 };

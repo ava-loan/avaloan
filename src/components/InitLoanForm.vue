@@ -12,16 +12,16 @@
       :defaultValue="loan"
       :validators="loanValidators"
     />
-    <div class="solvency">Solvency: <span class="solvency-value">{{calculatedSolvency | percent}}</span></div>
-    <div class="solvency-slider">
+    <div class="ltv">LTV: <span class="LTV-value">{{calculatedLTV | percent}}</span></div>
+    <div class="ltv-slider">
       <Slider
-        :min="minInitialSolvency"
-        :max="2.0"
-        :value="calculatedSolvency"
+        :min="0"
+        :max="maxInitialLTV"
+        :value="calculatedLTV"
         :step="0.01"
-        v-on:input="updateLoanFromSolvency"
-        :validators="solvencyValidators"
-        :labels="['Riskier', 'Safer']"
+        v-on:input="updateLoanFromLTV"
+        :validators="ltvValidators"
+        :labels="['Safer', 'Riskier']"
       />
     </div>
     <Button label="Create loan" :disabled="disabled" :waiting="waiting" v-on:click="borrow()"/>
@@ -36,7 +36,6 @@
   import {mapState, mapActions} from "vuex";
   import config from "@/config";
 
-  const MIN_INITIAL_SOLVENCY = 1.25;
   export default {
     name: 'InitLoanForm',
     props: {
@@ -49,7 +48,7 @@
     data() {
       return {
         loan: null,
-        minInitialSolvency: MIN_INITIAL_SOLVENCY,
+        maxInitialLTV: config.DEFAULT_LTV,
         collateral: null,
         waiting: false,
         userChangedLoan: false,
@@ -66,10 +65,10 @@
             message: 'Loan amount exceeds amount available in the pool'
           }
         ],
-        solvencyValidators: [
+        ltvValidators: [
           {
-            require: function(value) { return value >= MIN_INITIAL_SOLVENCY },
-            message: 'Minimum initial solvency is 125%'
+            require: function(value) { return value <= config.DEFAULT_LTV },
+            message: `Maximum initial LTV is ${config.DEFAULT_LTV * 100}%`
           }
         ]
       }
@@ -80,9 +79,9 @@
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.loan || !this.collateral;
       },
-      calculatedSolvency() {
+      calculatedLTV() {
         if (this.loan && this.collateral) {
-          return (this.loan + this.collateral) / this.loan;
+          return (this.loan) / this.collateral;
         } else {
           return 0;
         }
@@ -95,7 +94,7 @@
         this.errors[0] = result.error;
         this.errors = [...this.errors];
 
-        this.checkSolvency(this.calculatedSolvency);
+        this.checkLTV(this.calculatedLTV);
       },
       updateCollateral(result) {
         this.errors[1] = result.error;
@@ -119,12 +118,12 @@
       defaultLoan(value) {
         return (value && !isNaN(value)) ? value * 4 : 0;
       },
-      updateLoanFromSolvency(value) {
-        this.checkSolvency(value);
-        this.loan = parseFloat((this.collateral / (value - 1)).toFixed(2));
+      updateLoanFromLTV(ltv) {
+        this.checkLTV(ltv);
+        this.loan = parseFloat((this.collateral * ltv).toFixed(2));
       },
-      checkSolvency(value) {
-        this.errors[3] = value < this.minInitialSolvency;
+      checkLTV(value) {
+        this.errors[3] = value > this.maxInitialLTV;
         this.errors = [...this.errors];
       }
     }
@@ -146,43 +145,18 @@
   margin-bottom: 20px;
 }
 
-.btn {
-  .ball-beat {
-    display: none;
-  }
-
-  &.disabled {
-    opacity: 0.5;
-    cursor: initial;
-  }
-
-  &.waiting {
-    .btn-label {
-      visibility: hidden;
-      height: 0;
-      width: 0;
-    }
-
-    .ball-beat {
-      display: block;
-      margin-top: 7px;
-      margin-bottom: 8px;
-    }
-  }
-}
-
-.solvency {
+.ltv {
   color: #7d7d7d;
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 30px;
 
-  .solvency-value {
+  .ltv-value {
     font-weight: 700;
   }
 }
 
-.solvency-slider {
+.ltv-slider {
   margin-bottom: 50px;
   width: 490px;
 }

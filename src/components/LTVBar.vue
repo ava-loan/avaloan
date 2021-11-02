@@ -1,15 +1,15 @@
 <template>
   <div class="wrapper">
-    <div class="solvency-value">
-      <LoadedValue :value="solvency | percent"></LoadedValue>
+    <div class="ltv-value">
+      <LoadedValue :value="ltv | percent"></LoadedValue>
     </div>
     <div class="bar-wrapper">
-      <div class="solvency-info">{{info}}</div>
+      <div class="ltv-info">{{info}}</div>
       <div class="bar">
-        <div class="solvency-state" :style="{'width': width}">
+        <div class="ltv-state" :style="{'width': width}">
         </div>
         <div class="minimum-indicator"></div>
-        <div class="minimum-value">120%</div>
+        <div class="minimum-value">500%</div>
       </div>
     </div>
   </div>
@@ -20,7 +20,7 @@ import { mapState } from "vuex";
 import LoadedValue from "@/components/LoadedValue.vue";
 
 export default {
-  name: 'SolvencyBar',
+  name: 'LTVBar',
   components: {
     LoadedValue
   },
@@ -31,24 +31,18 @@ export default {
     }
   },
   computed: {
-    ...mapState('loan', ['solvency']),
+    ...mapState('loan', ['ltv']),
     info() {
-      if (this.solvency < 1.2) {
+      if (this.ltv > this.maxLTV) {
         return "Your loan is insolvent."
-      } else if (this.solvency < 1.24) {
+      } else if (this.ltv > 4.5) {
         return "Be careful!"
       } else {
         return "You are doing great!"
       }
     },
     width() {
-      if (this.solvency < 1.2) {
-        return this.solvency * 40 + '%';
-      } else if (this.solvency < 1.3) {
-        return (48 + (this.solvency - 1.2) * 100) + '%';
-      } else {
-        return Math.min(58 + (this.solvency - 1.3) * 20, 80) + '%';
-      }
+      return this.ltv + '%';
     }
   }
 }
@@ -66,11 +60,11 @@ export default {
     align-items: center;
   }
 
-  .solvency-value {
+  .ltv-value {
     font-size: 23px;
   }
 
-  .solvency-info {
+  .ltv-info {
     color: #7d7d7d;
     margin-top: 7px;
     margin-bottom: 9px;
@@ -93,6 +87,7 @@ export default {
     border-radius: 9.5px;
     box-shadow: inset 0 1px 3px 0 rgba(191, 188, 255, 0.7);
     background-color: rgba(191, 188, 255, 0.2);
+    margin-bottom: 10px;
 
     .minimum-indicator {
       position: absolute;
@@ -104,11 +99,7 @@ export default {
       background-color: #7d7d7d;
     }
 
-    .minimum-value {
-      margin-left: 38px;
-    }
-
-    .solvency-state {
+    .ltv-state {
       height: 17px;
       background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
       border-bottom-left-radius: 9.5px;

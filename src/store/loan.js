@@ -15,8 +15,7 @@ export default {
     isLoanAlreadyCreated: null,
     totalValue: null,
     debt: null,
-    solvency: null,
-    minSolvency: null,
+    ltv: null,
     loanBalance: null
   },
   mutations: {
@@ -35,11 +34,8 @@ export default {
     setDebt(state, debt) {
       state.debt = debt;
     },
-    setSolvency(state, solvency) {
-      state.solvency = solvency;
-    },
-    setMinSolvency(state, minSolvency) {
-      state.minSolvency = minSolvency;
+    setLtv(state, ltv) {
+      state.ltv = ltv;
     },
     setSupportedAssets(state, assets) {
       state.supportedAssets = assets;
@@ -78,9 +74,6 @@ export default {
           .usingPriceFeed("redstone-rapid");
 
         commit('setLoan', wrappedLoan);
-
-        const minSolvencyRatio = (await wrappedLoan.minSolvencyRatio()) / (await wrappedLoan.PERCENTAGE_PRECISION())
-        commit('setMinSolvency', minSolvencyRatio);
 
         dispatch('updateLoanStats');
         dispatch('updateLoanBalance');
@@ -126,7 +119,7 @@ export default {
 
       commit('setTotalValue', fromWei(status[0]));
       commit('setDebt', fromWei(status[1]));
-      commit('setSolvency', status[2]/1000);
+      commit('setLtv', status[2]/1000);
     },
     async updateLoanBalance({ state, rootState, commit }) {
       const provider = rootState.network.provider;
