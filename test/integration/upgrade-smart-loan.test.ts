@@ -107,24 +107,26 @@ describe('Smart loan - upgrading', () => {
     it("should fund a loan", async () => {
       expect(fromWei(await loan.connect(owner).getTotalValue())).to.be.equal(0);
       expect(fromWei(await loan.connect(owner).getDebt())).to.be.equal(0);
-      expect((await loan.connect(owner).getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect((await loan.connect(owner).getLTV()).toString()).to.be.equal("0");
 
       await loan.fund({value: toWei("100")});
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(100);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect((await loan.getLTV()).toString()).to.be.equal("0");
     });
 
 
     it("should create and fund a loan", async () => {
+      console.log('Before loan creation');
       await smartLoansFactory.connect(other).createAndFundLoan(toWei("2"), {value: toWei("10")});
+      console.log('After loan creation');
 
       const loan_proxy_address = await smartLoansFactory.getAccountForUser(other.address);
       const second_loan = ((await new ethers.Contract(loan_proxy_address, SmartLoanArtifact.abi)) as SmartLoan).connect(other);
       expect(fromWei(await second_loan.connect(other).getTotalValue())).to.be.equal(12);
       expect(fromWei(await second_loan.connect(other).getDebt())).to.be.equal(2);
-      expect((await second_loan.connect(other).getSolvencyRatio()).toString()).to.be.equal("6000");
+      expect((await second_loan.connect(other).getLTV()).toString()).to.be.equal("200");
     });
 
 
@@ -165,7 +167,7 @@ describe('Smart loan - upgrading', () => {
       expect(fromWei(await rewrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(fromWei(expectedAssetValue), 0.00001);
       expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.00001);
       expect(fromWei(await rewrappedLoan.getDebt())).to.be.equal(0);
-      expect(await rewrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await rewrappedLoan.getLTV()).to.be.equal(0);
     });
 
 

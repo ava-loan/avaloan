@@ -9,7 +9,6 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
 import {deployMockContract} from '@ethereum-waffle/mock-contract';
 import {Pool, OpenBorrowersRegistry} from "../../typechain";
-import {CompoundingIndex__factory} from "../../typechain";
 
 chai.use(solidity);
 

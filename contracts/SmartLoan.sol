@@ -20,12 +20,11 @@ import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable
 contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
 
   uint256 public constant PERCENTAGE_PRECISION = 1000;
-  uint256 private constant MAX_SOLVENCY_RATIO = 10000;
 
   uint256 public constant LIQUIDATION_BONUS = 100;
   uint256 private constant LIQUIDATION_CAP = 200;
 
-  uint256 public constant minSolvencyRatio = 1200;
+  uint256 public constant MAX_LTV = 5000;
 
   SupportedAssets supportedAssets;
   IAssetsExchange public exchange;
@@ -55,7 +54,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
    * The loan needs to remain solvent after the withdrawal
    * @param _amount to be withdrawn
   **/
-  function withdraw(uint256 _amount) external remainsSolvent onlyOwner {
+  function withdraw(uint256 _amount) external onlyOwner remainsSolvent {
     require(address(this).balance >= _amount, "There is not enough funds to withdraw");
 
     payable(msg.sender).transfer(_amount);
@@ -69,7 +68,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
    * @param _asset to code of the asset
    * @param _amount to be bought
   **/
-  function invest(bytes32 _asset, uint256 _amount) external onlyOwner {
+  function invest(bytes32 _asset, uint256 _amount) external onlyOwner remainsSolvent{
     exchange.buyAsset{value: address(this).balance}(_asset, _amount);
 
     emit Invested(msg.sender, _asset, _amount, block.timestamp);
@@ -165,17 +164,24 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   /**
     * Returns the current debt associated with the loan
   **/
-  function getDebt() public view returns(uint256) {
+  function getDebt() public virtual view returns(uint256) {
     return pool.getBorrowed(address(this));
   }
 
 
-  function getSolvencyRatio() public view returns(uint256) {
+  /**
+    * LoanToValue ratio is calculated as the ratio between debt and collateral.
+    * The collateral is equal to total loan value takeaway debt.
+  **/
+  function getLTV() public view returns(uint256) {
     uint256 debt = getDebt();
+    uint256 totalValue = getTotalValue();
     if (debt == 0) {
-      return MAX_SOLVENCY_RATIO;
+      return 0;
+    } else if (debt < totalValue){
+      return debt * PERCENTAGE_PRECISION / (totalValue - debt);
     } else {
-      return getTotalValue() * PERCENTAGE_PRECISION / debt;
+      return MAX_LTV;
     }
   }
 
@@ -184,7 +190,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
     return [
       getTotalValue(),
       getDebt(),
-      getSolvencyRatio(),
+      getLTV(),
       isSolvent() ? uint256(1) : uint256(0)
     ];
   }
@@ -192,11 +198,11 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
 
   /**
     * Checks if the loan is solvent.
-    * It means that the ratio between total value and debt is above save level,
-    * which is parametrized by the minSolvencyRatio
+    * It means that the ratio between debt and collateral is below safe level,
+    * which is parametrized by the MAX_LTV_RATIO
   **/
   function isSolvent() public view returns(bool) {
-    return getSolvencyRatio() >= minSolvencyRatio;
+    return getLTV() < MAX_LTV;
   }
 
 
