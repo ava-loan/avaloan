@@ -25,7 +25,7 @@
               v-bind:key="asset.symbol">
               <td data-label="Asset">
                 <div class="token-logo-wrapper">
-                  <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.svg`" class="token-logo"/>
+                  <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`" class="token-logo"/>
                 </div>
                 <span class="token-name">{{ asset.name }}</span>
                 </td>
@@ -91,7 +91,6 @@
                   v-on:close="() => { asset.showChart = false; }">
                   <Chart
                   :dataPoints="asset.prices"
-                  dateFormat="HH:mm"
                   :minY="asset.minPrice" :maxY="asset.maxPrice" lineWidth="3"/>
                 </SmallBlock>
               </td>
@@ -120,7 +119,7 @@
               v-bind:key="asset.symbol">
             <td data-label="Asset">
               <div class="token-logo-wrapper">
-                <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.svg`" class="token-logo"/>
+                <img :src="`https://cdn.redstone.finance/symbols/${asset.symbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`" class="token-logo"/>
               </div>
               <span class="token-name">{{ asset.name }}</span>
             </td>
@@ -162,7 +161,9 @@
                 v-on:close="() => { asset.showChart = false;  }">
                 <Chart
                   :dataPoints="asset.prices"
-                  :minY="asset.minPrice" :maxY="asset.maxPrice" :lineWidth="3"/>
+                  :minY="asset.minPrice"
+                  :maxY="asset.maxPrice"
+                  :lineWidth="3"/>
               </SmallBlock>
             </td>
           </tr>
@@ -269,7 +270,7 @@
           AVAX ($
           ${this.avaxToUSD((maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)})
           with slippage tolerance of
-          ~${(maximumSlippage(asset.buySlippage) * 100).toPrecision(1)}%
+          ~${(maximumSlippage(asset.buySlippage) * 100).toPrecision(2)}%
           `
       },
       sellSlippageInfo(asset) {
@@ -279,7 +280,7 @@
           AVAX ($
           ${(this.avaxToUSD(minAvaxToBeBought(asset.price * value, asset.sellSlippage))).toPrecision(6)})
           with slippage tolerance of
-          ~${(maximumSlippage(asset.sellSlippage) * 100).toPrecision(1)}%
+          ~${(maximumSlippage(asset.sellSlippage) * 100).toPrecision(2)}%
           `
       },
       toggleChart(symbol) {
@@ -362,19 +363,22 @@
         this.list = list;
 
         for (const symbol of Object.keys(list)) {
-          const priceResponse = await redstone.getHistoricalPrice(symbol, {
-            startDate: Date.now() - 3600 * 1000,
-            interval: 1,
+          redstone.getHistoricalPrice(symbol, {
+            startDate: Date.now() - 3600 * 1000 * 24 * 7,
+            interval: 3600 * 1000,
             endDate: Date.now()
-          })
+          }).then(
+            (resp) => {
 
-          const [prices, minPrice, maxPrice] = this.chartPoints(
-            priceResponse
-          );
+              const [prices, minPrice, maxPrice] = this.chartPoints(
+                resp
+              );
 
-          this.updateAsset(symbol, 'prices', prices);
-          this.updateAsset(symbol, 'minPrice', minPrice);
-          this.updateAsset(symbol, 'maxPrice', maxPrice);
+              this.updateAsset(symbol, 'prices', prices);
+              this.updateAsset(symbol, 'minPrice', minPrice);
+              this.updateAsset(symbol, 'maxPrice', maxPrice);
+            }
+          )
         }
       },
       share(asset) {

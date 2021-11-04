@@ -6,16 +6,22 @@
           :primary="{value: debt, type: 'avax', showIcon: true}"
           :secondary="{value: avaxToUSD(debt), type: 'usd'}" />
           <div class="borrow-buttons">
-<!--            <img @click="showBorrowBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>-->
-            <span @click="showBorrowBlock(0)">Borrow</span>
-            <span @click="showBorrowBlock(1)">Repay</span>
-<!--            <img src="src/assets/icons/slash-small.svg"/>-->
-<!--            <img @click="showBorrowBlock(1)" src="src/assets/icons/minus.svg" class="minus"/>-->
+            <img @click="showBorrowBlock(0)"
+                 src="src/assets/icons/plus.svg"
+                 class="plus"
+                 v-tooltip="'Borrow'"
+            />
+            <img src="src/assets/icons/slash-small.svg"/>
+            <img @click="showBorrowBlock(1)"
+                 src="src/assets/icons/minus.svg"
+                 class="minus"
+                 v-tooltip="'Repay'"
+            />
           </div>
       </div>
       <div class="ltv-value">
         <div class="label">
-          LTV
+          LTC
         </div>
         <div class="ltv-bar">
           <LTVBar />
@@ -26,11 +32,17 @@
           :primary="{value: collateral, type: 'avax', showIcon: true}"
           :secondary="{value: avaxToUSD(collateral), type: 'usd'}" />
           <div class="fund-buttons">
-<!--            <img @click="showCollateralBlock(0)" src="src/assets/icons/plus.svg" class="plus"/>-->
-<!--            <img src="src/assets/icons/slash-small.svg"/>-->
-<!--            <img @click="showCollateralBlock(1)" src="src/assets/icons/minus.svg" class="minus"/>-->
-            <span @click="showCollateralBlock(0)">Add</span>
-            <span @click="showCollateralBlock(1)">Reduce</span>
+            <img @click="showCollateralBlock(0)"
+                 src="src/assets/icons/plus.svg"
+                 class="plus"
+                 v-tooltip="'Add collateral'"
+            />
+            <img src="src/assets/icons/slash-small.svg"/>
+            <img @click="showCollateralBlock(1)"
+                 src="src/assets/icons/minus.svg"
+                 class="minus"
+                 v-tooltip="'Reduce collateral'"
+            />
           </div>
       </div>
     </Bar>
@@ -159,27 +171,17 @@
     transform: initial;
   }
 
-  span {
-    color: #6B70ED;
-    font-weight: 500;
+  .plus, .minus {
+    height: 24px;
     cursor: pointer;
+    opacity: 0.7;
+    transition: transform .4s ease-in-out;
 
-    &:first-of-type {
-      margin-right: 15px;
+    &:hover {
+      opacity: 1;
+      transform: scale(1.05);
     }
   }
-  //
-  //.plus, .minus {
-  //  height: 24px;
-  //  cursor: pointer;
-  //  opacity: 0.7;
-  //  transition: transform .4s ease-in-out;
-  //
-  //  &:hover {
-  //    opacity: 1;
-  //    transform: scale(1.05);
-  //  }
-  //}
 }
 
 .ltv-value {

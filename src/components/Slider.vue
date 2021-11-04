@@ -58,6 +58,9 @@ export default {
       error: ''
     };
   },
+  mounted() {
+    this.restyleInput(this.$refs.input, this.value);
+  },
   methods: {
     onInput() {
       this.onChange(this.currentValue);
@@ -69,11 +72,12 @@ export default {
 
       if (value < this.min) {
         element.style.backgroundSize = '0% 100%';
-      } else if (value < ((max - min) / 2 + min)) {
-        //optimized to fix graphical inconsistency between dot and background
-        element.style.backgroundSize = (value * 1.02 - min - 0.015) * 100 / (max - min) + '% 100%'
       } else {
-        element.style.backgroundSize = (value * 0.98 - min + 0.03) * 100 / (max - min) + '% 100%'
+        let size = (value - min) / (max - min);
+        //calculated this way to account for a thumb width
+        element.style.backgroundSize =
+          'calc(' + size * 100 + '% - ' + (size - 0.5) * 23 + 'px)'
+          + ' 100%';
       }
     },
     onChange(newValue) {
@@ -126,8 +130,9 @@ export default {
   box-shadow: inset 0 1px 3px 0 rgba(191, 188, 255, 0.7);
   background-color: rgba(191, 188, 255, 0.2);
 
+  background-origin: content-box;
 
-  //background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
+  background-image: linear-gradient(to right, #a5a9ff 17%, #c0a6ff 91%);
   background-size: 0% 100%;
   background-repeat: no-repeat;
 }

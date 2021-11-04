@@ -8,7 +8,10 @@ export function calculateCollateral(amount) {
 }
 
 export function maximumSlippage(currentSlippage) {
-    return currentSlippage + config.SLIPPAGE_TOLERANCE;
+  if (!currentSlippage) {
+    currentSlippage = 0;
+  }
+  return currentSlippage + config.SLIPPAGE_TOLERANCE;
 }
 
 export function maxAvaxToBeSold(amount, currentSlippage) {

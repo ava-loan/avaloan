@@ -92,7 +92,11 @@ export default {
           require: function(value) { return value < config.MAX_LTV },
           message: `LTC should be lower than ${config.MAX_LTV * 100}%`
         }
-      ]
+      ],
+      nonNegativeValidator: {
+        require: function(value) { return value >= 0 },
+        message: `Value cannot be smaller than 0`
+      }
     }
   }
 };
