@@ -25,12 +25,13 @@ import {MockUpgradedSmartLoan__factory} from "../../typechain";
 import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-flash-storage";
-import { syncTime } from "../../tools/helpers";
+import { syncTime } from "../../src/utils/blockchain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
+const PRICE_SIGNER = "0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9"; //redstone-rapid
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
 const erc20ABI = [
@@ -79,7 +80,7 @@ describe('Smart loan - upgrading', () => {
       await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, supportedAssets.address, exchange.address]) as SmartLoansFactory;
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, supportedAssets.address, exchange.address, PRICE_SIGNER]) as SmartLoansFactory;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
@@ -106,24 +107,26 @@ describe('Smart loan - upgrading', () => {
     it("should fund a loan", async () => {
       expect(fromWei(await loan.connect(owner).getTotalValue())).to.be.equal(0);
       expect(fromWei(await loan.connect(owner).getDebt())).to.be.equal(0);
-      expect((await loan.connect(owner).getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect((await loan.connect(owner).getLTV()).toString()).to.be.equal("0");
 
       await loan.fund({value: toWei("100")});
 
       expect(fromWei(await loan.getTotalValue())).to.be.equal(100);
       expect(fromWei(await loan.getDebt())).to.be.equal(0);
-      expect((await loan.getSolvencyRatio()).toString()).to.be.equal("10000");
+      expect((await loan.getLTV()).toString()).to.be.equal("0");
     });
 
 
     it("should create and fund a loan", async () => {
+      console.log('Before loan creation');
       await smartLoansFactory.connect(other).createAndFundLoan(toWei("2"), {value: toWei("10")});
+      console.log('After loan creation');
 
       const loan_proxy_address = await smartLoansFactory.getAccountForUser(other.address);
       const second_loan = ((await new ethers.Contract(loan_proxy_address, SmartLoanArtifact.abi)) as SmartLoan).connect(other);
       expect(fromWei(await second_loan.connect(other).getTotalValue())).to.be.equal(12);
       expect(fromWei(await second_loan.connect(other).getDebt())).to.be.equal(2);
-      expect((await second_loan.connect(other).getSolvencyRatio()).toString()).to.be.equal("6000");
+      expect((await second_loan.connect(other).getLTV()).toString()).to.be.equal("200");
     });
 
 
@@ -164,7 +167,7 @@ describe('Smart loan - upgrading', () => {
       expect(fromWei(await rewrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(fromWei(expectedAssetValue), 0.00001);
       expect(fromWei(await rewrappedLoan.getTotalValue())).to.be.closeTo(100, 0.00001);
       expect(fromWei(await rewrappedLoan.getDebt())).to.be.equal(0);
-      expect(await rewrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await rewrappedLoan.getLTV()).to.be.equal(0);
     });
 
 

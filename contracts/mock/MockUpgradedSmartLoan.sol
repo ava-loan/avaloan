@@ -12,11 +12,9 @@ import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 contract MockUpgradedSmartLoan is SmartLoan {
 
   /**
-   * Dummy implementation recording double deposits
-   * used to test upgrade of contract logic
+   * Dummy implementation used to test upgrade of contract logic
   **/
   function getTotalValue() public override pure returns(uint256) {
     return 777;
   }
-
 }

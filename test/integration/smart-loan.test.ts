@@ -21,7 +21,7 @@ import {
   Pool,
   SupportedAssets,
   SmartLoan,
-  SmartLoan__factory
+  SmartLoan__factory, MockSmartLoan, MockSmartLoan__factory
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -109,13 +109,13 @@ describe('Smart loan', () => {
       await wrappedLoan.getTotalValue();
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
 
       await wrappedLoan.fund({value: toWei("200")});
 
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(200);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
     it("should withdraw part of funds", async () => {
@@ -123,7 +123,7 @@ describe('Smart loan', () => {
 
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(100);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
     it("should buy asset", async () => {
@@ -137,7 +137,7 @@ describe('Smart loan', () => {
       expect(fromWei(await wrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(expectedAssetValue, 0.0001);
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.0001);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
     it("should provide assets balances and prices", async () => {
@@ -180,7 +180,7 @@ describe('Smart loan', () => {
       expect(await updatedLoan.getAssetValue(toBytes32('USD'))).to.be.closeTo(expectedUSDTokenValue, 10000000);
       expect(await updatedLoan.getTotalValue()).to.closeTo(initialLoanTotalValue.add(usdTokenValueDifference), 10000000000);
       expect(fromWei(await updatedLoan.getDebt())).to.be.equal(0);
-      expect(await updatedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await updatedLoan.getLTV()).to.be.equal(0);
     });
 
 
@@ -203,7 +203,7 @@ describe('Smart loan', () => {
       expect(currentLoanTotalValue).to.be.lte(upperExpectedBound);
 
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
   });
@@ -271,13 +271,13 @@ describe('Smart loan', () => {
     it("should fund a loan", async () => {
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(0);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
 
       await wrappedLoan.fund({value: toWei("100")});
 
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(100);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(10000);
+      expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
 
@@ -285,8 +285,8 @@ describe('Smart loan', () => {
       await wrappedLoan.borrow(toWei("200"));
 
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(300);
-      expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(200, 0.1);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.closeTo(BigNumber.from(1500), 1);
+      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(200);
+      expect(await wrappedLoan.getLTV()).to.be.equal(2000);
     });
 
 
@@ -295,7 +295,7 @@ describe('Smart loan', () => {
 
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(200);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(100, 0.1);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.equal(1999);
+      expect(await wrappedLoan.getLTV()).to.be.equal(1000);
     });
 
 
@@ -373,14 +373,14 @@ describe('Smart loan', () => {
 
       expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(500);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.closeTo(400, 0.1);
-      expect(await wrappedLoan.getSolvencyRatio()).to.be.closeTo(BigNumber.from(1250), 1);
+      expect(await wrappedLoan.getLTV()).to.be.equal(4000);
     });
 
     it("should invest", async () => {
-      await wrappedLoan.invest(toBytes32('USD'), toWei("1700", usdTokenDecimalPlaces));
+      await wrappedLoan.invest(toBytes32('USD'), toWei("1800", usdTokenDecimalPlaces));
 
       const currentUSDTokenBalance = (await loan.getAllAssetsBalances())[0];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("1700", usdTokenDecimalPlaces));
+      expect(currentUSDTokenBalance).to.be.equal(toWei("1800", usdTokenDecimalPlaces));
     });
 
 
@@ -421,6 +421,70 @@ describe('Smart loan', () => {
       expect(fromWei(await loanUpdated.getDebt())).to.be.closeTo(200, 0.1);
       expect(await loanUpdated.isSolvent()).to.be.true;
     });
+
+  });
+
+  describe('A loan with edge LTV cases', () => {
+    let loan: MockSmartLoan,
+      owner: SignerWithAddress;
+
+    before("deploy provider, exchange and pool", async () => {
+      [owner] = await getFixedGasSigners(10000000);
+    });
+
+    it("should deploy a smart loan", async () => {
+      loan = await (new MockSmartLoan__factory(owner).deploy());
+    });
+
+    it("should check debt equal to 0", async () => {
+      await loan.setValue(40000);
+      await loan.setDebt(0);
+      expect(await loan.getLTV()).to.be.equal(0);
+      expect(await loan.isSolvent()).to.be.true;
+    });
+
+    it("should check debt greater than 0 and lesser than totalValue", async () => {
+      await loan.setValue(50000);
+      await loan.setDebt(10000);
+      expect(await loan.getLTV()).to.be.equal(250);
+      expect(await loan.isSolvent()).to.be.true;
+    });
+
+    it("should check debt equal to totalValue", async () => {
+      await loan.setValue(40000);
+      await loan.setDebt(40000);
+      expect(await loan.getLTV()).to.be.equal(5000);
+      expect(await loan.isSolvent()).to.be.false;
+    });
+
+    it("should check debt greater than totalValue", async () => {
+      await loan.setValue(40000);
+      await loan.setDebt(40001);
+      expect(await loan.getLTV()).to.be.equal(5000);
+      expect(await loan.isSolvent()).to.be.false;
+    });
+
+    it("should check LTV 4999", async () => {
+      await loan.setValue(48001);
+      await loan.setDebt(40000);
+      expect(await loan.getLTV()).to.be.equal(4999);
+      expect(await loan.isSolvent()).to.be.true;
+    });
+
+    it("should check LTV 5000", async () => {
+      await loan.setValue(48000);
+      await loan.setDebt(40000);
+      expect(await loan.getLTV()).to.be.equal(5000);
+      expect(await loan.isSolvent()).to.be.false;
+    });
+
+    it("should check LTV 5001", async () => {
+      await loan.setValue(47998);
+      await loan.setDebt(40000);
+      expect(await loan.getLTV()).to.be.equal(5001);
+      expect(await loan.isSolvent()).to.be.false;
+    });
+
 
   });
 
