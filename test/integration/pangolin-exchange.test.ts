@@ -7,7 +7,7 @@ import PangolinExchangeArtifact from '../../artifacts/contracts/PangolinExchange
 import SupportedAssetsArtifact from '../../artifacts/contracts/SupportedAssets.sol/SupportedAssets.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {PangolinExchange, SupportedAssets} from '../../typechain';
-import {getFixedGasSigners, toBytes32} from "../_helpers";
+import {getFixedGasSigners, toBytes32, toWei} from "../_helpers";
 
 chai.use(solidity);
 
@@ -81,12 +81,12 @@ describe('PangolinExchange', () => {
 
 
     it('should check for the amount of tokens to sell to be greater than 0', async () => {
-      await expect(sut.sellAsset(toBytes32('DAI'), 0)).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
+      await expect(sut.sellAsset(toBytes32('DAI'), toWei("0"), toWei("0.01"))).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
     });
 
 
     it('should revert transaction in case of a sufficient token balance transferred to an exchange', async () => {
-      await expect(sut.sellAsset(toBytes32('DAI'), 1)).to.be.revertedWith('TransferHelper: TRANSFER_FROM_FAILED');
+      await expect(sut.sellAsset(toBytes32('DAI'), toWei("1"), toWei("0.01"))).to.be.revertedWith('TransferHelper: TRANSFER_FROM_FAILED');
     });
 
 
@@ -96,7 +96,7 @@ describe('PangolinExchange', () => {
       const daiTokenAmount = 1e20;
 
       await daiToken.connect(owner).transfer(sut.address, daiTokenAmount.toString());
-      await sut.sellAsset(toBytes32('DAI'), daiTokenAmount.toString());
+      await sut.sellAsset(toBytes32('DAI'), daiTokenAmount.toString(), 1);
 
       const currentDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);

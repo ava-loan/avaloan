@@ -1,6 +1,7 @@
 import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
+import redstone from 'redstone-api';
 
 import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
@@ -27,6 +28,7 @@ import {
 import {OpenBorrowersRegistry__factory} from "../../typechain";
 import { syncTime } from "../../src/utils/blockchain";
 import {BigNumber, Contract} from "ethers";
+import {parseUnits} from "ethers/lib/utils";
 
 chai.use(solidity);
 
@@ -55,7 +57,8 @@ describe('Smart loan', () => {
       usdTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
       MOCK_PRICES: any,
-      MOCK_AVAX_PRICE: number;
+      AVAX_PRICE: number,
+      USD_PRICE: number;
 
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -73,15 +76,17 @@ describe('Smart loan', () => {
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
-      MOCK_AVAX_PRICE = 100000;
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+
       MOCK_PRICES = [
         {
           symbol: 'USD',
-          value: MOCK_AVAX_PRICE * fromWei(await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress))
+          value: USD_PRICE
         },
         {
           symbol: 'AVAX',
-          value: MOCK_AVAX_PRICE
+          value: AVAX_PRICE
         }
       ]
 
@@ -126,22 +131,22 @@ describe('Smart loan', () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
 
-    it("should buy asset", async () => {
-      const usdPrice = MOCK_PRICES.find((token: any) => token.symbol == 'USD').value;
+    it("should buy an asset", async () => {
+      const usdPrice = USD_PRICE;
       const investedAmount = 100;
 
       const slippageTolerance = 0.03;
-      const requiredAvaxAmount = MOCK_PRICES[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
+      const requiredAvaxAmount = MOCK_PRICES[0].value * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
+
       await wrappedLoan.invest(
         toBytes32('USD'),
-        toWei(investedAmount.toString(), usdTokenDecimalPlaces),
+        parseUnits(investedAmount.toString(), usdTokenDecimalPlaces),
         toWei(requiredAvaxAmount.toString())
       );
+      const expectedAssetValueInAVAX = usdPrice * investedAmount / AVAX_PRICE;
 
-      const expectedAssetValue = fromWei(toWei(usdPrice.toString()).div(MOCK_AVAX_PRICE).mul(BigNumber.from(investedAmount)));
-
-      expect(fromWei(await wrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(expectedAssetValue, 0.0001);
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.0001);
+      expect(fromWei(await wrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(expectedAssetValueInAVAX, 0.0001);
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.001);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
@@ -152,7 +157,7 @@ describe('Smart loan', () => {
       expect(formatUnits(usdTokenBalance, usdTokenDecimalPlaces)).to.be.equal(100);
 
       const usdTokenPrice = (await wrappedLoan.getAllAssetsPrices())[0];
-      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.000001);
+      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.00001);
     });
 
 
@@ -183,17 +188,24 @@ describe('Smart loan', () => {
       const expectedUSDTokenValue = initialUSDTokenAssetValue.mul(2);
       const usdTokenValueDifference = expectedUSDTokenValue.sub(initialUSDTokenAssetValue);
 
-      expect(await updatedLoan.getAssetValue(toBytes32('USD'))).to.be.closeTo(expectedUSDTokenValue, 10000000);
-      expect(await updatedLoan.getTotalValue()).to.closeTo(initialLoanTotalValue.add(usdTokenValueDifference), 10000000000);
+      expect(await updatedLoan.getAssetValue(toBytes32('USD'))).to.be.closeTo(expectedUSDTokenValue, 100000000000);
+      expect(await updatedLoan.getTotalValue()).to.closeTo(initialLoanTotalValue.add(usdTokenValueDifference), 100000000000);
       expect(fromWei(await updatedLoan.getDebt())).to.be.equal(0);
       expect(await updatedLoan.getLTV()).to.be.equal(0);
     });
 
 
     it("should redeem investment", async () => {
-      const initialUSDTokenBalance = (await wrappedLoan.getAllAssetsBalances())[0];
+      const initialUSDTokenBalanceInWei = (await wrappedLoan.getAllAssetsBalances())[0];
+      const usdPrice = USD_PRICE;
 
-      await wrappedLoan.redeem(toBytes32('USD'), initialUSDTokenBalance);
+      const avaxPrice = AVAX_PRICE;
+      const slippageTolerance = 0.05;
+
+      await wrappedLoan.redeem(
+        toBytes32('USD'),
+        initialUSDTokenBalanceInWei,
+        toWei((formatUnits(initialUSDTokenBalanceInWei, usdTokenDecimalPlaces) * usdPrice / avaxPrice * (1 - slippageTolerance)).toString()));
 
       const currentUSDTokenBalance = (await wrappedLoan.getAllAssetsBalances())[0];
 
@@ -225,7 +237,7 @@ describe('Smart loan', () => {
       usdTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
       MOCK_PRICES: any,
-      MOCK_AVAX_PRICE: number;
+      AVAX_PRICE: number;
 
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -244,15 +256,15 @@ describe('Smart loan', () => {
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      MOCK_AVAX_PRICE = 100000;
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       MOCK_PRICES = [
         {
           symbol: 'USD',
-          value: MOCK_AVAX_PRICE * fromWei(await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress))
+          value: AVAX_PRICE * fromWei(await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress))
         },
         {
           symbol: 'AVAX',
-          value: MOCK_AVAX_PRICE
+          value: AVAX_PRICE
         }
       ]
     });
@@ -322,7 +334,7 @@ describe('Smart loan', () => {
       usdTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
       MOCK_PRICES: any,
-      MOCK_AVAX_PRICE: number;
+      AVAX_PRICE: number;
 
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
@@ -341,15 +353,15 @@ describe('Smart loan', () => {
       await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
-      MOCK_AVAX_PRICE = 100000;
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
       MOCK_PRICES = [
         {
           symbol: 'USD',
-          value: MOCK_AVAX_PRICE * fromWei(await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress))
+          value: AVAX_PRICE * fromWei(await exchange.getEstimatedAVAXForERC20Token(toWei("1", usdTokenDecimalPlaces), usdTokenAddress))
         },
         {
           symbol: 'AVAX',
-          value: MOCK_AVAX_PRICE
+          value: AVAX_PRICE
         }
       ]
     });
@@ -386,7 +398,7 @@ describe('Smart loan', () => {
       const investedAmount = 1800;
 
       const slippageTolerance = 0.03;
-      const requiredAvaxAmount = MOCK_PRICES[0].value * investedAmount * (1 + slippageTolerance) / MOCK_AVAX_PRICE;
+      const requiredAvaxAmount = MOCK_PRICES[0].value * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
       await wrappedLoan.invest(
         toBytes32('USD'),
         toWei(investedAmount.toString(), usdTokenDecimalPlaces),
