@@ -46,7 +46,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
 
     address tokenAddress = supportedAssets.getAssetAddress(_token);
 
-    uint256 amountIn = getMinimumAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
+    uint256 amountIn = getEstimatedAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
 
     require(msg.value >= amountIn, "Not enough funds provided");
 
@@ -93,7 +93,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   /**
      * Returns the minimum AVAX amount that is required to buy _exactAmountOut of _token ERC20 token.
   **/
-  function getMinimumAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
+  function getEstimatedAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
     address[] memory path = getPathForAVAXtoToken(_token);
 
     return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
@@ -102,7 +102,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   /**
    * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
   **/
-  function getMaximumAVAXFromERC20Token(uint256 _amountIn, address _token) public view returns (uint256) {
+  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) public view returns (uint256) {
     address[] memory path = getPathForTokenToAVAX(_token);
 
     return pangolinRouter.getAmountsOut(_amountIn, path)[1];

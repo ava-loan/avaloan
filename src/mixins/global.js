@@ -33,7 +33,7 @@ export default {
         const expectedAvax = amount * price;
 
         let checkedAvax =
-          await exchange.getMinimumAVAXForERC20Token(
+          await exchange.getEstimatedAVAXForERC20Token(
             parseUnits((amount).toString(), tokenDecimals), tokenAddress
           );
 
@@ -57,7 +57,7 @@ export default {
         const expectedAvax = amount * price;
 
         let checkedAvax =
-          await exchange.getMaximumAVAXFromERC20Token(
+          await exchange.getEstimatedAVAXFromERC20Token(
             parseUnits((amount).toString(), tokenDecimals), tokenAddress
           );
 
