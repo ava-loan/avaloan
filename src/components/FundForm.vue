@@ -5,16 +5,16 @@
       :defaultValue="fundValue"
       :validators="fundValidators"
     />
-    <div class="ltv">LTV: <b>{{LTVInfo}}</b></div>
+    <div class="ltv">LTC: <b>{{LTVInfo}}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
-        :min="LTV"
-        :max="2"
+        :min="0"
+        :max="ltv"
         :value="calculatedLTV"
         :step="0.001"
         v-on:input="updateFundFromLTV"
         :validators="ltvValidators"
-        :labels="['Riskier', 'Safer']"
+        :labels="['Safer', 'Riskier']"
       />
     </div>
     <Button label="Fund" :disabled="disabled" :waiting="waiting" v-on:click="submit()"/>
@@ -74,9 +74,9 @@ import {mapActions, mapState} from "vuex";
           );
         }
       },
-      updateFundFromLTV(LTV) {
-        this.checkLTV(LTV);
-        this.fundValue = parseFloat(((this.debt * LTV - this.totalValue)).toFixed(2));
+      updateFundFromLTV(ltv) {
+        this.checkLTV(ltv);
+        this.fundValue = parseFloat(((this.debt * ( 1 / ltv + 1) - this.totalValue)).toFixed(2));
       },
       checkLTV(value) {
         this.errors[2] = value > this.maxLTV;
@@ -84,13 +84,13 @@ import {mapActions, mapState} from "vuex";
       }
     },
     computed: {
-      ...mapState('loan', ['loan', 'debt', 'totalValue', 'LTV']),
+      ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
       ...mapState('network', ['balance']),
       calculatedLTV() {
         if (this.fundValue) {
-          return (this.totalValue + this.fundValue) / (this.debt);
+          return (this.debt) / (this.totalValue - this.debt + this.fundValue);
         } else {
-          return this.LTV;
+          return this.ltv;
         }
       },
       disabled() {

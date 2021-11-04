@@ -5,16 +5,16 @@
       :defaultValue="withdrawValue"
       :validators="withdrawValidators"
     />
-    <div class="ltv">LTV: <b>{{ltvInfo}}</b></div>
+    <div class="ltv">LTC: <b>{{ltvInfo}}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
-        :min="minLTV"
-        :max="ltv"
+        :min="ltv"
+        :max="maxLTV"
         :value="calculatedLTV"
         :step="0.001"
         v-on:input="updateWithdrawFromLTV"
         :validators="ltvValidators"
-        :labels="['Riskier', 'Safer']"
+        :labels="['Safer', 'Riskier']"
       />
     </div>
     <Button label="Withdraw" :disabled="disabled" :waiting="waiting" v-on:click="submit()"/>
@@ -75,7 +75,7 @@ import {mapActions, mapState} from "vuex";
       },
       updateWithdrawFromLTV(ltv) {
         this.checkLTV(ltv);
-        this.withdrawValue = parseFloat(((this.totalValue - this.debt * ltv)).toFixed(2));
+        this.withdrawValue = parseFloat((this.totalValue - (this.debt * ( 1 / ltv + 1))).toFixed(2));
       },
       checkLTV(value) {
         this.errors[2] = value > this.maxLTV;
@@ -87,7 +87,7 @@ import {mapActions, mapState} from "vuex";
       ...mapState('network', ['balance']),
       calculatedLTV() {
         if (this.withdrawValue) {
-          return (this.totalValue - this.withdrawValue) / (this.debt);
+          return this.debt / (this.totalValue - this.debt - this.withdrawValue);
         } else {
           return this.ltv;
         }

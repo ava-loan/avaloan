@@ -42,7 +42,7 @@
     data() {
       return {
         bubbleText: `Create a loan to start your investment adventure. <br/>
-        Remember that initial LTV cannot exceed than <b>${config.DEFAULT_LTV}%</b>.`
+        Remember that initial LTC cannot exceed <b>${config.DEFAULT_LTV * 100}%</b>.`
       }
     },
     computed: {

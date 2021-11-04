@@ -9,13 +9,13 @@
     <div class="ltv" v-html="LTVInfo"></div>
     <div class="ltv-slider-wrapper">
       <Slider
-        :min="ltv"
-        :max="maxLTV"
+        :min="0"
+        :max="ltv"
         :value="calculatedLTV"
         :step="0.001"
         v-on:input="updateRepayFromLTV"
         :validators="ltvValidators"
-        :labels="['Riskier', 'Safer']"
+        :labels="['Safer', 'Riskier']"
       />
     </div>
     <Button label="Repay" :disabled="disabled" :waiting="waiting" v-on:click="submit()"/>
@@ -99,7 +99,7 @@ import {mapActions, mapState} from "vuex";
         if (this.calculatedLTV === Number.POSITIVE_INFINITY) {
           return 'Loan fully repaid'
         } else {
-          return `LTV: <b>${this.$options.filters.percent(this.calculatedLTV)}</b>`;
+          return `LTC: <b>${this.$options.filters.percent(this.calculatedLTV)}</b>`;
         }
       }
     }
