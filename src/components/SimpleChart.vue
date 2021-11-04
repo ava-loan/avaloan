@@ -47,7 +47,7 @@
           hover: {
             mode: null
           },
-          aspectRatio: this.isMobile ? 2 : 2,
+          aspectRatio: 1.2,
           height: null,
           width: null,
           legend: {

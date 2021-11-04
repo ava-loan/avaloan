@@ -10,10 +10,10 @@
         </div>
       </div>
       <div v-if="max" class="max-wrapper" @click.stop="value = max">
-        MAX
+        <div class="max">MAX</div>
       </div>
       <div class="logo-wrapper">
-        <img class="logo" :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.svg`"/>
+        <img class="logo" :src="`https://cdn.redstone.finance/symbols/${symbol.toLowerCase()}.${asset.logoExt ? asset.logoExt : 'svg'}`"/>
         <span v-if="!isMobile" class="symbol">{{ symbol }}</span>
       </div>
     </div>
@@ -44,7 +44,7 @@
 
 
 <script>
-  import Vue from 'vue';
+import config from "@/config";
 
   export default {
     name: 'CurrencyInput',
@@ -68,8 +68,13 @@
       return {
         error: '',
         warning: '',
-        value: null
+        value: null,
+        defaultValidators: [],
+        asset: config.ASSETS_CONFIG[this.symbol]
       }
+    },
+    created() {
+      this.defaultValidators.push(this.nonNegativeValidator);
     },
     watch: {
       value: function (newValue) {
@@ -110,7 +115,7 @@
       checkErrors(newValue) {
         this.error = '';
 
-        this.validators.find(
+        [...this.validators, ...this.defaultValidators].find(
           check => {
             let value = typeof newValue === "number" ? newValue : 0;
             if (!check.require(value)) {
@@ -206,6 +211,20 @@ input[type=number] {
   cursor: pointer;
   width: 35px;
   min-width: 35px;
+  margin-right: 20px;
+
+
+  .max {
+    border: solid 1px #8986fe;
+    border-radius: 10px;
+    width: 45px;
+    height: 26px;
+    font-weight: bold;
+    line-height: 24px;
+    color: #8986fe;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.4);
+  }
 }
 
 img {

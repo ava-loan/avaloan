@@ -103,7 +103,8 @@
               type: 'time',
               time: {
                 displayFormats: {
-                  minute: this.dateFormat
+                  minute: this.dateFormat,
+                  hour: this.dateFormat
                 }
               },
               gridLines: {
