@@ -6,7 +6,7 @@ const UtilisationRatesCalculator = artifacts.require("./UtilisationRatesCalculat
 const Pool = artifacts.require("./Pool.sol");
 const SmartLoansFactory = artifacts.require("./SmartLoansFactory.sol");
 
-const PRICE_SIGNER = "0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9"; //redstone-rapid
+const PRICE_SIGNER = "0x3a7d971De367FE15D164CDD952F64205F2D9f10c"; //redstone-avalanche
 
 module.exports = function(deployer) {
   var factory;

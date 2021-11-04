@@ -7,13 +7,11 @@ module.exports = function(deployer) {
     await Promise.all([
       instance.setAsset(toBytes32('ETH'), addresses["ETH"]),
       instance.setAsset(toBytes32('BTC'), addresses["BTC"]),
-      instance.setAsset(toBytes32('LINK'), addresses["LINK"]),
       instance.setAsset(toBytes32('USDT'), addresses["USDT"]),
-      instance.setAsset(toBytes32('1INCH'), addresses["1INCH"]),
-      instance.setAsset(toBytes32('AAVE'), addresses["AAVE"]),
-      instance.setAsset(toBytes32('SNX'), addresses["SNX"]),
-      instance.setAsset(toBytes32('UNI'), addresses["UNI"]),
-      instance.setAsset(toBytes32('GRT'), addresses["GRT"]),
+      instance.setAsset(toBytes32('LINK'), addresses["LINK"]),
+      instance.setAsset(toBytes32('PNG'), addresses["PNG"]),
+      instance.setAsset(toBytes32('XAVA'), addresses["XAVA"]),
+      instance.setAsset(toBytes32('FRAX'), addresses["FRAX"])
     ]);
   });
 };

@@ -71,7 +71,7 @@ export default {
 
         const wrappedLoan = WrapperBuilder
           .wrapLite(loan)
-          .usingPriceFeed("redstone-rapid");
+          .usingPriceFeed("f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8");
 
         commit('setLoan', wrappedLoan);
 
