@@ -31,10 +31,9 @@ chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
-const PRICE_SIGNER = "0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9"; //redstone-rapid
 const pangolinRouterAddress = '0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106';
 const usdTokenAddress = '0xc7198437980c041c805a1edcba50c1ce5db95118';
-const PRICE_SIGNER = "0xf786a909D559F5Dee2dc6706d8e5A81728a39aE9"; //redstone-rapid
+const PRICE_SIGNER = "0x3a7d971De367FE15D164CDD952F64205F2D9f10c"; //redstone-rapid
 const erc20ABI = [
   'function decimals() public view returns (uint8)',
   'function balanceOf(address _owner) public view returns (uint256 balance)',
