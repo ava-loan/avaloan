@@ -12,7 +12,7 @@
       :defaultValue="loan"
       :validators="loanValidators"
     />
-    <div class="ltv">LTV: <span class="LTV-value">{{calculatedLTV | percent}}</span></div>
+    <div class="ltv">LTC: <span class="LTV-value">{{calculatedLTV | percent}}</span></div>
     <div class="ltv-slider">
       <Slider
         :min="0"
@@ -52,7 +52,7 @@
         collateral: null,
         waiting: false,
         userChangedLoan: false,
-        errors: [false, false],
+        errors: [false, false, false],
         collateralValidators: [
           {
             require: value => value <= this.balance,
@@ -77,7 +77,7 @@
       ...mapState('pool', ['totalDeposited']),
       ...mapState('network', ['balance']),
       disabled() {
-        return this.waiting || this.errors.includes(true) || !this.loan || !this.collateral;
+        return this.waiting || this.errors.includes(true) || !this.collateral;
       },
       calculatedLTV() {
         if (this.loan && this.collateral) {
@@ -107,6 +107,11 @@
       async borrow() {
         if (!this.disabled) {
           this.waiting = true;
+
+          if (this.loan === null) {
+            this.loan = 0;
+          }
+
           this.handleTransaction(this.createNewLoan, {amount: this.loan, collateral: this.collateral})
           .then(
             () => {
@@ -123,7 +128,7 @@
         this.loan = parseFloat((this.collateral * ltv).toFixed(2));
       },
       checkLTV(value) {
-        this.errors[3] = value > this.maxInitialLTV;
+        this.errors[2] = value > this.maxInitialLTV;
         this.errors = [...this.errors];
       }
     }

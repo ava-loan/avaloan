@@ -5,7 +5,7 @@
       :defaultValue="borrowValue"
       :validators="borrowValidators"
     />
-    <div class="ltv">LTV: <b>{{ltvInfo}}</b></div>
+    <div class="ltv">LTC: <b>{{ltvInfo}}</b></div>
     <div class="ltv-slider-wrapper">
       <Slider
         :min="ltv"
@@ -14,7 +14,7 @@
         :step="0.001"
         v-on:input="updateBorrowFromLTV"
         :validators="ltvValidators"
-        :labels="['Riskier', 'Safer']"
+        :labels="['Safer', 'Riskier']"
       />
     </div>
     <Button label="Borrow" :disabled="disabled" :waiting="waiting" v-on:click="submit()"/>

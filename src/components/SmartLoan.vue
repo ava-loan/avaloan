@@ -89,7 +89,7 @@
       collateralBlock: false,
       tabIndex: 0,
       loanInfo: `Invest in assets using AVAX from both loan and collateral. <br/>
-      Remember to keep LTV below <b>${config.DEFAULT_LTV * 100}%</b>.`
+      Remember to keep LTC below <b>${config.MAX_LTV * 100}%</b>.`
     }
   },
   components: {

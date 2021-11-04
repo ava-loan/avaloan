@@ -8,8 +8,7 @@
       <div class="bar">
         <div class="ltv-state" :style="{'width': width}">
         </div>
-        <div class="minimum-indicator"></div>
-        <div class="minimum-value">500%</div>
+        <div class="range"><span>0%</span><span>500%</span></div>
       </div>
     </div>
   </div>
@@ -42,7 +41,7 @@ export default {
       }
     },
     width() {
-      return this.ltv + '%';
+      return this.ltv / 5 * 100 + '%';
     }
   }
 }
@@ -89,14 +88,9 @@ export default {
     background-color: rgba(191, 188, 255, 0.2);
     margin-bottom: 10px;
 
-    .minimum-indicator {
-      position: absolute;
-      margin-left: 51px;
-      content: " ";
-      transform: translateY(-19px);
-      height: 21px;
-      width: 1px;
-      background-color: #7d7d7d;
+    .range {
+      display: flex;
+      justify-content: space-between;
     }
 
     .ltv-state {

@@ -89,8 +89,8 @@ export default {
     return {
       ltvValidators: [
         {
-          require: function(value) { return value <= config.MAX_LTV },
-          message: `Ltv should not exceed ${config.MAX_LTV * 100}%`
+          require: function(value) { return value < config.MAX_LTV },
+          message: `LTC should be lower than ${config.MAX_LTV * 100}%`
         }
       ]
     }
