@@ -1,9 +1,10 @@
 <template>
-  <div class="info-bubble-wrapper">
+  <div class="info-bubble-wrapper" v-if="shouldShow">
     <div class="info-bubble">
-      <img src="src/assets/icons/info.svg"/>
-      <div v-html="text">
+      <img src="src/assets/icons/info.svg" class="info"/>
+      <div v-html="text" class="text">
       </div>
+      <img src="src/assets/icons/cross.svg" class="cross" v-if="cacheKey" @click="hide">
     </div>
   </div>
 </template>
@@ -13,7 +14,20 @@
   export default {
     name: 'InfoBubble',
     props: {
-      text: ''
+      text: '',
+      cacheKey: '',
+      hidden: false
+    },
+    methods: {
+      hide() {
+        localStorage.setItem(this.cacheKey, 'false');
+        this.hidden = true;
+      }
+    },
+    computed: {
+      shouldShow() {
+        return !this.hidden && localStorage.getItem(this.cacheKey) !== 'false';
+      }
     }
   }
 </script>
@@ -33,14 +47,23 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 23px 50px 45px 50px;
+    padding: 23px 30px 45px 29px;
     font-weight: 500;
     color: #7d7d7d;
     line-height: 24px;
     min-width: 550px;
 
-    img {
+    .info {
       margin-right: 20px;
+    }
+
+    .text {
+      text-align: left;
+    }
+
+    .cross {
+      align-self: flex-start;
+      cursor: pointer;
     }
   }
 }

@@ -12,7 +12,8 @@
     </Bar>
     <InfoBubble
       text="Deposit your AVAX in a pool and get interest rates. <br/>
-        Your deposits will be available for others to borrow." />
+        Your deposits will be available for others to borrow."
+      cacheKey="DEPOSIT-INFO"/>
     <Block class="block" :bordered="true">
       <Tabs>
         <Tab title="Deposit" imgActive="add-deposit-active" img="add-deposit" imgPosition="left" titleWidth="100px">
@@ -36,12 +37,12 @@
         </Tab>
       </Tabs>
     </Block>
-    <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(history && history.length > 0)">
+    <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(poolHistory && poolHistory.length > 0)">
       <div class="history-title">Deposits history</div>
       <div>
         <Chart :dataPoints="chartPoints" :maxY="maximumDeposit" stepped="before" class="deposit-chart"/>
       </div>
-      <HistoryList :items="history" title="Last deposits" class="history-list"/>
+      <HistoryList :items="poolHistory" title="Last deposits" class="history-list"/>
     </Block>
   </div>
 </template>
@@ -91,17 +92,17 @@
       }
     },
     computed: {
-      ...mapState('pool', ['userDeposited', 'depositRate', 'totalDeposited', 'history']),
+      ...mapState('pool', ['userDeposited', 'depositRate', 'totalDeposited', 'poolHistory']),
       ...mapState('network', ['balance']),
       chartPoints() {
-        if (this.history == null || this.history.length === 0) {
+        if (this.poolHistory == null || this.poolHistory.length === 0) {
           return [];
         }
 
         let currentDeposit = 0;
         let maxDeposit = 0;
 
-        let dataPoints = this.history.slice().reverse().map(
+        let dataPoints = this.poolHistory.slice().reverse().map(
           (e) => {
             let value = e.type === "Deposit" ? e.value : -e.value;
             currentDeposit += value;

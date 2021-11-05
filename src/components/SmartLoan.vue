@@ -29,8 +29,8 @@
       </div>
       <div class="collateral">
         <Value label="Collateral"
-          :primary="{value: collateral, type: 'avax', showIcon: true}"
-          :secondary="{value: avaxToUSD(collateral), type: 'usd'}" />
+          :primary="{value: getCurrentCollateral, type: 'avax', showIcon: true}"
+          :secondary="{value: avaxToUSD(getCurrentCollateral), type: 'usd'}" />
           <div class="fund-buttons">
             <img @click="showCollateralBlock(0)"
                  src="src/assets/icons/plus.svg"
@@ -46,7 +46,7 @@
           </div>
       </div>
     </Bar>
-    <InfoBubble v-if="!borrowBlock && !collateralBlock" :text="loanInfo" />
+    <InfoBubble v-if="!borrowBlock && !collateralBlock" :text="loanInfo" cacheKey="LOAN-INFO"/>
     <Block v-if="borrowBlock" class="block borrow-block" :bordered="true">
       <img @click="borrowBlock = false" src="src/assets/icons/cross.svg" class="cross" />
       <Tabs :openTabIndex="tabIndex">
@@ -85,7 +85,7 @@
   import Tab from "@/components/Tab.vue";
   import LTVBar from "@/components/LTVBar.vue";
   import CurrencyForm from "@/components/CurrencyForm.vue";
-  import {mapState} from "vuex";
+  import {mapGetters, mapState} from "vuex";
   import RepayForm from "./RepayForm";
   import BorrowForm from "./BorrowForm";
   import FundForm from "./FundForm";
@@ -100,7 +100,7 @@
       borrowBlock: false,
       collateralBlock: false,
       tabIndex: 0,
-      loanInfo: `Invest in assets using AVAX from both loan and collateral. <br/>
+      loanInfo: `Invest in assets using AVAX from loan and collateral. <br/>
       Remember to keep LTC below <b>${config.MAX_LTV * 100}%</b>.`
     }
   },
@@ -123,9 +123,7 @@
     ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
     ...mapState('pool', ['userDeposited']),
     ...mapState('network', ['balance']),
-    collateral() {
-      return this.totalValue - this.debt;
-    }
+    ...mapGetters('loan', ['getCurrentCollateral'])
   },
   methods: {
     showBorrowBlock(tabIndex) {
