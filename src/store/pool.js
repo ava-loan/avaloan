@@ -9,7 +9,7 @@ export default {
     totalBorrowed: null,
     depositRate: null,
     borrowingRate: null,
-    history: null,
+    poolHistory: null,
     depositInterests: null,
     userBorrowed: null,
     userDeposited: null,
@@ -31,8 +31,8 @@ export default {
     setBorrowingRate(state, borrowingRate) {
       state.borrowingRate = borrowingRate;
     },
-    setHistory(state, history) {
-      state.history = history;
+    setPoolHistory(state, poolHistory) {
+      state.poolHistory = poolHistory;
     },
     setDepositInterests(state, depositInterests) {
       state.depositInterests = depositInterests;
@@ -74,7 +74,7 @@ export default {
         dispatch('updateBorrowingRate'),
         dispatch('updateUserDeposited'),
         dispatch('updateUserBorrowed'),
-        dispatch('updateHistory')
+        dispatch('updatePoolHistory')
       ])
     },
     async updateTotalDeposited({ state, commit }) {
@@ -98,12 +98,12 @@ export default {
       const borrowingRate = parseFloat(ethers.utils.formatEther(await state.pool.getBorrowingRate()));
       commit('setBorrowingRate', borrowingRate);
     },
-    async updateHistory({ commit, state, rootState }) {
+    async updatePoolHistory({ commit, state, rootState }) {
       const pool = state.pool;
       const account = rootState.network.account;
       const poolDepositorBalance = await pool.getDeposits(account);
 
-      pool.myDeposits  = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
+      pool.myDeposits = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
 
       let totalDeposited = 0;
       let totalWithdrawn = 0;
@@ -115,7 +115,7 @@ export default {
 
       logs = logs.filter(item => item.address === pool.address);
 
-      const history = [];
+      const poolHistory = [];
       logs.forEach(log => {
         let parsed = pool.iface.parseLog(log);
 
@@ -133,10 +133,10 @@ export default {
         if (event.type === 'Deposit') totalDeposited += event.value;
         if (event.type === 'Withdrawal') totalWithdrawn += event.value;
 
-        history.unshift(event);
+        poolHistory.unshift(event);
       });
 
-      commit('setHistory', history);
+      commit('setPoolHistory', poolHistory);
 
       const depositInterests = pool.myDeposits - totalDeposited + totalWithdrawn;
 
@@ -152,7 +152,7 @@ export default {
       const tx = await state.pool.deposit({gasLimit: 500000, value: ethers.utils.parseEther(amount.toString())});
       await rootState.network.provider.waitForTransaction(tx.hash);
 
-      dispatch('updateHistory');
+      dispatch('updatePoolHistory');
       dispatch('updatePoolData');
       dispatch('network/updateBalance', {}, {root:true})
     },
@@ -168,7 +168,7 @@ export default {
       const tx = await state.pool.withdraw(ethers.utils.parseEther(amount.toString()), {gasLimit: 500000});
       await provider.waitForTransaction(tx.hash);
 
-      dispatch('updateHistory');
+      dispatch('updatePoolHistory');
       dispatch('updatePoolData');
       dispatch('network/updateBalance', {}, {root:true})
     },
@@ -176,7 +176,7 @@ export default {
       const tx = await state.pool.borrow(ethers.utils.parseEther(amount), {gasLimit: 500000});
       await provider.waitForTransaction(tx.hash);
 
-      dispatch('updateHistory');
+      dispatch('updatePoolHistory');
       dispatch('updatePoolData');
     }
   },

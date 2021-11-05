@@ -62,9 +62,9 @@ import {mapActions, mapGetters, mapState} from "vuex";
         this.checkLTV(this.calculatedLTV);
       },
       async submit() {
-        this.waiting = true;
         if (!this.disabled) {
-         this.handleTransaction(this.borrow, {amount: this.borrowValue})
+          this.waiting = true;
+          this.handleTransaction(this.borrow, {amount: this.borrowValue})
           .then(
             () => {
               this.waiting = false;

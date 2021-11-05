@@ -16,7 +16,21 @@ export default {
     totalValue: null,
     debt: null,
     ltv: null,
-    loanBalance: null
+    loanBalance: null,
+    loanEvents: null,
+    collateralFromPayments: null
+  },
+  getters: {
+    getCurrentCollateral(state) {
+      return state.totalValue - state.debt;
+    },
+    getProfit(state, getters) {
+      if (getters.getCurrentCollateral !== null && state.collateralFromPayments !== null) {
+        return getters.getCurrentCollateral - state.collateralFromPayments;
+      } else {
+        return 0;
+      }
+    }
   },
   mutations: {
     setLoan(state, loan) {
@@ -42,6 +56,12 @@ export default {
     },
     setLoanBalance(state, balance) {
       state.loanBalance = balance;
+    },
+    setLoanEvents(state, loanEvents) {
+      state.loanEvents = loanEvents;
+    },
+    setCollateralFromPayments(state, collateral) {
+      state.collateralFromPayments = collateral;
     }
   },
   actions: {
@@ -67,7 +87,7 @@ export default {
 
       if (state.isLoanAlreadyCreated) {
         const loan = new ethers.Contract(userLoan, LOAN.abi, provider.getSigner());
-
+        loan.iface = new ethers.utils.Interface(LOAN.abi);
 
         const wrappedLoan = WrapperBuilder
           .wrapLite(loan)
@@ -77,6 +97,7 @@ export default {
 
         dispatch('updateLoanStats');
         dispatch('updateLoanBalance');
+        dispatch('updateLoanHistory');
         dispatch('updateAssets');
       }
       return true;
@@ -127,6 +148,46 @@ export default {
 
       commit('setLoanBalance', balance);
     },
+    async updateLoanHistory({ commit, state, rootState }) {
+      const loan = state.loan;
+
+      let collateralFromPayments = 0;
+
+      const provider = rootState.network.provider;
+
+      let logs = await provider.getLogs({
+        fromBlock: 0,
+        address: loan.address,
+        topics: [ [
+          loan.iface.getEventTopic("Funded"),
+          loan.iface.getEventTopic("Withdrawn"),
+          loan.iface.getEventTopic("Invested"),
+          loan.iface.getEventTopic("Redeemed"),
+          loan.iface.getEventTopic("Borrowed"),
+          loan.iface.getEventTopic("Repaid"),
+        ] ]
+      });
+
+      const loanEvents = [];
+
+      logs.forEach(log => {
+        let parsed = loan.iface.parseLog(log);
+
+        let event = {
+          type: parsed.name,
+          timestamp: parsed.args.time.toString() * 1000,
+          value: parseFloat(ethers.utils.formatEther(parsed.args.amount)),
+          tx: log.transactionHash
+        };
+
+        if (event.type === 'Funded') collateralFromPayments += event.value;
+        if (event.type === 'Withdrawn') collateralFromPayments -= event.value;
+
+        loanEvents.unshift(event);
+
+      commit('setCollateralFromPayments', collateralFromPayments);
+      commit('setLoanEvents', loanEvents);
+    },
     async createNewLoan({ rootState, dispatch, commit }, { amount, collateral }) {
       const provider = rootState.network.provider;
 
@@ -147,6 +208,7 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
     },
     async repay({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;
@@ -156,6 +218,7 @@ export default {
       await provider.waitForTransaction(tx.hash);
 
       dispatch('updateLoanStats');
+      dispatch('updateLoanHistory');
     },
     async fund({ state, rootState, dispatch, commit }, { amount }) {
       const provider = rootState.network.provider;

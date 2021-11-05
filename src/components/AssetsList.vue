@@ -5,7 +5,11 @@
         <div class="title">Your investments</div>
         <div class="total">
           <span class="total-value-wrapper">
-            <span class="total-value">Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span></span>
+            <span class="total-value">
+              Total value: <span class="value">$ {{ totalValue ? avaxToUSD(totalValue).toFixed(2) || usd : ''}}</span>
+              <span class="vertical-line"></span>
+              Your {{ getProfit >= 0 ? 'profit' : 'loss'}}: <span class="value" :class="{'red': getProfit < 0}">$ {{ getProfit !== null ? avaxToUSD(getProfit).toFixed(2) || usd : ''}}</span>
+            </span>
           </span>
         </div>
         <table id="investmentsTable">
@@ -182,7 +186,7 @@
   import CurrencyForm from "@/components/CurrencyForm.vue";
   import SmallBlock from "@/components/SmallBlock.vue";
   import LoadedValue from "@/components/LoadedValue.vue";
-  import { mapState, mapActions } from "vuex";
+  import {mapState, mapActions, mapGetters} from "vuex";
   import redstone from 'redstone-api';
   import Vue from 'vue'
   import config from "@/config";
@@ -212,19 +216,28 @@
     },
     computed: {
       ...mapState('loan', ['totalValue', 'assets']),
+      ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
       investments() {
-        return Object.values(this.list).filter(
-          asset => {
-            return asset.balance > 0 || asset.symbol === this.nativeToken
-          }
-        )
+        if (this.list) {
+          return Object.values(this.list).filter(
+            asset => {
+              return asset.balance > 0 || asset.symbol === this.nativeToken
+            }
+          )
+        } else {
+          return [];
+        }
       },
       investmentOptions() {
-        return Object.values(this.list).filter(
-          asset => {
-            return (!asset.balance || asset.balance === 0) && asset.symbol !== this.nativeToken
-          }
-        )
+        if (this.list) {
+          return Object.values(this.list).filter(
+            asset => {
+              return (!asset.balance || asset.balance === 0) && asset.symbol !== this.nativeToken
+            }
+          )
+        } else {
+          return [];
+        }
       },
       nativeToken() {
         return config.nativeToken;
@@ -343,7 +356,6 @@
         let maxValue = 0;
         let minValue = points[0].value;
 
-        //test
         let dataPoints = points.map(
           item => {
             if (item.value > maxValue) maxValue = item.value;
@@ -407,7 +419,8 @@
       assets: {
         handler(newVal) {
           this.updateAssets(newVal);
-        }
+        },
+        immediate: true
       }
     }
   }
@@ -442,7 +455,7 @@
 }
 
 .total {
-  margin-top: 18px;
+  margin-top: 30px;
   width: 100%;
   text-align: center;
 
@@ -462,6 +475,17 @@
 
     .value {
       font-weight: 500;
+
+      &.red {
+        color: #f64254;
+      }
+    }
+
+    .vertical-line {
+      width: 3px;
+      height: 17px;
+      margin: 3px 18px 2px 19px;
+      border-left: solid 2px #dadada;
     }
   }
 }
