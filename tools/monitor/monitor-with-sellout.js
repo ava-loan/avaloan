@@ -1,24 +1,22 @@
 const Loans = require('../loans.js');
-const Liquidate = require('../liquidate.js');
 const args = require('yargs').argv;
 
-let interval = args.interval ? args.interval : 5;
+let interval = args.interval ? args.interval : 10;
 
 console.log(`Monitoring loans with ${interval} seconds interval`);
-
-async function monitorAndLiquidate() {
+async function monitorAndSellout() {
   let loans = await Loans.findAllLoans();
+
   loans.forEach( async loanAddress => {
     let status = await Loans.getLoanStatus(loanAddress);
     if (!status.isSolvent) {
       console.log("Insolvent loan found: " + loanAddress);
       console.log(status);
-      let amount = await Liquidate.calculateLiquidationAmount(loanAddress);
-      await Liquidate.liquidate(loanAddress, amount);
+      await Loans.loanSellout(loanAddress);
     }
   });
-  setTimeout(monitorAndLiquidate, interval * 1000);
+  setTimeout(monitorAndSellout, interval * 1000);
 }
 
 
-monitorAndLiquidate();
+monitorAndSellout();

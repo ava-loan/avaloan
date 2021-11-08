@@ -24,7 +24,7 @@ async function depositToPool(amount) {
   let tx = await pool.deposit({value: toWei(amount.toString())});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
-  console.log("Depositing processed with " + receipt.status == 1 ? "success" : "failure");
+  console.log("Depositing processed with " + (receipt.status == 1 ? "success" : "failure"));
 }
 
 

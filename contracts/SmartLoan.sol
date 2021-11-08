@@ -53,13 +53,13 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   }
 
 
-  function setMaxLTV(uint256 _newMaxLtv) public {
+  function setMaxLTV(uint256 _newMaxLtv) external {
     require(msg.sender == governor, "Only the governor account can change the maximal LTV");
     MAX_LTV = _newMaxLtv;
   }
 
 
-  function setMinSelloutLTV(uint256 _newMinSelloutLtv) public {
+  function setMinSelloutLTV(uint256 _newMinSelloutLtv) external {
     require(msg.sender == governor, "Only the governor account can change the minimal sellout ltv");
     MIN_SELLOUT_LTV = _newMinSelloutLtv;
   }
@@ -92,13 +92,14 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   function nonSolventPartialOrFullAssetSale(bytes32 asset, uint256 targetAvaxAmount) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
-    uint256 saleAvaxValue = exchange.getEstimatedAVAXFromERC20Token(balance, supportedAssets.getAssetAddress(asset));
-
-    if (saleAvaxValue < targetAvaxAmount) {
-      nonSolventAssetSale(asset, balance, saleAvaxValue);
-    } else {
-      uint256 saleAmount = balance * targetAvaxAmount / saleAvaxValue;
-      nonSolventAssetSale(asset, saleAmount, targetAvaxAmount);
+    if (balance > 0) {
+      uint256 saleAvaxValue = exchange.getEstimatedAVAXFromERC20Token(balance, supportedAssets.getAssetAddress(asset));
+      if (saleAvaxValue < targetAvaxAmount) {
+        nonSolventAssetSale(asset, balance, saleAvaxValue);
+      } else {
+        uint256 saleAmount = balance * targetAvaxAmount / saleAvaxValue;
+        nonSolventAssetSale(asset, saleAmount, targetAvaxAmount);
+      }
     }
   }
 
@@ -130,12 +131,16 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   **/
   function sellout(uint256 repayAmount) external successfullSellout {
     require(!isSolvent(), "Cannot sellout a solvent account");
-    bytes32[] memory assets = supportedAssets.getAllAssets();
+    uint256 debt = getDebt();
+    if (repayAmount > debt) {
+      repayAmount = debt;
+    }
     uint256 totalRepayAmount = repayAmount + repayAmount * LIQUIDATION_BONUS / PERCENTAGE_PRECISION;
 
     if (address(this).balance >= totalRepayAmount) {
       attemptRepay(repayAmount);
     } else {
+      bytes32[] memory assets = supportedAssets.getAllAssets();
       for (uint i = 0; i < assets.length; i++) {
         nonSolventPartialOrFullAssetSale(assets[i], totalRepayAmount - address(this).balance);
         if (address(this).balance >= totalRepayAmount) {
@@ -230,7 +235,6 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   **/
   function getTotalValue() public virtual view returns (uint256) {
     uint256 total = address(this).balance;
-
     bytes32[] memory assets = supportedAssets.getAllAssets();
 
     for (uint i = 0; i < assets.length; i++) {
@@ -304,9 +308,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   **/
   function getAssetValue(bytes32 _asset) public view returns (uint256) {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-
     uint256 assetBalance = exchange.getBalance(address(this), _asset);
-
     if (assetBalance > 0) {
       return getAssetPriceInAVAXWei(_asset) * assetBalance / 10 ** token.decimals();
     } else {
