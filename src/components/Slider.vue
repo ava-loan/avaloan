@@ -112,6 +112,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "~@/styles/variables";
+
 .slider-component .slide-container {
   width: 100%;
 }
@@ -171,7 +173,7 @@ export default {
 .error {
   text-align: end;
   height: 24px;
-  color: #f64254;
+  color: $red;
 
   img {
     width: 20px;
