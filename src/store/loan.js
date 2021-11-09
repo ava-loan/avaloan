@@ -4,7 +4,7 @@ import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
 import SUPPORTED_ASSETS from '@contracts/SupportedAssets.json'
 import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import config from "@/config";
-import { maxAvaxToBeSold, minAvaxToBeBought } from "../utils/calculate";
+import {maxAvaxToBeSold, minAvaxToBeBought, parseLogs} from "../utils/calculate";
 import { WrapperBuilder } from "redstone-flash-storage";
 
 export default {
@@ -91,7 +91,7 @@ export default {
 
         const wrappedLoan = WrapperBuilder
           .wrapLite(loan)
-          .usingPriceFeed("f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8");
+          .usingPriceFeed(config.dataProviderId);
 
         commit('setLoan', wrappedLoan);
 
@@ -151,7 +151,6 @@ export default {
     async updateLoanHistory({ commit, state, rootState }) {
       const loan = state.loan;
 
-      let collateralFromPayments = 0;
 
       const provider = rootState.network.provider;
 
@@ -168,22 +167,8 @@ export default {
         ] ]
       });
 
-      const loanEvents = [];
 
-      logs.forEach(log => {
-        let parsed = loan.iface.parseLog(log);
-
-        let event = {
-          type: parsed.name,
-          timestamp: parsed.args.time.toString() * 1000,
-          value: parseFloat(ethers.utils.formatEther(parsed.args.amount)),
-          tx: log.transactionHash
-        };
-
-        if (event.type === 'Funded') collateralFromPayments += event.value;
-        if (event.type === 'Withdrawn') collateralFromPayments -= event.value;
-
-        loanEvents.unshift(event);
+      const [loanEvents, collateralFromPayments] = parseLogs(loan, logs);
 
       commit('setCollateralFromPayments', collateralFromPayments);
       commit('setLoanEvents', loanEvents);

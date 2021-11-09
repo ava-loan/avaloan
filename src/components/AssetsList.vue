@@ -215,7 +215,7 @@
       ]
     },
     computed: {
-      ...mapState('loan', ['totalValue', 'assets']),
+      ...mapState('loan', ['totalValue', 'assets', 'loanHistory']),
       ...mapGetters('loan', ['getCurrentCollateral', 'getProfit']),
       investments() {
         if (this.list) {
@@ -477,7 +477,7 @@
       font-weight: 500;
 
       &.red {
-        color: #f64254;
+        color: $red;
       }
     }
 
@@ -531,30 +531,6 @@
   cursor: pointer;
 }
 
-#investmentsTable, #optionsTable {
-  width: 100%;
-  margin-top: 45px;
-
-  th {
-    text-align: center;
-    color: #696969;
-  }
-
-  td {
-    font-weight: 500;
-  }
-
-  .right {
-    text-align: right;
-    justify-content: flex-end;
-  }
-
-  .center {
-    text-align: center;
-    justify-content: center;
-  }
-}
-
 .token-logo {
   height: 20px;
 
@@ -604,57 +580,6 @@ tbody tr {
 }
 
 @media screen and (max-width: $md - 1) {
-  table {
-    border: 0;
-  }
-
-  table caption {
-    font-size: 1.3em;
-  }
-
-  table thead {
-    border: none;
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    width: 1px;
-  }
-
-  table tr {
-    border-width: 0px 0 3px 0;
-    display: block;
-    margin-bottom: 1.5em;
-    margin-top: 0;
-    padding-top: 0;
-  }
-
-  table td {
-    border-bottom: 1px solid #ddd;
-    display: block;
-    font-size: .8em;
-    text-align: right;
-    padding: 0.5rem 0;
-  }
-
-  table td::before {
-    content: attr(data-label);
-    float: left;
-    font-weight: bold;
-
-    &.chart-icon {
-      flex: 50% 0 0;
-      text-align: left;
-      width: 100%;
-    }
-  }
-
-  table td:last-child {
-    border-bottom: 0;
-  }
-
   .chart-icon, .invest-buttons {
     display: inline-block;
     border-bottom: none;

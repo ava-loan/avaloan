@@ -15,5 +15,6 @@ export default {
       "FRAX": {name: "Frax", symbol: "FRAX", decimals: 18, address: addresses.FRAX}
     },
     nativeToken: "AVAX",
-    SLIPPAGE_TOLERANCE: 0.03
+    SLIPPAGE_TOLERANCE: 0.03,
+    dataProviderId: "f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8"
 }

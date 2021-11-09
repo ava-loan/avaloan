@@ -22,6 +22,29 @@ export function minAvaxToBeBought(amount, currentSlippage) {
   return amount / (1 + maximumSlippage(currentSlippage ? currentSlippage : 0));
 }
 
+export function parseLogs(loan, logs) {
+  let collateralFromPayments = 0;
+  let loanEvents = [];
+
+  logs.forEach(log => {
+    let parsed = loan.iface.parseLog(log);
+
+    let event = {
+      type: parsed.name,
+      timestamp: parsed.args.time.toString() * 1000,
+      value: parseFloat(ethers.utils.formatEther(parsed.args.amount)),
+      tx: log.transactionHash
+    };
+
+    if (event.type === 'Funded') collateralFromPayments += event.value;
+    if (event.type === 'Withdrawn') collateralFromPayments -= event.value;
+
+    loanEvents.unshift(event);
+  });
+
+  return [loanEvents, collateralFromPayments]
+}
+
 export const fromWei = val => parseFloat(ethers.utils.formatEther(val));
 export const toWei = ethers.utils.parseEther;
 export const parseUnits = ethers.utils.parseUnits;

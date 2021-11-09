@@ -258,6 +258,6 @@ img {
   }
 }
 .error {
-  color: #f64254;
+  color: $red;
 }
 </style>
