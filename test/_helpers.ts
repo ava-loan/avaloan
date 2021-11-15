@@ -47,7 +47,7 @@ export const getSelloutRepayAmount = async function (
 
   targetLTV = targetLTV / 1000;
   bonus = bonus / 1000;
-  return (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1);
+  return (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1) * 1.04;
 };
 
 export const getFixedGasSigners = async function (gasLimit: number) {

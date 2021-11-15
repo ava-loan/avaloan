@@ -10,7 +10,7 @@ let privateKeyWallet = new ethers.Wallet(mnemonic);
 
 var provider;
 
-provider = new ethers.providers.JsonRpcProvider();
+provider = new ethers.providers.JsonRpcProvider("https://207.154.255.139/");    // Digital Ocean forked node, leave blank for localhost
 
 
 let wallet = privateKeyWallet.connect(provider);
@@ -50,9 +50,7 @@ async function borrowFromPool(loanAddress, amount) {
 
 async function setMaxLTV(loanAddress, maxLTV) {
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
-  let tx = await loan.setMaxLTV(maxLTV);
-  // FIXME: Temporary for testing purposes
-  await loan.setMinSelloutLTV(0);
+  let tx = await loan.setMaxLTV(maxLTV, {gasLimit: 2000000});
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
   console.log("Setting maximal LTV processed with " + (receipt.status == 1 ? "success" : "failure"));
@@ -63,7 +61,7 @@ function getSelloutRepayAmount(totalValue, debt, bonus, targetLTV) {
   bonus = bonus / 1000;
   let repayAmount = (targetLTV * (totalValue - debt) - debt) / (targetLTV * bonus - 1);
   console.log(`The repay amount for ${totalValue} totalValue, ${debt} debt and ${targetLTV} targetLTV with ${bonus} bonus is ${repayAmount}`);
-  return repayAmount * 1.03;
+  return repayAmount * 1.04;
 }
 
 

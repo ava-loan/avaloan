@@ -159,7 +159,7 @@ describe('Smart loan', () => {
       expect(formatUnits(usdTokenBalance, usdTokenDecimalPlaces)).to.be.equal(100);
 
       const usdTokenPrice = (await wrappedLoan.getAllAssetsPrices())[0];
-      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.00001);
+      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.0001);
     });
 
 
@@ -463,7 +463,7 @@ describe('Smart loan', () => {
       const poolAvaxValue = await provider.getBalance(pool.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await wrappedLoan.setMinSelloutLTV(350);
+      await wrappedLoan.setMinSelloutLTV(200);
       await wrappedLoan.setMaxLTV(400);
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
@@ -471,7 +471,7 @@ describe('Smart loan', () => {
         await wrappedLoan.getTotalValue(),
         await wrappedLoan.getDebt(),
         await wrappedLoan.LIQUIDATION_BONUS(),
-        await wrappedLoan.MAX_LTV() - 10
+        await wrappedLoan.MAX_LTV()
       )
 
       await wrappedLoan.sellout(repayAmount.toString());

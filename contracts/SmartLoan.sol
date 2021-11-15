@@ -93,12 +93,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 saleAvaxValue = exchange.getEstimatedAVAXFromERC20Token(balance, supportedAssets.getAssetAddress(asset));
-      if (saleAvaxValue < targetAvaxAmount) {
+      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, supportedAssets.getAssetAddress(asset));
+      if (balance < minSaleAmount) {
+        uint256 saleAvaxValue = exchange.getEstimatedAVAXFromERC20Token(balance, supportedAssets.getAssetAddress(asset));
         nonSolventAssetSale(asset, balance, saleAvaxValue);
       } else {
-        uint256 saleAmount = balance * targetAvaxAmount / saleAvaxValue;
-        nonSolventAssetSale(asset, saleAmount, targetAvaxAmount);
+        nonSolventAssetSale(asset, minSaleAmount, targetAvaxAmount);
       }
     }
   }
@@ -110,17 +110,19 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   * liquidation bonus will be paid to the liquidator.
   **/
   function attemptRepay(uint256 _repayAmount) internal {
-    if (address(this).balance < _repayAmount) {
+    if (address(this).balance <= _repayAmount) {
       repay(address(this).balance);
     } else {
       repay(_repayAmount);
-      uint256 bonus = _repayAmount * LIQUIDATION_BONUS / PERCENTAGE_PRECISION;
-      if (bonus < address(this).balance) {
-        payable(msg.sender).transfer(bonus);
-      } else {
-        payable(msg.sender).transfer(address(this).balance);
-      }
+    }
+  }
 
+
+  function payBonus(uint256 _bonus) internal {
+    if (_bonus < address(this).balance) {
+      payable(msg.sender).transfer(_bonus);
+    } else {
+      payable(msg.sender).transfer(address(this).balance);
     }
   }
 
@@ -135,11 +137,11 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
     if (repayAmount > debt) {
       repayAmount = debt;
     }
-    uint256 totalRepayAmount = repayAmount + repayAmount * LIQUIDATION_BONUS / PERCENTAGE_PRECISION;
+    uint256 bonus = repayAmount * LIQUIDATION_BONUS / PERCENTAGE_PRECISION;
+    uint256 totalRepayAmount = repayAmount + bonus;
 
-    if (address(this).balance >= totalRepayAmount) {
-      attemptRepay(repayAmount);
-    } else {
+
+    if (address(this).balance < (totalRepayAmount)) {
       bytes32[] memory assets = supportedAssets.getAllAssets();
       for (uint i = 0; i < assets.length; i++) {
         nonSolventPartialOrFullAssetSale(assets[i], totalRepayAmount - address(this).balance);
@@ -147,8 +149,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
           break;
         }
       }
-      attemptRepay(repayAmount);
     }
+    attemptRepay(repayAmount);
+    payBonus(bonus);
   }
 
 
@@ -365,9 +368,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
   **/
   modifier successfullSellout() {
     _;
-    require(getLTV() >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss.");
+    uint256 LTV = getLTV();
+    require(LTV >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss.");
     if (address(this).balance > 0) {
-      require(getLTV() < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state.");
+      require(LTV < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state.");
     }
   }
 

@@ -49,4 +49,12 @@ interface IAssetsExchange {
   **/
   function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) external returns(uint256);
 
+
+  /**
+       * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
+    **/
+  function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) external returns(uint256);
+
+
+
 }
