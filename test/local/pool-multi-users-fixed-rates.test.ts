@@ -96,14 +96,13 @@ describe('Pool with two users', () => {
       "user2 borrows and after year repays, " +
       "user3 deposits after year",
       async function () {
-      await sut.connect(user1).deposit({value: toWei("1.0")});
+      await sut.connect(user1).deposit({value: toWei("2.0")});
       await sut.connect(user2).borrow(toWei("1.0"));
 
       await time.increase(time.duration.years(1));
       let toRepay = await sut.getBorrowed(user2.address);
       await sut.connect(user2).repay({value: toRepay});
 
-      //withdrawing maximum amount
       await sut.connect(user1).withdraw(toRepay);
 
       await sut.connect(user3).deposit({value: toWei("1.0")});
@@ -112,33 +111,9 @@ describe('Pool with two users', () => {
 
       let user1Deposit = await sut.getDeposits(user1.address);
       const user2Deposit = await sut.getDeposits(user3.address);
-      expect(fromWei(user1Deposit)).to.be.closeTo(0, 0.000001);
+      expect(fromWei(user1Deposit)).to.be.closeTo(1.10517093, 0.000001);
       expect(fromWei(user2Deposit)).to.be.closeTo(1.051271, 0.000001);
     });
-
-    it("user1 deposits and after year withdraws, " +
-      "user2 borrows and after year repays, " +
-      "user3 deposits after year",
-      async function () {
-        await sut.connect(user1).deposit({value: toWei("1.0")});
-        await sut.connect(user2).borrow(toWei("1.0"));
-
-        await time.increase(time.duration.years(1));
-        let toRepay = await sut.getBorrowed(user2.address);
-        await sut.connect(user2).repay({value: toRepay});
-
-        //withdrawing maximum amount
-        await sut.connect(user1).withdraw(toRepay);
-
-        await sut.connect(user3).deposit({value: toWei("1.0")});
-
-        await time.increase(time.duration.years(1));
-
-        let user1Deposit = await sut.getDeposits(user1.address);
-        const user2Deposit = await sut.getDeposits(user3.address);
-        expect(fromWei(user1Deposit)).to.be.closeTo(0, 0.000001);
-        expect(fromWei(user2Deposit)).to.be.closeTo(1.051271, 0.000001);
-      });
   });
 });
 
