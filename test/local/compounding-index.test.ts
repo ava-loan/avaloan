@@ -34,7 +34,7 @@ describe('CompoundingIndex',() => {
 
     it("should set initial index 1", async () => {
       let start = fromWei(await sut.getIndex());
-      expect(start).to.be.closeTo(1, 0.000001);
+      expect(start).to.equal(1);
     });
 
     it("should get user value with the default start", async () => {
@@ -194,6 +194,5 @@ describe('CompoundingIndex',() => {
       expect(userValue).to.be.closeTo(1105.170, 0.001);
     });
   });
-
 });
 
