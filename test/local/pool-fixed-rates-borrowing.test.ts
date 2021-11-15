@@ -34,12 +34,12 @@ describe('Pool with fixed interests rates', () => {
 
       await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
 
-      await sut.connect(depositor).deposit({value: toWei("1.0")});
+      await sut.connect(depositor).deposit({value: toWei("2.0")});
     });
 
     it("should borrow", async () => {
       await sut.borrow(toWei("1.0"));
-      expect(await provider.getBalance(sut.address)).to.be.equal(toWei("0", "ether"));
+      expect(await provider.getBalance(sut.address)).to.be.equal(toWei("1", "ether"));
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
       expect(borrowed).to.be.closeTo(1.000000, 0.000001);
@@ -75,7 +75,7 @@ describe('Pool with fixed interests rates', () => {
       let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
 
       await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
-      await sut.connect(depositor).deposit({value: toWei("1.0")});
+      await sut.connect(depositor).deposit({value: toWei("2.0")});
     });
 
     it("should wait for 1 year", async () => {
@@ -87,7 +87,7 @@ describe('Pool with fixed interests rates', () => {
 
     it("should borrow", async () => {
       await sut.borrow(toWei("1.0"));
-      expect(await provider.getBalance(sut.address)).to.be.equal(toWei("0", "ether"));
+      expect(await provider.getBalance(sut.address)).to.be.equal(toWei("1", "ether"));
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
       expect(borrowed).to.be.closeTo(1.000000, 0.000001);
@@ -109,4 +109,36 @@ describe('Pool with fixed interests rates', () => {
 
   });
 
+  describe('Borrowing close to pool utilisation threshold', () => {
+    let sut: Pool,
+      owner: SignerWithAddress,
+      depositor: SignerWithAddress,
+      fixedRatesCalculator;
+
+    before("Deploy Pool contract", async () => {
+      [owner, depositor] = await getFixedGasSigners(10000000);
+      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      sut = (await deployContract(owner, PoolArtifact)) as Pool;
+
+      let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
+
+      await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await sut.connect(depositor).deposit({value: toWei("1.0")});
+    });
+
+    it("should be able to borrow at threshold", async () => {
+      await sut.borrow(toWei("0.95"));
+
+      let borrowed = fromWei(await sut.getBorrowed(owner.address));
+      expect(borrowed).to.be.closeTo(0.95, 0.000001);
+    });
+
+    it("should not be able to borrow above threshold", async () => {
+      await expect(sut.borrow(toWei("0.01"))).to.be.revertedWith("The pool utilisation cannot be greater " +
+        "than 95%.");
+
+      let borrowed = fromWei(await sut.getBorrowed(owner.address));
+      expect(borrowed).to.be.closeTo(0.95, 0.000001);
+    });
+  });
 });
