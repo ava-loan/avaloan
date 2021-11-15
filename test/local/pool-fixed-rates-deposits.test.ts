@@ -94,6 +94,17 @@ describe('Pool with fixed interests rates', () => {
       expect(fromWei(tenYearsDeposit)).to.be.closeTo(1.6487212, 0.000001);
     });
 
+    describe("after half year delay", () => {
+      it("should increase deposit after half year", async function () {
+        await sut.deposit({value: toWei("1.0")});
+        expect(await provider.getBalance(sut.address)).to.equal(toWei("1"));
+
+        await time.increase(time.duration.years(0.5));
+        const halfYearDeposit = await sut.getDeposits(owner.address);
+        expect(fromWei(halfYearDeposit)).to.be.closeTo(1.025315122129735, 0.000001);
+      });
+    });
+
     describe("after 1 year delay", () => {
       beforeEach(async () => {
         await time.increase(time.duration.years(1));
