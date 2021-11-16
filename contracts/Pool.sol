@@ -15,7 +15,7 @@ import "./IBorrowersRegistry.sol";
  */
 contract Pool is OwnableUpgradeable {
 
-    uint256 public constant MAX_POOL_UTILISATION = 95 * 10**16;
+    uint256 public constant MAX_POOL_UTILISATION = 0.95 ether;
 
     mapping(address => uint256) public deposits;
     uint256 public totalDeposited;
@@ -228,6 +228,7 @@ contract Pool is OwnableUpgradeable {
       require(address(borrowersRegistry) != address(0), "Borrowers registry is not configured.");
       require(borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow.");
       _;
+      require(totalDeposited > 0, "Cannot borrow from an empty pool.");
       require(totalBorrowed * 1 ether / totalDeposited <= MAX_POOL_UTILISATION, "The pool utilisation cannot be greater than 95%.");
     }
 
