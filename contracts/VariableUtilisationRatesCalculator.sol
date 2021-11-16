@@ -10,21 +10,25 @@ import "hardhat/console.sol";
  * @title VariableUtilisationRatesCalculator
  * @dev Contract which calculates the interest rates based on pool utilisation.
  * Utilisation is computed as the ratio between funds borrowed and funds deposited to the pool.
- * Borrowing rates are calculated using a piecewise linear function. The first piece defined by UTILISATION_FACTOR (slope)
- * and OFFSET (shift). Second piece is defined by previous function, BREAKPOINT (threshold value) and MAX_RATE
- * (value at pool utilisation of 1).
- */
+ * Borrowing rates are calculated using a piecewise linear function. The first piece is defined by SLOPE_1
+ * and OFFSET (shift). Second piece is defined by SLOPE_2 (calculated off-chain), BREAKPOINT (threshold value above
+ * which second piece is considered) and MAX_RATE (value at pool utilisation of 1).
+**/
 contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   using WadRayMath for uint256;
 
-  uint256 public constant UTILISATION_FACTOR = 5 * 10 ** 17;
-  uint256 public constant OFFSET = 5 * 10 ** 16;
+  uint256 public constant SLOPE_1 = 0.12 ether;
+  uint256 public constant OFFSET = 0.05 ether;
   // BREAKPOINT must be lower than 1 ether
-  uint256 public constant BREAKPOINT = 8 * 10 ** 17;
-  uint256 public constant MAX_RATE = 75 * 10 ** 16;
+  uint256 public constant BREAKPOINT = 0.8 ether;
+  uint256 public constant MAX_RATE = 0.75 ether;
+
+  // calculated off-chain for gas efficiency with following formula:
+  // (MAX_RATE - OFFSET - SLOPE_1 * BREAKPOINT) / (1 - BREAKPOINT)
+  uint256 public constant SLOPE_2 = 3.02 ether;
 
 
-  /* ========== VIEW FUNCTIONS ========== */
+/* ========== VIEW FUNCTIONS ========== */
 
 
   /**
@@ -62,39 +66,35 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   /**
   * Returns the current borrowing rate
   * The value is based on the pool utilisation according to the piecewise linear formula:
-  * 1) for pool utilisation lower than or equal to breakpoint
-  * borrowing_rate = UTILISATION_FACTOR * utilisation + OFFSET
-  * 2) for pool utilisation greater than breakpoint
-  * slope_factor = (MAX_RATE - OFFSET - UTILISATION_FACTOR * BREAKPOINT) / (1 - BREAKPOINT)
-  * borrowing_rate = slope_factor * utilisation + MAX_RATE - slope_factor
+  * 1) for pool utilisation lower than or equal to breakpoint:
+  * borrowing_rate = SLOPE_1 * utilisation + OFFSET
+  * 2) for pool utilisation greater than breakpoint:
+  * borrowing_rate = SLOPE_2 * utilisation + MAX_RATE - SLOPE_2
   * @dev _totalLoans total value of loans
   * @dev _totalDeposits total value of deposits
 **/
   function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);
 
-//    require(poolUtilisation <= 1 ether, "Pool utilisation cannot be greater than 1.");
+    // TODO: uncomment when issue with calculating pool utilisation is resolved. Now it is disabled to let the appropriate tests fail to show the issue
+    // require(poolUtilisation <= 1 ether, "Pool utilisation cannot be greater than 1.");
 
 
     if (poolUtilisation <= BREAKPOINT) {
       return poolUtilisation.wadToRay()
-      .rayMul(UTILISATION_FACTOR.wadToRay()).rayToWad()
-      + OFFSET;
+        .rayMul(SLOPE_1.wadToRay()).rayToWad()
+        + OFFSET;
     } else {
-      uint256 slopeFactor = (
-      MAX_RATE
-      - OFFSET
-      - UTILISATION_FACTOR.wadToRay()
-      .rayMul(BREAKPOINT.wadToRay()).rayToWad()).wadToRay()
-      .rayDiv(
-        (1 ether - BREAKPOINT).wadToRay()
-      )
-      .rayToWad();
+      // full formula derived from piecewise linear function calculation except for SLOPE_2 subtraction (separated for
+      // unsigned integer safety check)
+      uint256 value = SLOPE_2.wadToRay()
+        .rayMul(poolUtilisation.wadToRay()).rayToWad()
+        + MAX_RATE;
 
-      return slopeFactor.wadToRay()
-      .rayMul(poolUtilisation.wadToRay()).rayToWad()
-      + MAX_RATE
-      - slopeFactor;
+      require(value >= SLOPE_2,
+      "Out of range value when calculating borrowing rate. Consider checking if SLOPE_2 is calculated correctly");
+
+      return value - SLOPE_2;
     }
   }
 }
