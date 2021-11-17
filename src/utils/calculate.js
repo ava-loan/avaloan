@@ -7,7 +7,7 @@ export function calculateCollateral(amount) {
     }
 }
 
-export function maximumSlippage(currentSlippage) {
+export function acceptableSlippage(currentSlippage) {
   if (!currentSlippage) {
     currentSlippage = 0;
   }
@@ -15,11 +15,11 @@ export function maximumSlippage(currentSlippage) {
 }
 
 export function maxAvaxToBeSold(amount, currentSlippage) {
-  return (1 + maximumSlippage(currentSlippage ? currentSlippage : 0)) * amount;
+  return (1 + (currentSlippage ? currentSlippage : 0)) * amount;
 }
 
 export function minAvaxToBeBought(amount, currentSlippage) {
-  return amount / (1 + maximumSlippage(currentSlippage ? currentSlippage : 0));
+  return amount / (1 + (currentSlippage ? currentSlippage : 0));
 }
 
 export function parseLogs(loan, logs) {
