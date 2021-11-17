@@ -190,7 +190,7 @@
   import redstone from 'redstone-api';
   import Vue from 'vue'
   import config from "@/config";
-  import {maxAvaxToBeSold, maximumSlippage} from "../utils/calculate";
+  import {maxAvaxToBeSold, acceptableSlippage} from "../utils/calculate";
   import {minAvaxToBeBought} from "../utils/calculate";
 
 
@@ -278,22 +278,22 @@
       //TODO: add optional chaining
       buySlippageInfo(asset) {
         return (value) =>
-          `Cost will be at most
+          `Cost will be
           <b>${(maxAvaxToBeSold(asset.price * value, asset.buySlippage)).toPrecision(6)}</b>
           AVAX ($
           ${this.avaxToUSD((maxAvaxToBeSold(asset.price * value, asset.buySlippage))).toPrecision(6)})
-          with slippage tolerance of
-          ~${(maximumSlippage(asset.buySlippage) * 100).toPrecision(2)}%
+          with current slippage of ${(asset.buySlippage * 100).toFixed(2)}%
+          (max. slippage ${(acceptableSlippage(asset.buySlippage) * 100).toFixed(2)}%)
           `
       },
       sellSlippageInfo(asset) {
         return (value) =>
-          `You'll get at least
+          `You'll get
           <b>${(minAvaxToBeBought(asset.price * value, asset.sellSlippage)).toPrecision(6)}</b>
           AVAX ($
           ${(this.avaxToUSD(minAvaxToBeBought(asset.price * value, asset.sellSlippage))).toPrecision(6)})
-          with slippage tolerance of
-          ~${(maximumSlippage(asset.sellSlippage) * 100).toPrecision(2)}%
+          with current slippage of ${(asset.sellSlippage * 100).toFixed(2)}%
+          (max. slippage ${(acceptableSlippage(asset.sellSlippage) * 100).toFixed(2)}%)
           `
       },
       toggleChart(symbol) {
