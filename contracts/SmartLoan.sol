@@ -3,6 +3,7 @@ pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./IAssetsExchange.sol";
 import "./SupportedAssets.sol";
 import "./Pool.sol";
@@ -17,7 +18,7 @@ import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable
  * It permits only a limited and safe token transfer.
  *
  */
-contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
+contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
 
   uint256 public constant PERCENTAGE_PRECISION = 1000;
 
@@ -54,7 +55,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable {
    * The loan needs to remain solvent after the withdrawal
    * @param _amount to be withdrawn
   **/
-  function withdraw(uint256 _amount) external onlyOwner remainsSolvent {
+  function withdraw(uint256 _amount) external onlyOwner remainsSolvent nonReentrant {
     require(address(this).balance >= _amount, "There is not enough funds to withdraw");
 
     payable(msg.sender).transfer(_amount);
