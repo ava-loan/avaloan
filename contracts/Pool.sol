@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
 import "./IBorrowersRegistry.sol";
-import "hardhat/console.sol";
 
 /**
  * @title Pool
@@ -64,18 +63,19 @@ contract Pool is Ownable, IERC20 {
   function transfer(address recipient, uint256 amount) external override returns (bool) {
     require(msg.sender != address(0), "ERC20: transfer from the zero address");
     require(recipient != address(0), "ERC20: transfer to the zero address");
+    require(recipient != address(this), "ERC20: cannot transfer to the pool address");
 
     _accumulateDepositInterests(msg.sender);
 
     require(_deposited[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
-  unchecked {// (this is verified in "require" above)
-    _deposited[msg.sender] -= amount;
-  }
+
+    // (this is verified in "require" above)
+    unchecked {
+      _deposited[msg.sender] -= amount;
+    }
 
     _accumulateDepositInterests(recipient);
     _deposited[recipient] += amount;
-
-    // TODO: verify CompoundingIndex
 
     emit Transfer(msg.sender, recipient, amount);
 
@@ -88,7 +88,7 @@ contract Pool is Ownable, IERC20 {
 
   function approve(address spender, uint256 amount) external override returns (bool) {
     _accumulateDepositInterests(msg.sender);
-    // TODO: should we also accumulate here deposit interest for "spender"?
+
     require(_deposited[msg.sender] >= amount, "ERC20: approve amount exceeds balance");
     _allowed[msg.sender][spender] = amount;
 
@@ -196,7 +196,7 @@ contract Pool is Ownable, IERC20 {
   }
 
   function totalSupply() public view override returns (uint256) {
-    return _totalDeposited;
+    return balanceOf(address(this));
   }
 
 
@@ -233,28 +233,38 @@ contract Pool is Ownable, IERC20 {
 
     _totalDeposited += amount;
     _deposited[account] += amount;
+    _deposited[address(this)] += amount;
 
     emit Transfer(address(0), account, amount);
   }
 
+
   function _burn(address account, uint256 amount) internal {
     require(account != address(0), "ERC20: burn from the zero address");
 
-    uint256 accountBalance = _deposited[account];
-    require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+    require(_totalDeposited >= amount, "ERC20: burn amount exceeds current pool balance");
+    require(_deposited[address(this)] >= amount, "ERC20: burn amount exceeds current pool indexed balance");
 
-  unchecked {// verified in "require" above
-    _deposited[account] = accountBalance - amount;
-  }
+    uint256 accountBalance = _deposited[account];
+    require(accountBalance >= amount, "ERC20: burn amount exceeds user balance");
+
+    // verified in "require" above
+    unchecked {
+      _deposited[account] = accountBalance - amount;
+      _deposited[address(this)] = _deposited[address(this)] - amount;
+    }
+
     _totalDeposited -= amount;
 
     emit Transfer(account, address(0), amount);
   }
 
+
   function _updateRates() internal {
     depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed, _totalDeposited));
     borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed, _totalDeposited));
   }
+
 
   function _accumulateDepositInterests(address user) internal {
     uint256 depositedWithInterests = balanceOf(user);
@@ -265,7 +275,9 @@ contract Pool is Ownable, IERC20 {
     emit InterestsCollected(user, interests, block.timestamp);
 
     depositIndex.updateUser(user);
+    depositIndex.updateUser(address(this));
   }
+
 
   function _accumulateBorrowingInterests(address user) internal {
     uint256 borrowedWithInterests = getBorrowed(user);

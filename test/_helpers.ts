@@ -1,5 +1,6 @@
 import {ethers, network} from "hardhat";
 import {BigNumber} from "ethers";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 
 export const toWei = ethers.utils.parseUnits;
 export const fromWei = (val: BigNumber) => parseFloat(ethers.utils.formatEther(val));
@@ -31,3 +32,15 @@ export const time = {
     }
   }
 }
+
+export const getFixedGasSigners = async function(gasLimit:number) {
+  const signers : SignerWithAddress[] = await ethers.getSigners();
+  signers.forEach(signer => {
+    let orig = signer.sendTransaction;
+    signer.sendTransaction = function(transaction) {
+      transaction.gasLimit = BigNumber.from(gasLimit.toString());
+      return orig.apply(signer, [transaction]);
+    }
+  });
+  return signers;
+};
