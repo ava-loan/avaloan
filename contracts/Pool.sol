@@ -2,6 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
 import "./IBorrowersRegistry.sol";
@@ -13,7 +14,7 @@ import "./IBorrowersRegistry.sol";
  * Rates are compounded every second and getters always return the current deposit and borrowing balance.
  * The interest rates calculation is delegated to the external calculator contract.
  */
-contract Pool is OwnableUpgradeable {
+contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     uint256 public constant MAX_POOL_UTILISATION = 0.95 ether;
 
@@ -102,7 +103,7 @@ contract Pool is OwnableUpgradeable {
      * Withdraws selected amount from the user deposits
      * @dev _amount the amount to be withdrawn
     **/
-    function withdraw(uint256 _amount) external {
+    function withdraw(uint256 _amount) external nonReentrant {
         accumulateDepositInterests(msg.sender);
 
         require(deposits[msg.sender] >= _amount, "You are trying to withdraw more that was deposited.");
