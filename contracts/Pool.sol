@@ -126,6 +126,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     **/
     function borrow(uint256 _amount) payable external canBorrow {
         require(address(this).balance >= _amount, "There is no enough funds in the pool to fund the loan.");
+        require(totalDeposited - totalBorrowed >= _amount, "There is no enough deposit in the pool to fund the loan.");
 
         accumulateBorrowingInterests(msg.sender);
 
