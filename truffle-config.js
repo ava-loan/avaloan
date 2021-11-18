@@ -50,9 +50,9 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     },
 
-    fork: {
+    server: {
       url: "https://207.154.255.139",     // Localhost (default: none)
-      network_id: "2137",       // Any network (default: none)
+      network_id: "2139",       // Any network (default: none)
     },
 
     // Another network with more advanced options...
