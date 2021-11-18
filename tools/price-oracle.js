@@ -25,7 +25,7 @@ async function setPrice(asset, price) {
   let tx = await priceProvider.setPrice(ethers.utils.formatBytes32String(asset), toWei(price.toString()));
   console.log("Waiting for tx: " + tx.hash);
   let receipt = await provider.waitForTransaction(tx.hash);
-  console.log("Setting price processed with " + receipt.status == 1 ? "success" : "failure");
+  console.log("Setting price processed with " + (receipt.status == 1 ? "success" : "failure"));
 }
 
 

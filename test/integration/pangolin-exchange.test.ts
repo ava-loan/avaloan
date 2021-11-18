@@ -90,6 +90,21 @@ describe('PangolinExchange', () => {
     });
 
 
+    it('should transfer back all transferred but not sold tokens', async () => {
+      let daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      const initialDAITokenBalance = daiTokenBalance;
+      expect(daiTokenBalance).to.not.be.equal("0");
+
+      await daiToken.connect(owner).transfer(sut.address, daiTokenBalance.toString());
+      daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      expect(daiTokenBalance).to.be.equal("0");
+
+      await sut.transferBack(toBytes32("DAI"));
+      daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
+      expect(daiTokenBalance).to.be.equal(initialDAITokenBalance);
+    });
+
+
     it('should check if an erc20 tokens were sold successfully', async () => {
       const initialDAITokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const initialAvaxBalance = await provider.getBalance(owner.address);

@@ -36,4 +36,25 @@ interface IAssetsExchange {
   function getBalance(address _user, bytes32 _asset) external view returns(uint256);
 
 
+  /**
+   * Transfers the current balance of the _asset held by exchange contract to the msg.sender
+   * This method can be used to obtain tokens already sent to the exchange contract in case selling those tokens failed.
+   * @dev _asset the asset code of an asset
+  **/
+  function transferBack(bytes32 _asset) external;
+
+
+  /**
+     * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
+  **/
+  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) external returns(uint256);
+
+
+  /**
+       * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
+    **/
+  function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) external returns(uint256);
+
+
+
 }

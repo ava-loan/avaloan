@@ -1,4 +1,4 @@
 {
   "provider-url" : "http://localhost:8545",
-  "network-id" : 2
+  "network-id" : 31337
 }

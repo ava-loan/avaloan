@@ -35,6 +35,13 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   }
 
 
+  function transferBack(bytes32 _asset) external override {
+    address tokenAddress = supportedAssets.getAssetAddress(_asset);
+    IERC20 token = IERC20(tokenAddress);
+    token.transfer(msg.sender, token.balanceOf(address(this)));
+  }
+
+
   /**
    * Buys selected ERC20 token with AVAX using the Pangolin DEX
    * Refunds unused AVAX to the msg.sender
@@ -91,6 +98,16 @@ contract PangolinExchange is Ownable, IAssetsExchange {
 
 
   /**
+     * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
+  **/
+  function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) public view override returns (uint256) {
+    address[] memory path = getPathForTokenToAVAX(_token);
+
+    return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
+  }
+
+
+  /**
      * Returns the minimum AVAX amount that is required to buy _exactAmountOut of _token ERC20 token.
   **/
   function getEstimatedAVAXForERC20Token(uint256 _exactAmountOut, address _token) public view returns (uint256) {
@@ -102,7 +119,7 @@ contract PangolinExchange is Ownable, IAssetsExchange {
   /**
    * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
   **/
-  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) public view returns (uint256) {
+  function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) public view override returns (uint256) {
     address[] memory path = getPathForTokenToAVAX(_token);
 
     return pangolinRouter.getAmountsOut(_amountIn, path)[1];
