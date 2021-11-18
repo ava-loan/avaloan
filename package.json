@@ -5,7 +5,7 @@
   "author": "Jakub Wojciechowski <jakub@alice.si>",
   "scripts": {
     "dev": "node scripts/dev-server.js",
-    "serve": "yarn build:contracts:truffle && yarn dev",
+    "start": "yarn migrate:local && yarn dev",
     "build:contracts:hardhat": "yarn hardhat compile",
     "build:contracts:hardhat:force": "yarn hardhat compile --force",
     "build:contracts:truffle": "truffle compile",
@@ -13,6 +13,8 @@
     "build": "yarn build:contracts:truffle && node scripts/build.js",
     "test-local": "yarn hardhat test test/local/*",
     "forked-test-node": "yarn hardhat node --fork https://api.avax.network/ext/bc/C/rpc",
+    "migrate:local": "npx truffle migrate --network local",
+    "migrate:server": "npx truffle migrate --network server",
     "test-integration": "yarn hardhat test test/integration/* --network hardhat-integration",
     "test:watch": "yarn hardhat test && yarn hardhat watch test",
     "ci:watch": "yarn hardhat watch ci"

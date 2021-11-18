@@ -84,16 +84,26 @@
             params: [{ chainId: this.toHex(config.chainId) }],
           });
         } catch (switchError) {
-          // This error code indicates that the chain has not been added to MetaMask.
+          // This error code indicates that the chain has not been added to MetaMask
           if (switchError.code === 4902) {
             try {
-              //TODO IMPORTANT: change in production
-              await ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
+              const walletParams = process.env.NODE_ENV === 'development' ?
+                {
+                  chainName: 'Localhost',
+                  chainId: this.toHex(config.chainId),
+                  rpcUrls:  [ "http://localhost" ]
+                }
+                :
+                {
                   chainName: 'Forked Avalanche',
                   chainId: this.toHex(config.chainId),
-                  rpcUrls:  [ "https://207.154.255.139/" ] }],
+                  //TODO IMPORTANT: set proper address in production
+                  rpcUrls:  [ "https://207.154.255.139/" ]
+                }
+
+              await ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: walletParams
               });
             } catch (addError) {
               Vue.$toast.error("Error while adding network");
