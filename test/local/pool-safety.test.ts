@@ -55,7 +55,7 @@ describe('Safety tests of pool', () => {
     it("user 1 forcefully funds pool contract with 1 ETH", async () => {
       await time.increase(time.duration.years(1));
 
-      expect(fromWei(await pool.totalDeposited())).to.be.closeTo(1, 0.000001);
+      expect(fromWei(await pool.totalSupply())).to.be.closeTo(1.098340055784504, 0.000001);
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.3, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.0938, 0.000001);
@@ -63,7 +63,7 @@ describe('Safety tests of pool', () => {
 
       await destructable.connect(user1).destruct(pool.address);
 
-      expect(fromWei(await pool.totalDeposited())).to.be.closeTo(1, 0.000001);
+      expect(fromWei(await pool.totalSupply())).to.be.closeTo(1.098340055784504, 0.000001);
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.3, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.0938, 0.000001);
@@ -73,7 +73,7 @@ describe('Safety tests of pool', () => {
     it("wait a year and check pool", async () => {
       await time.increase(time.duration.years(1));
 
-      expect(fromWei(await pool.totalDeposited())).to.be.closeTo(1, 0.000001);
+      expect(fromWei(await pool.totalSupply())).to.be.closeTo(1.206350878140707, 0.000001);
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.3, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.0938, 0.000001);

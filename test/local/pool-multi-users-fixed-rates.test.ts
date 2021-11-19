@@ -45,8 +45,8 @@ describe('Pool with two users', () => {
 
       await sut.connect(user2).deposit({value: toWei("1.0")});
 
-      const user1Deposit = await sut.getDeposits(user1.address);
-      const user2Deposit = await sut.getDeposits(user2.address);
+      const user1Deposit = await sut.balanceOf(user1.address);
+      const user2Deposit = await sut.balanceOf(user2.address);
       expect(fromWei(user1Deposit)).to.be.closeTo(1.051271, 0.000001);
       expect(fromWei(user2Deposit)).to.be.closeTo(1, 0.000001);
     });
@@ -60,8 +60,8 @@ describe('Pool with two users', () => {
 
       await time.increase(time.duration.years(1));
 
-      const user1Deposit = await sut.getDeposits(user1.address);
-      const user2Deposit = await sut.getDeposits(user2.address);
+      const user1Deposit = await sut.balanceOf(user1.address);
+      const user2Deposit = await sut.balanceOf(user2.address);
       expect(fromWei(user1Deposit)).to.be.closeTo(1.105170, 0.000001);
       expect(fromWei(user2Deposit)).to.be.closeTo(1.051271, 0.000001);
     });
@@ -79,14 +79,14 @@ describe('Pool with two users', () => {
       let toRepay = await sut.getBorrowed(user3.address);
       await sut.connect(user3).repay({value: toRepay});
 
-      let user1Deposit = await sut.getDeposits(user1.address);
+      let user1Deposit = await sut.balanceOf(user1.address);
       expect(fromWei(user1Deposit)).to.be.closeTo(1.051271, 0.000001);
       await sut.connect(user1).withdraw(toRepay);
 
       await time.increase(time.duration.years(1));
 
-      user1Deposit = await sut.getDeposits(user1.address);
-      const user2Deposit = await sut.getDeposits(user2.address);
+      user1Deposit = await sut.balanceOf(user1.address);
+      const user2Deposit = await sut.balanceOf(user2.address);
 
       expect(fromWei(user1Deposit)).to.be.closeTo(0, 0.000001);
       expect(fromWei(user2Deposit)).to.be.closeTo(1.105170, 0.000001);
@@ -109,8 +109,8 @@ describe('Pool with two users', () => {
 
       await time.increase(time.duration.years(1));
 
-      let user1Deposit = await sut.getDeposits(user1.address);
-      const user2Deposit = await sut.getDeposits(user3.address);
+      let user1Deposit = await sut.balanceOf(user1.address);
+      const user2Deposit = await sut.balanceOf(user3.address);
       expect(fromWei(user1Deposit)).to.be.closeTo(1.10517093, 0.000001);
       expect(fromWei(user2Deposit)).to.be.closeTo(1.051271, 0.000001);
     });

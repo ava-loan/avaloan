@@ -43,7 +43,7 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(4));
 
       let poolBalance = fromWei(await provider.getBalance(pool.address));
-      let depositUser1 = fromWei(await pool.getDeposits(user1.address));
+      let depositUser1 = fromWei(await pool.balanceOf(user1.address));
       let borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
 
       expect(depositUser1).to.be.closeTo( 5.685261377043027, 0.000001);
@@ -53,7 +53,7 @@ describe('Pool with fixed interests rates', () => {
 
       await pool.connect(user1).withdraw(toWei("5.68"));
 
-      depositUser1 = fromWei(await pool.getDeposits(user1.address));
+      depositUser1 = fromWei(await pool.balanceOf(user1.address));
 
       expect(depositUser1).to.be.closeTo(0.005261464291408269  , 0.000001);
 
@@ -65,7 +65,7 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
 
       // poolBalance = fromWei(await provider.getBalance(pool.address));
-      // depositUser1 = fromWei(await pool.getDeposits(user1.address));
+      // depositUser1 = fromWei(await pool.balanceOf(user1.address));
       // borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
       //
       // expect(depositUser1).to.be.below(borrowedUser2 + poolBalance);

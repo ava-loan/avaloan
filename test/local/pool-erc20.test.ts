@@ -2,17 +2,18 @@ import {ethers, waffle} from "hardhat"
 import chai, {expect} from "chai"
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from "../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json";
-import PoolArtifact from "../artifacts/contracts/Pool.sol/Pool.json";
+import FixedRatesCalculatorArtifact from "../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json";
+import PoolArtifact from "../../artifacts/contracts/Pool.sol/Pool.json";
 import OpenBorrowersRegistryArtifact
-  from "../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
+  from "../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, time, toWei, getFixedGasSigners} from "./_helpers";
-import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../typechain";
+import {fromWei, time, toWei, getFixedGasSigners} from "../_helpers";
+import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../typechain";
 
 chai.use(solidity);
 
 const {deployContract} = waffle;
+const ZERO = ethers.constants.AddressZero;
 
 describe("Pool ERC20 token functions", () => {
   let sut: Pool,
@@ -31,12 +32,12 @@ describe("Pool ERC20 token functions", () => {
 
   beforeEach(async () => {
     [owner, user1, user2, user3, user4, user5] = await getFixedGasSigners(10000000);
-    fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
     sut = (await deployContract(owner, PoolArtifact)) as Pool;
-    await sut.setRatesCalculator(fixedRatesCalculator.address);
 
+    let fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
     let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
-    await sut.setBorrowersRegistry(borrowersRegistry.address);
+
+    await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
   });
 
   describe("transfer", () => {

@@ -39,7 +39,7 @@ describe('Pool with fixed interests rates', () => {
       await pool.connect(user1).deposit({value: toWei("1.0")});
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1", "ether"));
 
-      expect(fromWei(await pool.getDeposits(user1.address))).to.be.closeTo(1.000000, 0.000001);
+      expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.000000, 0.000001);
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0, 0.000001);
 
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.05, 0.000001);
@@ -50,7 +50,7 @@ describe('Pool with fixed interests rates', () => {
       await pool.connect(user2).borrow(toWei("0.5"));
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("0.5", "ether"));
 
-      expect(fromWei(await pool.getDeposits(user1.address))).to.be.closeTo(1.000000, 0.000001);
+      expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.000000, 0.000001);
       expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(0.5, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.15, 0.000001);
@@ -62,7 +62,7 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("0.5", "ether"));
 
-      expect(fromWei(await pool.getDeposits(user1.address))).to.be.closeTo(1.161834, 0.000001);
+      expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.161834, 0.000001);
 
       expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(0.674929, 0.000001);
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.15, 0.000001);
@@ -74,9 +74,9 @@ describe('Pool with fixed interests rates', () => {
       await pool.connect(user3).deposit({value: toWei("1.0")});
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1.5", "ether"));
 
-      expect(fromWei(await pool.getDeposits(user1.address))).to.be.closeTo(1.161834, 0.000001);
-      expect(fromWei(await pool.getDeposits(user3.address))).to.be.closeTo(1, 0.000001);
-      expect(fromWei(await pool.totalDeposited())).to.be.closeTo(2, 0.000001);
+      expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.161834, 0.000001);
+      expect(fromWei(await pool.balanceOf(user3.address))).to.be.closeTo(1, 0.000001);
+      expect(fromWei(await pool.totalSupply())).to.be.closeTo(2, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.04375, 0.000001);
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.175, 0.000001);
@@ -86,8 +86,8 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1.5", "ether"));
 
-      expect(fromWei(await pool.getDeposits(user1.address))).to.be.closeTo(1.213792802126371, 0.000001);
-      expect(fromWei(await pool.getDeposits(user3.address))).to.be.closeTo( 1.0447211419209947, 0.000001);
+      expect(fromWei(await pool.balanceOf(user1.address))).to.be.closeTo(1.213792802126371, 0.000001);
+      expect(fromWei(await pool.balanceOf(user3.address))).to.be.closeTo( 1.0447211419209947, 0.000001);
       expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(0.8040071048536998, 0.000001);
     });
 
@@ -107,15 +107,15 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
-      const depositUser1 = fromWei(await pool.getDeposits(user1.address));
-      const depositUser3 = fromWei(await pool.getDeposits(user3.address));
+      const depositUser1 = fromWei(await pool.balanceOf(user1.address));
+      const depositUser3 = fromWei(await pool.balanceOf(user3.address));
       const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
       const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
 
-      expect(depositUser1).to.be.closeTo( 1.6694596382289013, 0.000001);
-      expect(depositUser3).to.be.closeTo(1.4369172226146938, 0.000001);
-      expect(borrowedUser2).to.be.closeTo(1.2298015799270716, 0.000001);
-      expect(borrowedUser4).to.be.closeTo(1.5295904358967245, 0.000001);
+      expect(depositUser1).to.be.closeTo( 1.6279658921180449, 0.000001);
+      expect(depositUser3).to.be.closeTo(1.4012032094846514, 0.000001);
+      expect(borrowedUser2).to.be.closeTo(1.2102177458482974, 0.000001);
+      expect(borrowedUser4).to.be.closeTo(1.5052326283112025, 0.000001);
 
       expect(fromWei(await pool.getDepositRate())).to.be.closeTo(0.31875, 0.000001);
 
@@ -127,7 +127,7 @@ describe('Pool with fixed interests rates', () => {
     it("user2 repays full loan", async () => {
       await pool.connect(user2).repay({value: await pool.getBorrowed(user2.address)});
 
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.7298015799270716, 0.000001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.7102177500292384, 0.000001);
 
       expect(fromWei(await pool.getBorrowed(user2.address))).to.be.closeTo(0, 0.000001);
 
@@ -139,14 +139,14 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
-      expect(poolBalance).to.be.closeTo(1.7298015799270716, 0.000001);
+      expect(poolBalance).to.be.closeTo(1.7102177500292384, 0.000001);
 
-      const depositUser1 = fromWei(await pool.getDeposits(user1.address));
-      const depositUser3 = fromWei(await pool.getDeposits(user3.address));
+      const depositUser1 = fromWei(await pool.balanceOf(user1.address));
+      const depositUser3 = fromWei(await pool.balanceOf(user3.address));
       const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
-      expect(depositUser1).to.be.closeTo( 1.9396354219052518, 0.000001);
-      expect(depositUser3).to.be.closeTo(1.6694596570872446, 0.000001);
-      expect(borrowedUser4).to.be.closeTo(2.0647311553136625, 0.000001);
+      expect(depositUser1).to.be.closeTo( 1.7662155599806035, 0.000001);
+      expect(depositUser3).to.be.closeTo(1.520195813872899, 0.000001);
+      expect(borrowedUser4).to.be.closeTo(1.8914913024354991, 0.000001);
 
       expect(depositUser1 + depositUser3).to.be.below(borrowedUser4 + poolBalance);
     });
@@ -157,25 +157,25 @@ describe('Pool with fixed interests rates', () => {
       const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
       const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
 
-      expect(fromWei(await pool.getDepositRate())).to.be.closeTo(  0.16832483546269317, 0.000001);
-      expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.31618279583622916, 0.000001);
+      expect(fromWei(await pool.getDepositRate())).to.be.closeTo(  0.12163188454181471, 0.000001);
+      expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.2728728295322914, 0.000001);
 
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(2.7298015799270716, 0.000001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(2.7102177458482974, 0.000001);
 
-      await pool.connect(user1).withdraw(await pool.getDeposits(user1.address));
+      await pool.connect(user1).withdraw(await pool.balanceOf(user1.address));
 
-      const depositUser1 = fromWei(await pool.getDeposits(user1.address));
-      const depositUser3 = fromWei(await pool.getDeposits(user3.address));
+      const depositUser1 = fromWei(await pool.balanceOf(user1.address));
+      const depositUser3 = fromWei(await pool.balanceOf(user3.address));
 
       expect(depositUser1).to.be.closeTo( 0, 0.000001);
-      expect(depositUser3).to.be.closeTo( 1.6694596570872446, 0.000001);
+      expect(depositUser3).to.be.closeTo( 1.5201958245100409, 0.000001);
 
-      expect(fromWei(await pool.getDepositRate())).to.be.closeTo( 0.6200627713778759, 0.000001);
-      expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.5823655861609345, 0.000001);
+      expect(fromWei(await pool.getDepositRate())).to.be.closeTo( 0.44195294726176887, 0.000001);
+      expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.495745668318647, 0.000001);
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
 
-      expect(poolBalance).to.be.closeTo(0.7901661567018363, 0.000001);
+      expect(poolBalance).to.be.closeTo(0.9440021703982676, 0.000001);
 
       expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
 
@@ -185,15 +185,15 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
-      const depositUser1 = fromWei(await pool.getDeposits(user1.address));
-      const depositUser3 = fromWei(await pool.getDeposits(user3.address));
+      const depositUser1 = fromWei(await pool.balanceOf(user1.address));
+      const depositUser3 = fromWei(await pool.balanceOf(user3.address));
       const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
       const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
 
       expect(depositUser1).to.be.closeTo( 0, 0.000001);
-      expect(depositUser3).to.be.closeTo(3.1036001948448235, 0.000001);
+      expect(depositUser3).to.be.closeTo(2.3650333341504504, 0.000001);
       expect(borrowedUser2).to.be.closeTo(0, 0.000001);
-      expect(borrowedUser4).to.be.closeTo(1.9061545810370257, 0.000001);
+      expect(borrowedUser4).to.be.closeTo(1.463580835899401, 0.000001);
 
       expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
     });
