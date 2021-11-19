@@ -86,7 +86,7 @@ export default {
       commit('setTotalBorrowed', totalBorrowed);
     },
     async updateUserDeposited({ state, commit, rootState }) {
-      const userDeposited = parseFloat(ethers.utils.formatEther(await state.pool.getDeposits(rootState.network.account)));
+      const userDeposited = parseFloat(ethers.utils.formatEther(await state.pool.balanceOf(rootState.network.account)));
       commit('setUserDeposited', userDeposited);
       return true;
     },
@@ -101,7 +101,7 @@ export default {
     async updatePoolHistory({ commit, state, rootState }) {
       const pool = state.pool;
       const account = rootState.network.account;
-      const poolDepositorBalance = await pool.getDeposits(account);
+      const poolDepositorBalance = await pool.balanceOf(account);
 
       pool.myDeposits = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
 

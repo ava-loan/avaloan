@@ -47,7 +47,7 @@ describe('Upgreadable pool', () => {
 
     it("should deposit and borrow using proxy", async () => {
       await pool.connect(depositor).deposit({value: toWei("1.0")});
-      expect(fromWei(await pool.getDeposits(depositor.address))).to.be.closeTo(1, 0.000001);
+      expect(fromWei(await pool.balanceOf(depositor.address))).to.be.closeTo(1, 0.000001);
 
       await pool.connect(borrower).borrow(toWei("0.5"));
       expect(fromWei(await pool.getBorrowed(borrower.address))).to.be.closeTo(0.5, 0.000001);
@@ -66,7 +66,7 @@ describe('Upgreadable pool', () => {
 
       await proxy.connect(admin).upgradeTo(mockUpgradedPool.address);
 
-      expect(fromWei(await pool.getDeposits(depositor.address))).to.be.closeTo(1, 0.000001);
+      expect(fromWei(await pool.balanceOf(depositor.address))).to.be.closeTo(1, 0.000001);
       expect(fromWei(await pool.getBorrowed(borrower.address))).to.be.closeTo(0.5, 0.000001);
     });
 
@@ -74,7 +74,7 @@ describe('Upgreadable pool', () => {
     it("should have new logic after upgrade", async () => {
       //Upgraded logic doubles deposits value
       await pool.connect(depositor2).deposit({value: toWei("1.0")});
-      expect(fromWei(await pool.getDeposits(depositor2.address))).to.be.closeTo(2, 0.000001);
+      expect(fromWei(await pool.balanceOf(depositor2.address))).to.be.closeTo(2, 0.000001);
     });
 
     it("should allow owner-only functions after upgrade", async () => {

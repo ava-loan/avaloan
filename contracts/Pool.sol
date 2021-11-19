@@ -34,21 +34,21 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 
   function initialize(
-      IRatesCalculator _ratesCalculator,
-      IBorrowersRegistry _borrowersRegistry,
-      CompoundingIndex _depositIndex,
-      CompoundingIndex _borrowIndex
+      IRatesCalculator ratesCalculator_,
+      IBorrowersRegistry borrowersRegistry_,
+      CompoundingIndex depositIndex_,
+      CompoundingIndex borrowIndex_
     )  initializer public {
 
-      ratesCalculator = _ratesCalculator;
-      borrowersRegistry = _borrowersRegistry;
+      _ratesCalculator = ratesCalculator_;
+      _borrowersRegistry = borrowersRegistry_;
 
-      depositIndex = address(_depositIndex) == address(0) ? new CompoundingIndex() : _depositIndex;
-      borrowIndex = address(_borrowIndex) == address(0) ? new CompoundingIndex() : _borrowIndex;
+      depositIndex = address(depositIndex_) == address(0) ? new CompoundingIndex() : depositIndex_;
+      borrowIndex = address(borrowIndex_) == address(0) ? new CompoundingIndex() : borrowIndex_;
 
       __Ownable_init();
 
-      updateRates();
+      _updateRates();
     }
 
 
@@ -167,14 +167,14 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
 
-    /**
-     * Borrows the specified amount
-     * It updates user borrowed balance, total borrowed amount and rates
-     * @dev _amount the amount to be borrowed
-    **/
-    function borrow(uint256 _amount) payable external canBorrow {
-        require(address(this).balance >= _amount, "There is no enough funds in the pool to fund the loan.");
-        require(totalDeposited - totalBorrowed >= _amount, "There is no enough deposit in the pool to fund the loan.");
+  /**
+   * Borrows the specified amount
+   * It updates user borrowed balance, total borrowed amount and rates
+   * @dev _amount the amount to be borrowed
+  **/
+  function borrow(uint256 _amount) payable external canBorrow {
+    require(address(this).balance >= _amount, "There is not enough funds in the pool to fund the loan.");
+    require(_totalDeposited - totalBorrowed >= _amount, "There is no enough deposit in the pool to fund the loan.");
 
     _accumulateBorrowingInterests(msg.sender);
 
@@ -284,8 +284,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 
   function _updateRates() internal {
-    depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed, _totalDeposited));
-    borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed, _totalDeposited));
+    depositIndex.setRate(_ratesCalculator.calculateDepositRate(totalBorrowed, totalSupply()));
+    borrowIndex.setRate(_ratesCalculator.calculateBorrowingRate(totalBorrowed, totalSupply()));
   }
 
 
@@ -317,8 +317,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(address(_borrowersRegistry) != address(0), "Borrowers registry is not configured.");
     require(_borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow.");
     _;
-    require(totalDeposited > 0, "Cannot borrow from an empty pool.");
-    require(totalBorrowed * 1 ether / totalDeposited <= MAX_POOL_UTILISATION, "The pool utilisation cannot be greater than 95%.");
+    require(_totalDeposited > 0, "Cannot borrow from an empty pool.");
+    require(totalBorrowed * 1 ether / _totalDeposited <= MAX_POOL_UTILISATION, "The pool utilisation cannot be greater than 95%.");
   }
 
 

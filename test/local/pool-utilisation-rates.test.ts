@@ -108,10 +108,10 @@ describe('Pool with fixed interests rates', () => {
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("0.924929", "ether"));
 
       const currentDeposits = fromWei(await pool.balanceOf(depositor.address));
-      expect(currentDeposits).to.be.closeTo(1.213792, 0.000001);
+      expect(currentDeposits).to.be.closeTo(1.2019070655842596, 0.000001);
 
       const currentBorrowed = fromWei(await pool.getBorrowed(borrower.address));
-      expect(currentBorrowed).to.be.closeTo(0.297812, 0.000001);
+      expect(currentBorrowed).to.be.closeTo(0.29267162744261205, 0.000001);
 
       const depositRate = fromWei(await pool.getDepositRate());
       expect(depositRate).to.be.closeTo(0.043750, 0.000001);
