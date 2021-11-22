@@ -4,7 +4,6 @@ pragma solidity ^0.8.2;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRatesCalculator.sol";
 import "./WadRayMath.sol";
-import "hardhat/console.sol";
 
 /**
  * @title VariableUtilisationRatesCalculator
@@ -56,10 +55,14 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   function calculateDepositRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns (uint256) {
     if (_totalDeposits == 0) return 0;
 
-    return this.calculateBorrowingRate(_totalLoans, _totalDeposits).wadToRay()
-    .rayMul(_totalLoans.wadToRay())
-    .rayDiv(_totalDeposits.wadToRay())
-    .rayToWad();
+    if (_totalLoans >= _totalDeposits) {
+      return MAX_RATE;
+    } else {
+      return this.calculateBorrowingRate(_totalLoans, _totalDeposits).wadToRay()
+      .rayMul(_totalLoans.wadToRay())
+      .rayDiv(_totalDeposits.wadToRay())
+      .rayToWad();
+    }
   }
 
 
@@ -74,13 +77,13 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
   * @dev _totalDeposits total value of deposits
 **/
   function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
+    if (totalDeposits == 0) return OFFSET;
+
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);
 
-    // TODO: uncomment when issue with calculating pool utilisation is resolved. Now it is disabled to let the appropriate tests fail to show the issue
-    // require(poolUtilisation <= 1 ether, "Pool utilisation cannot be greater than 1.");
-
-
-    if (poolUtilisation <= BREAKPOINT) {
+    if (poolUtilisation > 1 ether) {
+      return MAX_RATE;
+    } else if (poolUtilisation <= BREAKPOINT) {
       return poolUtilisation.wadToRay()
         .rayMul(SLOPE_1.wadToRay()).rayToWad()
         + OFFSET;
