@@ -122,18 +122,30 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   function payBonus(uint256 _bonus) internal {
     if (_bonus < address(this).balance) {
       payable(msg.sender).transfer(_bonus);
-    } else {
+    } else if (address(this).balance != 0) {
       payable(msg.sender).transfer(address(this).balance);
     }
   }
 
 
-  /**
-  * This function role is to sell part/all of the available assets in order to bring the loan back to a solvent state.
-  *
-  **/
-  function sellout(uint256 repayAmount) external successfullSellout {
+  function selloutLoan() external onlyOwner {
+    bytes32[] memory assets = supportedAssets.getAllAssets();
+    for (uint i = 0; i < assets.length; i++) {
+      nonSolventAssetSale(assets[i], getERC20TokenInstance(assets[i]).balanceOf(address(this)), 0);
+    }
+
+    uint256 debt = getDebt();
+    require(address(this).balance >= debt, "Selling out all assets without repaying the whole debt is not allowed.");
+    repay(debt);
+    if (address(this).balance > 0) {
+      withdraw(address(this).balance);
+    }
+  }
+
+
+  function selloutInsolventLoan(uint256 repayAmount) external successfullSellout {
     require(!isSolvent(), "Cannot sellout a solvent account");
+
     uint256 debt = getDebt();
     if (repayAmount > debt) {
       repayAmount = debt;
@@ -141,7 +153,17 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     uint256 bonus = repayAmount * LIQUIDATION_BONUS / PERCENTAGE_PRECISION;
     uint256 totalRepayAmount = repayAmount + bonus;
 
+    sellout(totalRepayAmount);
+    attemptRepay(repayAmount);
+    payBonus(bonus);
+  }
 
+
+  /**
+  * This function role is to sell part/all of the available assets in order to bring the loan back to a solvent state.
+  *
+  **/
+  function sellout(uint256 totalRepayAmount) private {
     if (address(this).balance < (totalRepayAmount)) {
       bytes32[] memory assets = supportedAssets.getAllAssets();
       for (uint i = 0; i < assets.length; i++) {
@@ -151,8 +173,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
         }
       }
     }
-    attemptRepay(repayAmount);
-    payBonus(bonus);
+
   }
 
 
@@ -162,7 +183,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * The loan needs to remain solvent after the withdrawal
    * @param _amount to be withdrawn
   **/
-  function withdraw(uint256 _amount) external onlyOwner remainsSolvent nonReentrant {
+  function withdraw(uint256 _amount) public onlyOwner remainsSolvent nonReentrant {
     require(address(this).balance >= _amount, "There is not enough funds to withdraw");
 
     payable(msg.sender).transfer(_amount);

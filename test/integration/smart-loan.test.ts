@@ -148,7 +148,7 @@ describe('Smart loan', () => {
       const expectedAssetValueInAVAX = usdPrice * investedAmount / AVAX_PRICE;
 
       expect(fromWei(await wrappedLoan.getAssetValue(toBytes32('USD')))).to.be.closeTo(expectedAssetValueInAVAX, 0.0001);
-      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.01);
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.closeTo(100, 0.1);
       expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(0);
       expect(await wrappedLoan.getLTV()).to.be.equal(0);
     });
@@ -159,7 +159,7 @@ describe('Smart loan', () => {
       expect(formatUnits(usdTokenBalance, usdTokenDecimalPlaces)).to.be.equal(100);
 
       const usdTokenPrice = (await wrappedLoan.getAllAssetsPrices())[0];
-      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.0001);
+      expect(fromWei(usdTokenPrice)).to.be.closeTo(fromWei(estimatedAVAXPriceFor1USDToken), 0.001);
     });
 
 
@@ -446,7 +446,7 @@ describe('Smart loan', () => {
     it("should fail a sellout attempt", async () => {
       expect(await wrappedLoan.getLTV()).to.be.lt(5000);
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await expect(wrappedLoan.sellout(toWei("1", 18))).to.be.revertedWith('Cannot sellout a solvent account')
+      await expect(wrappedLoan.selloutInsolventLoan(toWei("1", 18))).to.be.revertedWith('Cannot sellout a solvent account')
     });
 
     it("should check if only governor can change the maximal LTV", async () => {
@@ -459,6 +459,7 @@ describe('Smart loan', () => {
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {
       let balances = await wrappedLoan.getAllAssetsBalances();
+      const initialUSDTokenBalance = balances[0];
       const initialLINKTokenBalance = balances[1];
       const poolAvaxValue = await provider.getBalance(pool.address);
 
@@ -474,7 +475,7 @@ describe('Smart loan', () => {
         await wrappedLoan.MAX_LTV()
       )
 
-      await wrappedLoan.sellout(repayAmount.toString());
+      await wrappedLoan.selloutInsolventLoan(repayAmount.toString());
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect((await provider.getBalance(pool.address)).gt(poolAvaxValue)).to.be.true;
@@ -483,8 +484,125 @@ describe('Smart loan', () => {
 
       const currentUSDTokenBalance = balances[0];
       const currentLINKTokenBalance = balances[1];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("0", usdTokenDecimalPlaces));
-      expect(currentLINKTokenBalance).to.be.lt(toWei(initialLINKTokenBalance.toString(), linkTokenDecimalPlaces));
+
+      expect(currentUSDTokenBalance).to.be.lt(initialUSDTokenBalance);
+      expect(currentLINKTokenBalance).to.be.eq(initialLINKTokenBalance);
+    });
+
+
+  });
+
+  describe('A loan with owner sellout', () => {
+    let supportedAssets: SupportedAssets,
+      exchange: PangolinExchange,
+      loan: SmartLoan,
+      wrappedLoan: any,
+      pool: Pool,
+      owner: SignerWithAddress,
+      depositor: SignerWithAddress,
+      usdTokenContract: Contract,
+      linkTokenContract: Contract,
+      usdTokenDecimalPlaces: BigNumber,
+      linkTokenDecimalPlaces: BigNumber,
+      MOCK_PRICES: any,
+      AVAX_PRICE: number,
+      LINK_PRICE: number,
+      USD_PRICE: number;
+
+    before("deploy provider, exchange and pool", async () => {
+      [owner, depositor] = await getFixedGasSigners(10000000);
+
+      const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
+      linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
+
+      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
+      await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
+      await supportedAssets.setAsset(toBytes32('LINK'), linkTokenAddress);
+
+
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      usdTokenDecimalPlaces = await usdTokenContract.decimals();
+      linkTokenDecimalPlaces = await linkTokenContract.decimals();
+
+      AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
+      USD_PRICE = (await redstone.getPrice('USDT')).value;
+      LINK_PRICE = (await redstone.getPrice('LINK')).value;
+
+      MOCK_PRICES = [
+        {
+          symbol: 'USD',
+          value: USD_PRICE
+        },
+        {
+          symbol: 'LINK',
+          value: LINK_PRICE
+        },
+        {
+          symbol: 'AVAX',
+          value: AVAX_PRICE
+        }
+      ]
+
+      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.connect(depositor).deposit({value: toWei("1000")});
+    });
+
+    it("should deploy a smart loan, fund, borrow and invest", async () => {
+      loan = await (new SmartLoan__factory(owner).deploy());
+      loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
+
+      wrappedLoan = WrapperBuilder
+        .mockLite(loan)
+        .using(
+          () => {
+            return {
+              prices: MOCK_PRICES,
+              timestamp: Date.now()
+            }
+          })
+
+      await wrappedLoan.authorizeProvider();
+
+      await wrappedLoan.fund({value: toWei("100")});
+      await wrappedLoan.borrow(toWei("300"));
+
+      expect(fromWei(await wrappedLoan.getTotalValue())).to.be.equal(400);
+      expect(fromWei(await wrappedLoan.getDebt())).to.be.equal(300);
+      expect(await wrappedLoan.getLTV()).to.be.equal(3000);
+
+      const slippageTolerance = 0.03;
+      let investedAmount = 15000;
+      let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
+
+      await wrappedLoan.invest(
+        toBytes32('USD'),
+        parseUnits(investedAmount.toString(), usdTokenDecimalPlaces),
+        toWei(requiredAvaxAmount.toString())
+      );
+
+      let balances = await wrappedLoan.getAllAssetsBalances();
+      const currentUSDTokenBalance = balances[0];
+      expect(currentUSDTokenBalance).to.be.equal(toWei("15000", usdTokenDecimalPlaces));
+    });
+
+
+    it("should fail a selloutLoan attempt at the onlyOwner check", async () => {
+      await expect(wrappedLoan.connect(depositor).selloutLoan()).to.be.revertedWith("Ownable: caller is not the owner")
+    });
+
+    it("should perform an owner's selloutLoan call", async () => {
+      const ownerInitialAvaxBalance = await provider.getBalance(owner.address);
+      await wrappedLoan.selloutLoan();
+      expect(await wrappedLoan.isSolvent()).to.be.true;
+      expect(await wrappedLoan.getDebt()).to.be.equal(0);
+      expect(await provider.getBalance(owner.address)).to.be.gt(ownerInitialAvaxBalance);
+
+      let balances = await wrappedLoan.getAllAssetsBalances();
+      expect(balances[0]).to.be.equal(0);
     });
 
 
