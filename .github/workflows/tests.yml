@@ -11,3 +11,5 @@ jobs:
         run: yarn build:contracts:hardhat:force
       - name: Run tests
         run: yarn hardhat test test/local/*
+      - name: Run integration tests
+        run: yarn hardhat test test/integration/* --network hardhat-integration
