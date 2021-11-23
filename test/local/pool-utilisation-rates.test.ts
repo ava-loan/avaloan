@@ -5,19 +5,16 @@ import {solidity} from "ethereum-waffle";
 import UtilisationRatesCalculatorArtifact
   from '../../artifacts/contracts/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import OpenBorrowersRegistryArtifact
-  from '../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {OpenBorrowersRegistry, Pool, UtilisationRatesCalculator} from "../../typechain";
-import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../../typechain";
+import {OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../typechain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Pool with fixed interests rates', () => {
+describe('Pool with utilisation interests rates', () => {
 
   describe('Deposit, borrow, wait & borrow more', () => {
     let pool: Pool,
@@ -79,10 +76,10 @@ describe('Pool with fixed interests rates', () => {
       expect(currentBorrowed).to.be.closeTo(0.674929, 0.000001);
 
       const depositRate = fromWei(await pool.getDepositRate());
-      expect(depositRate).to.be.closeTo(0.15, 0.000001);
+      expect(depositRate).to.be.closeTo(0.19777820662296586, 0.000001);
 
       const borrowingRate = fromWei(await pool.getBorrowingRate());
-      expect(borrowingRate).to.be.closeTo(0.3, 0.000001);
+      expect(borrowingRate).to.be.closeTo(0.3404585617527775, 0.000001);
     });
 
 
@@ -96,10 +93,10 @@ describe('Pool with fixed interests rates', () => {
       expect(currentBorrowed).to.be.closeTo(0.25, 0.000001);
 
       const depositRate = fromWei(await pool.getDepositRate());
-      expect(depositRate).to.be.closeTo(0.043750, 0.000001);
+      expect(depositRate).to.be.closeTo(0.03390951225679867, 0.000001);
 
       const borrowingRate = fromWei(await pool.getBorrowingRate());
-      expect(borrowingRate).to.be.closeTo(0.175, 0.000001);
+      expect(borrowingRate).to.be.closeTo(0.1575886727001946, 0.000001);
     });
 
 
@@ -111,13 +108,13 @@ describe('Pool with fixed interests rates', () => {
       expect(currentDeposits).to.be.closeTo(1.2019070655842596, 0.000001);
 
       const currentBorrowed = fromWei(await pool.getBorrowed(borrower.address));
-      expect(currentBorrowed).to.be.closeTo(0.29267162744261205, 0.000001);
+      expect(currentBorrowed).to.be.closeTo(0.2926716192672473, 0.000001);
 
       const depositRate = fromWei(await pool.getDepositRate());
-      expect(depositRate).to.be.closeTo(0.043750, 0.000001);
+      expect(depositRate).to.be.closeTo(0.0418228967112633, 0.000001);
 
       const borrowingRate = fromWei(await pool.getBorrowingRate());
-      expect(borrowingRate).to.be.closeTo(0.175, 0.000001);
+      expect(borrowingRate).to.be.closeTo(0.1717530160174189, 0.000001);
     });
 
   });

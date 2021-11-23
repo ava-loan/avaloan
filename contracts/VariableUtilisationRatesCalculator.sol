@@ -67,15 +67,15 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
 
 
   /**
-  * Returns the current borrowing rate
-  * The value is based on the pool utilisation according to the piecewise linear formula:
-  * 1) for pool utilisation lower than or equal to breakpoint:
-  * borrowing_rate = SLOPE_1 * utilisation + OFFSET
-  * 2) for pool utilisation greater than breakpoint:
-  * borrowing_rate = SLOPE_2 * utilisation + MAX_RATE - SLOPE_2
-  * @dev _totalLoans total value of loans
-  * @dev _totalDeposits total value of deposits
-**/
+    * Returns the current borrowing rate
+    * The value is based on the pool utilisation according to the piecewise linear formula:
+    * 1) for pool utilisation lower than or equal to breakpoint:
+    * borrowing_rate = SLOPE_1 * utilisation + OFFSET
+    * 2) for pool utilisation greater than breakpoint:
+    * borrowing_rate = SLOPE_2 * utilisation + MAX_RATE - SLOPE_2
+    * @dev _totalLoans total value of loans
+    * @dev _totalDeposits total value of deposits
+  **/
   function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns (uint256) {
     if (totalDeposits == 0) return OFFSET;
 

@@ -90,9 +90,22 @@ describe('UtilisationRatesCalculator', () => {
     expect(utilisation).to.be.closeTo(1, 0.000001);
 
     const depositRate = fromWei(await sut.calculateDepositRate(toWei("100"), toWei("100")));
+
     expect(depositRate).to.be.closeTo(0.55, 0.000001);
 
     const borrowingRate = fromWei(await sut.calculateBorrowingRate(toWei("100"), toWei("100")));
+    expect(borrowingRate).to.be.closeTo(0.55, 0.000001);
+  });
+
+  it("should calculate for 110% utilisation", async function () {
+    const utilisation = fromWei(await sut.getPoolUtilisation(toWei("110"), toWei("100")));
+    expect(utilisation).to.be.closeTo(1.1, 0.000001);
+
+    const depositRate = fromWei(await sut.calculateDepositRate(toWei("110"), toWei("100")));
+
+    expect(depositRate).to.be.closeTo(0.55, 0.000001);
+
+    const borrowingRate = fromWei(await sut.calculateBorrowingRate(toWei("110"), toWei("100")));
     expect(borrowingRate).to.be.closeTo(0.55, 0.000001);
   });
 

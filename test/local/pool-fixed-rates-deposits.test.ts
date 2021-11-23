@@ -171,16 +171,16 @@ describe('Pool with fixed interests rates', () => {
   describe("withdraw function", () => {
     it("should not allow to withdraw when no deposit", async () => {
       await expect(sut.withdraw(toWei("0.5")))
-        .to.be.revertedWith("ERC20: burn amount exceeds current pool balance");
+        .to.be.revertedWith("ERC20: burn amount exceeds current pool indexed balance");
       await expect(sut.withdraw(toWei("0.000000001")))
-        .to.be.revertedWith("ERC20: burn amount exceeds current pool balance");
+        .to.be.revertedWith("ERC20: burn amount exceeds current pool indexed balance");
       ;
     });
 
     it("should not allow to withdraw more than already on deposit", async () => {
       await sut.deposit({value: toWei("1.0")});
       await expect(sut.withdraw(toWei("1.0001")))
-        .to.be.revertedWith("ERC20: burn amount exceeds current pool balance");
+        .to.be.revertedWith("ERC20: burn amount exceeds current pool indexed balance");
     });
 
     it("should not allow to withdraw more than already on deposit after accumulating interests", async () => {
@@ -188,7 +188,7 @@ describe('Pool with fixed interests rates', () => {
       await time.increase(time.duration.years(1));
 
       await expect(sut.withdraw(toWei("1.052")))
-        .to.be.revertedWith("ERC20: burn amount exceeds current pool balance");
+        .to.be.revertedWith("ERC20: burn amount exceeds current pool indexed balance");
     });
 
     it("should allow to withdraw all deposit", async () => {
