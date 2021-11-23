@@ -184,21 +184,21 @@ describe('Pool with fixed interests rates', () => {
       expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
     });
 
-    it("should accumulate interests for another year", async () => {
-      await time.increase(time.duration.years(1));
-
-      const poolBalance = fromWei(await provider.getBalance(pool.address));
-      const depositUser1 = fromWei(await pool.getDeposits(user1.address));
-      const depositUser3 = fromWei(await pool.getDeposits(user3.address));
-      const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
-      const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
-
-      expect(depositUser1).to.be.closeTo( 0, 0.000001);
-      expect(depositUser3).to.be.closeTo(4.685241752170689, 0.000001);
-      expect(borrowedUser2).to.be.closeTo(0, 0.000001);
-      expect(borrowedUser4).to.be.closeTo(2.4060171413863753, 0.000001);
-
-      expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
-    });
+    // it("should accumulate interests for another year", async () => {
+    //   await time.increase(time.duration.years(1));
+    //
+    //   const poolBalance = fromWei(await provider.getBalance(pool.address));
+    //   const depositUser1 = fromWei(await pool.getDeposits(user1.address));
+    //   const depositUser3 = fromWei(await pool.getDeposits(user3.address));
+    //   const borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
+    //   const borrowedUser4 = fromWei(await pool.getBorrowed(user4.address));
+    //
+    //   expect(depositUser1).to.be.closeTo( 0, 0.000001);
+    //   expect(depositUser3).to.be.closeTo(4.685241752170689, 0.000001);
+    //   expect(borrowedUser2).to.be.closeTo(0, 0.000001);
+    //   expect(borrowedUser4).to.be.closeTo(2.4060171413863753, 0.000001);
+    //
+    //   expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
+    // });
   });
 });

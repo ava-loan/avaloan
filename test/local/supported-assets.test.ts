@@ -82,7 +82,7 @@ describe('SupportedAssets', () => {
       await expect(sut.setAsset(toBytes32(token1), token1Address))
         .to.be.revertedWith("Cannot set an asset that has already been set.");
     });
-  
+
 
     it("should not set an empty string asset", async () => {
       await expect(sut.setAsset(toBytes32(""), token1Address))
