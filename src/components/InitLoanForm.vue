@@ -61,7 +61,7 @@
         ],
         loanValidators: [
           {
-            require: value => value <= this.totalDeposited,
+            require: value => value <= this.totalSupply,
             message: 'Loan amount exceeds amount available in the pool'
           }
         ],
@@ -74,7 +74,7 @@
       }
     },
     computed: {
-      ...mapState('pool', ['totalDeposited']),
+      ...mapState('pool', ['totalSupply']),
       ...mapState('network', ['balance']),
       disabled() {
         return this.waiting || this.errors.includes(true) || !this.collateral;

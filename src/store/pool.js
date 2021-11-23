@@ -5,22 +5,22 @@ export default {
   namespaced: true,
   state: {
     pool: null,
-    totalDeposited: null,
+    totalSupply: null,
     totalBorrowed: null,
     depositRate: null,
     borrowingRate: null,
     poolHistory: null,
     depositInterests: null,
     userBorrowed: null,
-    userDeposited: null,
+    userDepositBalance: null,
     deploymentBlock: null
   },
   mutations: {
     setPool(state, pool) {
       state.pool = pool;
     },
-    setTotalDeposited(state, totalDeposited) {
-      state.totalDeposited = totalDeposited;
+    setTotalSupply(state, totalSupply) {
+      state.totalSupply = totalSupply;
     },
     setTotalBorrowed(state, totalBorrowed) {
       state.totalBorrowed = totalBorrowed;
@@ -43,13 +43,13 @@ export default {
     setUserBorrowed(state, userBorrowed) {
       state.userBorrowed = userBorrowed;
     },
-    setUserDeposited(state, deposited) {
-      state.userDeposited = deposited;
+    setUserDepositBalance(state, deposited) {
+      state.userDepositBalance = deposited;
     }
   },
   getters: {
     getAvailable(state) {
-      return state.totalDeposited - state.totalBorrowed;
+      return state.totalSupply - state.totalBorrowed;
     }
   },
   actions: {
@@ -68,26 +68,26 @@ export default {
     },
     async updatePoolData({ dispatch }) {
       Promise.all([
-        dispatch('updateTotalDeposited'),
+        dispatch('updateTotalSupply'),
         dispatch('updateTotalBorrowed'),
         dispatch('updateDepositRate'),
         dispatch('updateBorrowingRate'),
-        dispatch('updateUserDeposited'),
+        dispatch('updateUserDepositBalance'),
         dispatch('updateUserBorrowed'),
         dispatch('updatePoolHistory')
       ])
     },
-    async updateTotalDeposited({ state, commit }) {
-      const totalDeposited = parseFloat(ethers.utils.formatEther(await state.pool.totalDeposited()));
-      commit('setTotalDeposited', totalDeposited);
+    async updateTotalSupply({ state, commit }) {
+      const totalSupply = parseFloat(ethers.utils.formatEther(await state.pool.totalSupply()));
+      commit('setTotalSupply', totalSupply);
     },
     async updateTotalBorrowed({ state, commit }) {
       const totalBorrowed = parseFloat(ethers.utils.formatEther(await state.pool.totalBorrowed()));
       commit('setTotalBorrowed', totalBorrowed);
     },
-    async updateUserDeposited({ state, commit, rootState }) {
-      const userDeposited = parseFloat(ethers.utils.formatEther(await state.pool.balanceOf(rootState.network.account)));
-      commit('setUserDeposited', userDeposited);
+    async updateUserDepositBalance({ state, commit, rootState }) {
+      const userDepositBalance = parseFloat(ethers.utils.formatEther(await state.pool.balanceOf(rootState.network.account)));
+      commit('setUserDepositBalance', userDepositBalance);
       return true;
     },
     async updateDepositRate({ state, commit }) {
@@ -105,7 +105,7 @@ export default {
 
       pool.myDeposits = parseFloat(ethers.utils.formatEther(poolDepositorBalance));
 
-      let totalDeposited = 0;
+      let totalSupply = 0;
       let totalWithdrawn = 0;
       const provider = rootState.network.provider;
       let logs = await provider.getLogs({
@@ -130,7 +130,7 @@ export default {
           tx: log.transactionHash
         };
 
-        if (event.type === 'Deposit') totalDeposited += event.value;
+        if (event.type === 'Deposit') totalSupply += event.value;
         if (event.type === 'Withdrawal') totalWithdrawn += event.value;
 
         poolHistory.unshift(event);
@@ -138,7 +138,7 @@ export default {
 
       commit('setPoolHistory', poolHistory);
 
-      const depositInterests = pool.myDeposits - totalDeposited + totalWithdrawn;
+      const depositInterests = pool.myDeposits - totalSupply + totalWithdrawn;
 
       commit('setDepositInterests', depositInterests);
     },
