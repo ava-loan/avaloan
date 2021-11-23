@@ -1,4 +1,4 @@
-# Avaloan - Smart Loans on the Avalanche blockchain
+# DeltaPrime - Smart Loans on the Avalanche blockchain
 
 [LIVE DEMO](https://avaloan.xyz/#/) on the Fuji testnet
 
@@ -124,7 +124,7 @@ A user can reduce the liquidation risk adjusting amount of personal funds deposi
 
     yarn install
 
-2. Create a `.secret` file in the root of the project with a mnemonic phrase of your account. 
+2. Create a `.secret` file in the root of the project with a mnemonic phrase of your account.
 
 3. Make sure that all of the smart-contracts are compiled before trying to deploy the dApp:
 
@@ -133,7 +133,7 @@ A user can reduce the liquidation risk adjusting amount of personal funds deposi
 4. Setup your local network (e.g. like [here](#forked-test-node)) and migrate contracts
 
 5. <a id="configure-chainid"></a>  Depending on your environment set a proper `chainId` in `src/config.js`. It must match the chain id returned
-by the network and be set up in your Metamask configuration of network as well. 
+by the network and be set up in your Metamask configuration of network as well.
 
 6. To deploy the front-end on your local machine please type in your command line:
 
@@ -149,7 +149,7 @@ by the network and be set up in your Metamask configuration of network as well.
 
 2. Migrate contracts (in a separate terminal window)
 
-    npx truffle migrate --network local   
+    npx truffle migrate --network local
 
 Your default chain id is 31337. [Set it up](#configure-chainid) in the UI application and your Metamask account.
 
