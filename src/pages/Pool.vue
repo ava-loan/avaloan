@@ -2,13 +2,13 @@
   <div class="deposit container">
     <Bar>
       <Value label="Your deposits"
-        :primary="{value: userDeposited, type: 'avax', showIcon: true}"
-        :secondary="{value: avaxToUSD(userDeposited), type: 'usd'}" />
+        :primary="{value: userDepositBalance, type: 'avax', showIcon: true}"
+        :secondary="{value: avaxToUSD(userDepositBalance), type: 'usd'}" />
       <Value label="Current APR"
         :primary="{value: depositRate, type: 'percent'}"/>
       <Value label="All deposits"
-        :primary="{value: totalDeposited, type: 'avax', showIcon: true}"
-        :secondary="{value: avaxToUSD(totalDeposited), type: 'usd'}" />
+        :primary="{value: totalSupply, type: 'avax', showIcon: true}"
+        :secondary="{value: avaxToUSD(totalSupply), type: 'usd'}" />
     </Bar>
     <InfoBubble
       text="Deposit your AVAX in a pool and get interest rates. <br/>
@@ -31,7 +31,7 @@
             v-on:submitValue="withdrawValue"
             :waiting="waitingForWithdraw"
             flexDirection="column"
-            :max="userDeposited"
+            :max="userDepositBalance"
             :validators="withdrawValidators"
           />
         </Tab>
@@ -85,14 +85,14 @@
         ],
         withdrawValidators: [
           {
-            require: value => value <= this.userDeposited,
+            require: value => value <= this.userDepositBalance,
             message: 'Withdraw amount exceeds your account deposit'
           }
         ]
       }
     },
     computed: {
-      ...mapState('pool', ['userDeposited', 'depositRate', 'totalDeposited', 'poolHistory']),
+      ...mapState('pool', ['userDepositBalance', 'depositRate', 'totalSupply', 'poolHistory']),
       ...mapState('network', ['balance']),
       chartPoints() {
         if (this.poolHistory == null || this.poolHistory.length === 0) {

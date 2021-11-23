@@ -121,7 +121,7 @@
   },
   computed: {
     ...mapState('loan', ['loan', 'debt', 'totalValue', 'ltv']),
-    ...mapState('pool', ['userDeposited']),
+    ...mapState('pool', ['userDepositBalance']),
     ...mapState('network', ['balance']),
     ...mapGetters('loan', ['getCurrentCollateral'])
   },

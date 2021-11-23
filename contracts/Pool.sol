@@ -281,7 +281,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
     require(_deposited[address(this)] >= amount, "ERC20: burn amount exceeds current pool indexed balance");
 
-    require(_deposited[account >= amount, "ERC20: burn amount exceeds user balance");
+    require(_deposited[account] >= amount, "ERC20: burn amount exceeds user balance");
 
     // verified in "require" above
     unchecked {
