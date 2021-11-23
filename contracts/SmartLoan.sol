@@ -21,17 +21,16 @@ import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable
 contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
 
   uint256 public constant PERCENTAGE_PRECISION = 1000;
-
   uint256 public constant LIQUIDATION_BONUS = 100;
-  uint256 private constant LIQUIDATION_CAP = 200;
 
-  uint256 public MAX_LTV = 5000;
-  uint256 public MIN_SELLOUT_LTV = 4000;
+  uint256 public LTV_SOLVENCY_THRESHOLD = 5000;
+  uint256 public MIN_POST_SELLOUT_LTV = 4000;
+  address private governor;
 
   SupportedAssets supportedAssets;
   IAssetsExchange public exchange;
   Pool pool;
-  address private governor;
+
 
   function initialize(SupportedAssets _supportedAssets, IAssetsExchange assetsExchange_, Pool pool_, address _governor) external initializer {
     supportedAssets = _supportedAssets;
@@ -40,8 +39,8 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     __Ownable_init();
     __PriceAware_init();
     governor = _governor;
-    MAX_LTV = 5000;
-    MIN_SELLOUT_LTV = 4000;
+    LTV_SOLVENCY_THRESHOLD = 5000;
+    MIN_POST_SELLOUT_LTV = 4000;
   }
 
 
@@ -54,15 +53,15 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
 
-  function setMaxLTV(uint256 _newMaxLtv) external {
-    require(msg.sender == governor, "Only the governor account can change the maximal LTV");
-    MAX_LTV = _newMaxLtv;
+  function setLtvSolvencyThreshold(uint256 newLtvSolvencyThreshold) external {
+    require(msg.sender == governor, "Only the governor account can change the maximal LTV solvency threshold.");
+    LTV_SOLVENCY_THRESHOLD = newLtvSolvencyThreshold;
   }
 
 
-  function setMinSelloutLTV(uint256 _newMinSelloutLtv) external {
-    require(msg.sender == governor, "Only the governor account can change the minimal sellout ltv");
-    MIN_SELLOUT_LTV = _newMinSelloutLtv;
+  function setMinPostSelloutLTV(uint256 newMinPostSelloutLTV) external {
+    require(msg.sender == governor, "Only the governor account can change the minimal post-sellout LTV");
+    MIN_POST_SELLOUT_LTV = newMinPostSelloutLTV;
   }
 
 
@@ -302,7 +301,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     } else if (debt < totalValue) {
       return debt * PERCENTAGE_PRECISION / (totalValue - debt);
     } else {
-      return MAX_LTV;
+      return LTV_SOLVENCY_THRESHOLD;
     }
   }
 
@@ -320,10 +319,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   /**
     * Checks if the loan is solvent.
     * It means that the ratio between debt and collateral is below safe level,
-    * which is parametrized by the MAX_LTV
+    * which is parametrized by the LTV_SOLVENCY_THRESHOLD
   **/
   function isSolvent() public view returns (bool) {
-    return getLTV() < MAX_LTV;
+    return getLTV() < LTV_SOLVENCY_THRESHOLD;
   }
 
 
@@ -384,16 +383,16 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
   /**
-  * This modifier checks if the LTV is between MIN_SELLOUT_LTV and MAX_LTV after performing the sellout() operation.
-  * It is possible for the Loan to be above MAX_LTV only if the totalValue is equal to 0 which means that everything
+  * This modifier checks if the LTV is between MIN_POST_SELLOUT_LTV and LTV_SOLVENCY_THRESHOLD after performing the sellout() operation.
+  * It is possible for the Loan to be above LTV_SOLVENCY_THRESHOLD only if the totalValue is equal to 0 which means that everything
   * was sold out and repayed.
   **/
   modifier successfullSellout() {
     _;
     uint256 LTV = getLTV();
-    require(LTV >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss.");
+    require(LTV >= MIN_POST_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss.");
     if (address(this).balance > 0) {
-      require(LTV < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state.");
+      require(LTV < LTV_SOLVENCY_THRESHOLD, "This operation would not result in bringing the loan back to a solvent state.");
     }
   }
 

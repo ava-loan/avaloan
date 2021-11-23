@@ -449,12 +449,12 @@ describe('Smart loan', () => {
       await expect(wrappedLoan.selloutInsolventLoan(toWei("1", 18))).to.be.revertedWith('Cannot sellout a solvent account')
     });
 
-    it("should check if only governor can change the maximal LTV", async () => {
-      await expect(wrappedLoan.connect(depositor).setMaxLTV("6000")).to.be.revertedWith("Only the governor account can change the maximal LTV");
+    it("should check if only governor can change the LTV solvency threshold", async () => {
+      await expect(wrappedLoan.connect(depositor).setLtvSolvencyThreshold("6000")).to.be.revertedWith("Only the governor account can change the maximal LTV solvency threshold.");
     });
 
-    it("should check if only governor can change the minimal sellout LTV", async () => {
-      await expect(wrappedLoan.connect(depositor).setMinSelloutLTV("3000")).to.be.revertedWith("Only the governor account can change the minimal sellout ltv");
+    it("should check if only governor can change the minimal post-sellout LTV", async () => {
+      await expect(wrappedLoan.connect(depositor).setMinPostSelloutLTV("3000")).to.be.revertedWith("Only the governor account can change the minimal post-sellout LTV");
     });
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {
@@ -464,15 +464,15 @@ describe('Smart loan', () => {
       const poolAvaxValue = await provider.getBalance(pool.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await wrappedLoan.setMinSelloutLTV(200);
-      await wrappedLoan.setMaxLTV(400);
+      await wrappedLoan.setMinPostSelloutLTV(200);
+      await wrappedLoan.setLtvSolvencyThreshold(400);
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
       const repayAmount = await getSelloutRepayAmount(
         await wrappedLoan.getTotalValue(),
         await wrappedLoan.getDebt(),
         await wrappedLoan.LIQUIDATION_BONUS(),
-        await wrappedLoan.MAX_LTV()
+        await wrappedLoan.LTV_SOLVENCY_THRESHOLD()
       )
 
       await wrappedLoan.selloutInsolventLoan(repayAmount.toString());
