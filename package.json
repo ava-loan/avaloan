@@ -1,11 +1,12 @@
 {
-  "name": "Avaloan",
+  "name": "DeltaPrime",
   "version": "0.1.0",
   "description": "Smart loans",
   "author": "Jakub Wojciechowski <jakub@alice.si>",
   "scripts": {
     "dev": "node scripts/dev-server.js",
     "start": "yarn migrate:local && yarn dev",
+    "start:server": "yarn migrate:server && vercel --prod",
     "build:contracts:hardhat": "yarn hardhat compile",
     "build:contracts:hardhat:force": "yarn hardhat compile --force",
     "build:contracts:truffle": "truffle compile",
