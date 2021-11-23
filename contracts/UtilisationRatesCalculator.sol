@@ -56,13 +56,9 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
     function getPoolUtilisation(uint256 _totalLoans, uint256 _totalDeposits) public pure returns(uint256) {
         if (_totalDeposits == 0) return 0;
 
-        if (_totalLoans >= _totalDeposits) {
-          return 1 ether;
-        } else {
-          return _totalLoans.wadToRay()
-          .rayDiv(_totalDeposits.wadToRay())
-          .rayToWad();
-        }
+        return _totalLoans.wadToRay()
+        .rayDiv(_totalDeposits.wadToRay())
+        .rayToWad();
     }
 
 
@@ -77,7 +73,7 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
         if (_totalDeposits == 0) return 0;
 
       if (_totalLoans >= _totalDeposits) {
-          return this.calculateBorrowingRate(_totalLoans, _totalDeposits).wadToRay();
+          return this.calculateBorrowingRate(_totalLoans, _totalDeposits);
         } else {
           return this.calculateBorrowingRate(_totalLoans, _totalDeposits).wadToRay()
           .rayMul(_totalLoans.wadToRay())
@@ -93,10 +89,14 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
       * @dev _totalLoans total value of loans
       * @dev _totalDeposits total value of deposits
     **/
-    function calculateBorrowingRate(uint256 totalLoans, uint256 totalDeposits) external view override returns(uint256) {
-        return getPoolUtilisation(totalLoans, totalDeposits).wadToRay()
-                .rayMul(utilisationFactor.wadToRay()).rayToWad()
-                + offset;
+    function calculateBorrowingRate(uint256 _totalLoans, uint256 _totalDeposits) external view override returns(uint256) {
+      if (_totalLoans >= _totalDeposits) {
+        return utilisationFactor + offset;
+      } else {
+        return getPoolUtilisation(_totalLoans, _totalDeposits).wadToRay()
+                  .rayMul(utilisationFactor.wadToRay()).rayToWad()
+                  + offset;
+      }
     }
 
 

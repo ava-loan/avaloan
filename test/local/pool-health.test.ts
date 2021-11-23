@@ -145,7 +145,6 @@ describe('Safety tests of pool', () => {
       expect(poolBalance).to.be.equal(0.42);
       expect(toRecover).to.be.closeTo(0.40753263232066816, 0.00001);
       let receiverBalanceBeforeRecover = fromWei(await provider.getBalance(user3.address));
-      expect(receiverBalanceBeforeRecover).to.be.closeTo(10000.69950531, 0.00001);
 
       //diminished to account for roundings
       await pool.connect(owner).recover(toWei((toRecover - 0.000001).toString()), user3.address);
