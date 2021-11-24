@@ -96,6 +96,16 @@ async function findAllLoans() {
   return loans;
 }
 
+
+async function selloutSolventLoan(loanAddress) {
+  let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
+  loan = WrapperBuilder
+    .wrapLite(loan)
+    .usingPriceFeed("f1Ipos2fVPbxPVO65GBygkMyW0tkAhp2hdprRPPBBN8"); // redstone-avalanche
+  await loan.selloutLoan({gasLimit: 2000000});
+}
+
+
 async function getLoanStatus(loanAddress) {
   let loan = new ethers.Contract(loanAddress, LOAN.abi, wallet);
   loan = WrapperBuilder
@@ -120,5 +130,6 @@ module.exports = {
   borrowFromPool,
   invest,
   setMaxLTV,
-  loanSellout
+  loanSellout,
+  selloutSolventLoan
 };
