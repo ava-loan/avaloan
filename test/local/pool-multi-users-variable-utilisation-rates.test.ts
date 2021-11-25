@@ -18,7 +18,7 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Pool with fixed interests rates', () => {
+describe('Pool with variable interests rates', () => {
 
   describe('Deposit, borrow, wait & borrow more', () => {
     let pool: Pool,
