@@ -159,9 +159,11 @@ describe("Pool ERC20 token functions", () => {
 
   describe("transferFrom", () => {
     it("should revert if amount higher than user5 balance", async () => {
-      await sut.connect(user1).deposit({value: toWei("1.0")});
+      await sut.connect(user1).deposit({value: toWei("2.0")});
+      await sut.connect(user1).approve(user2.address, toWei("2.0"));
+      await sut.connect(user1).withdraw(toWei("1.0"));
 
-      await expect(sut.transferFrom(user1.address, user2.address, toWei("1.01")))
+      await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("1.01")))
         .to.be.revertedWith("Not enough tokens to transfer required amount.");
     });
 
@@ -169,7 +171,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).deposit({value: toWei("1.0")});
       await sut.connect(user1).approve(user2.address, toWei("0.5"));
 
-      await expect(sut.transferFrom(user1.address, user2.address, toWei("0.55")))
+      await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
         .to.be.revertedWith("Not enough tokens allowed to transfer required amount.");
     });
 

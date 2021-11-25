@@ -85,7 +85,7 @@ contract UtilisationRatesCalculator is IRatesCalculator, Ownable {
       /**
       * Returns the current borrowing rate
       * The value is based on the pool utilisation according to the linear formula:
-      * borrowing_ate = utilisation * utilisationFactor + offset
+      * borrowing_rate = utilisation * utilisationFactor + offset
       * @dev _totalLoans total value of loans
       * @dev _totalDeposits total value of deposits
     **/

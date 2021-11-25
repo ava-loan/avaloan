@@ -81,7 +81,7 @@ describe('Safety tests of pool', () => {
     });
   });
 
-  describe('Total loans greater than total deposits', () => {
+  describe('Surplus of 50% utilised pool', () => {
     let pool: Pool,
       owner: SignerWithAddress,
       user1: SignerWithAddress,
@@ -96,7 +96,72 @@ describe('Safety tests of pool', () => {
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
       await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+    });
 
+    it("surplus for empty pool should be 0", async () => {
+      let poolBalance = fromWei(await provider.getBalance(pool.address));
+      let totalBorrowed = fromWei(await pool.totalBorrowed());
+      let totalSupply = fromWei(await pool.totalSupply());
+      const currentSurplus = poolBalance + totalBorrowed - totalSupply;
+      expect(currentSurplus).to.be.closeTo(0, 0.00001);
+    });
+
+    it("surplus before borrowing should be 0", async () => {
+      await pool.connect(user1).deposit({value: toWei("1")});
+      expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1", "ether"));
+
+      const currentSurplus = fromWei(await provider.getBalance(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
+      expect(currentSurplus).to.be.closeTo(0, 0.00001);
+    });
+
+    it("surplus before accumulating rates should be 0", async () => {
+      await pool.connect(user2).borrow(toWei("0.5"));
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.equal(0.5);
+
+      const currentSurplus = fromWei(await provider.getBalance(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
+      expect(currentSurplus).to.be.closeTo(0, 0.00001);
+    });
+
+    it("take surplus after accumulating rates", async () => {
+      await time.increase(time.duration.years(2));
+
+      const totalSupply = fromWei(await pool.totalSupply());
+      const totalBorrowed = fromWei(await pool.totalBorrowed());
+      const poolBalance = fromWei(await provider.getBalance(pool.address));
+      const currentSurplus = fromWei(await provider.getBalance(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
+      expect(currentSurplus).to.be.closeTo(0.00676029, 0.00001);
+      expect(poolBalance).to.be.closeTo(0.5, 0.00001);
+
+      const maxAvailableSurplus = Math.min(poolBalance, currentSurplus);
+
+      let receiverBalanceBeforeRecover = fromWei(await provider.getBalance(user3.address));
+
+      await pool.connect(owner).recoverSurplus(toWei((maxAvailableSurplus - 0.000001).toString()), user3.address);
+
+      let receiverBalanceAfterRecover = fromWei(await provider.getBalance(user3.address));
+
+      expect(receiverBalanceAfterRecover).to.be.closeTo(receiverBalanceBeforeRecover + maxAvailableSurplus, 0.00001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(poolBalance - maxAvailableSurplus, 0.00001);
+      expect(fromWei(await pool.totalSupply())).to.be.closeTo(totalSupply, 0.00001);
+      expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(totalBorrowed, 0.00001);
+    });
+  });
+
+  describe('Pool utilisation greater than 1', () => {
+    let pool: Pool,
+      owner: SignerWithAddress,
+      user1: SignerWithAddress,
+      user2: SignerWithAddress,
+      user3: SignerWithAddress,
+      ratesCalculator: VariableUtilisationRatesCalculator;
+
+    before("Deploy Pool contract", async () => {
+      [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
+      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
 
     it("keep rates at maximum when pool utilisation is higher than 1", async () => {
@@ -108,6 +173,8 @@ describe('Safety tests of pool', () => {
 
       await time.increase(time.duration.years(4));
 
+      const poolUtilisation = await ratesCalculator.getPoolUtilisation(await pool.totalBorrowed(), await pool.totalSupply());
+      expect(poolUtilisation).to.be.above( 1);
 
       let poolBalance = fromWei(await provider.getBalance(pool.address));
       let depositUser1 = fromWei(await pool.balanceOf(user1.address));
@@ -137,27 +204,36 @@ describe('Safety tests of pool', () => {
       expect(fromWei(await pool.getBorrowingRate())).to.equal(0.75);
     });
 
-    it("recover residual funds", async () => {
-      let poolBalance = fromWei(await provider.getBalance(pool.address));
-      let totalSupply = fromWei(await pool.totalSupply());
-      const toRecover = poolBalance - totalSupply;
+    it("recover surplus funds", async () => {
+      const poolBalance = fromWei(await provider.getBalance(pool.address));
+      const totalBorrowed = fromWei(await pool.totalBorrowed());
+      const totalSupply = fromWei(await pool.totalSupply());
+      const depositRate = fromWei(await pool.getDepositRate());
+      const borrowingRate = fromWei(await pool.getBorrowingRate());
+
+      const currentSurplus = poolBalance + totalBorrowed - totalSupply;
+      const maxAvailableSurplus = Math.min(poolBalance, currentSurplus);
+
+      expect(maxAvailableSurplus).to.be.closeTo(0.42, 0.00001);
+      expect(poolBalance).to.be.closeTo(0.42, 0.00001);
       expect(totalSupply).to.be.closeTo(0.012467367382828578, 0.00001);
-      expect(poolBalance).to.be.equal(0.42);
-      expect(toRecover).to.be.closeTo(0.40753263232066816, 0.00001);
+      expect(totalBorrowed).to.be.closeTo(0.496177, 0.00001);
+      expect(maxAvailableSurplus).to.be.closeTo(0.42, 0.00001);
+
       let receiverBalanceBeforeRecover = fromWei(await provider.getBalance(user3.address));
 
       //diminished to account for roundings
-      await pool.connect(owner).recover(toWei((toRecover - 0.000001).toString()), user3.address);
+      await pool.connect(owner).recoverSurplus(toWei((maxAvailableSurplus - 0.000001).toString()), user3.address);
 
       let receiverBalanceAfterRecover = fromWei(await provider.getBalance(user3.address));
 
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.0124674, 0.00001);
-      expect(receiverBalanceAfterRecover).to.be.closeTo(receiverBalanceBeforeRecover + toRecover, 0.00001);
-      await expect(pool.connect(owner).recover(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more residual funds than available");
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
+      expect(receiverBalanceAfterRecover).to.be.closeTo(receiverBalanceBeforeRecover + maxAvailableSurplus, 0.00001);
+      await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more surplus funds than pool balance");
 
-      expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.0124674, 0.00001);
-      expect(fromWei(await pool.getDepositRate())).to.equal(0.75);
-      expect(fromWei(await pool.getBorrowingRate())).to.equal(0.75);
+      expect(fromWei(await pool.totalSupply())).to.be.closeTo(totalSupply, 0.00001);
+      expect(fromWei(await pool.getDepositRate())).to.equal(depositRate);
+      expect(fromWei(await pool.getBorrowingRate())).to.equal(borrowingRate);
     });
 
     it("check condition of pool after a year", async () => {
@@ -166,7 +242,7 @@ describe('Safety tests of pool', () => {
       expect(fromWei(await pool.getDepositRate())).to.equal(0.75);
       expect(fromWei(await pool.getBorrowingRate())).to.equal(0.75);
 
-      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.0124674, 0.00001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(0.026393417976572575, 0.00001);
     });
 
@@ -183,6 +259,20 @@ describe('Safety tests of pool', () => {
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(0, 0.00001);
       expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0, 0.00001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(1.02401623, 0.00001);
+    });
+
+    it("recover surplus and check pool condition", async () => {
+      const poolBalance = fromWei(await provider.getBalance(pool.address));
+      const totalBorrowed = fromWei(await pool.totalBorrowed());
+      const totalSupply = fromWei(await pool.totalSupply());
+
+      const currentSurplus = poolBalance + totalBorrowed - totalSupply;
+      await pool.connect(owner).recoverSurplus(toWei((currentSurplus - 0.000001).toString()), user3.address);
+
+      expect(fromWei(await pool.totalSupply())).to.be.closeTo(0, 0.00001);
+      expect(fromWei(await pool.totalBorrowed())).to.be.closeTo(0, 0.00001);
+      expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
     });
   });
 });
