@@ -575,7 +575,7 @@ describe('Smart loan', () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 15000;
+      let investedAmount = 40000;
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
@@ -586,7 +586,7 @@ describe('Smart loan', () => {
 
       let balances = await wrappedLoan.getAllAssetsBalances();
       const currentUSDTokenBalance = balances[0];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("15000", usdTokenDecimalPlaces));
+      expect(currentUSDTokenBalance).to.be.equal(toWei("40000", usdTokenDecimalPlaces));
     });
 
 

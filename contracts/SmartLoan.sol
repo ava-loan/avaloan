@@ -128,7 +128,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
 
-  function selloutLoan() external onlyOwner {
+  function selloutLoan() external onlyOwner successfullSellout {
     bytes32[] memory assets = supportedAssets.getAllAssets();
     for (uint i = 0; i < assets.length; i++) {
       nonSolventAssetSale(assets[i], getERC20TokenInstance(assets[i]).balanceOf(address(this)), 0);
@@ -391,10 +391,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   modifier successfullSellout() {
     _;
     uint256 LTV = getLTV();
-    require(LTV >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss.");
-    if (address(this).balance > 0) {
-      require(LTV < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state.");
+    if (msg.sender != owner()) {
+      require(LTV >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss.");
     }
+    require(LTV < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state.");
   }
 
 
