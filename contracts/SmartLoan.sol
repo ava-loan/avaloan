@@ -74,13 +74,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   function nonSolventAssetSale(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
     token.transfer(address(exchange), _amount);
-
-    (bool success,) = address(exchange).call{value : 0}(
-      abi.encodeWithSignature("sellAsset(bytes32,uint256,uint256)", asset, _amount, _minAvaxOut)
-    );
-    if (!success) {
-      exchange.transferBack(asset);
-    }
+    exchange.sellAsset(asset, _amount, _minAvaxOut);
   }
 
 
@@ -131,7 +125,11 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   function selloutLoan() external onlyOwner successfullSellout {
     bytes32[] memory assets = supportedAssets.getAllAssets();
     for (uint i = 0; i < assets.length; i++) {
-      nonSolventAssetSale(assets[i], getERC20TokenInstance(assets[i]).balanceOf(address(this)), 0);
+      uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
+      if (balance > 0) {
+        nonSolventAssetSale(assets[i], balance, 0);
+      }
+
     }
 
     uint256 debt = getDebt();
@@ -201,7 +199,8 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner remainsSolvent {
     require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds available");
 
-    exchange.buyAsset{value : _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
+    bool success = exchange.buyAsset{value : _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
+    if (success != true) revert('Investment failed.');
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
@@ -216,7 +215,8 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   function redeem(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external onlyOwner remainsSolvent {
     IERC20Metadata token = getERC20TokenInstance(_asset);
     token.transfer(address(exchange), _exactERC20AmountIn);
-    exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
+    bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
+    if (success != true) revert('Redemption failed.');
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }
