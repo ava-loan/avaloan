@@ -2,14 +2,14 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
-import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import FixedRatesCalculatorArtifact from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
 import OpenBorrowersRegistryArtifact
-  from '../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+  from '../../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../typechain";
-import {CompoundingIndex__factory} from "../../typechain";
+import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
+import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../../typechain";
+import {CompoundingIndex__factory} from "../../../typechain";
 
 chai.use(solidity);
 
@@ -17,7 +17,7 @@ const ZERO = ethers.constants.AddressZero;
 
 const {deployContract, provider} = waffle;
 
-describe('Pool with fixed interests rates', () => {
+describe('Pool with fixed interest rates', () => {
 
   describe('Single borrowing with interest rates', () => {
     let sut: Pool,

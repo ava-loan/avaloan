@@ -84,7 +84,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(recipient != address(0), "ERC20: cannot transfer to the zero address");
     require(recipient != address(this), "ERC20: cannot transfer to the pool address");
 
-    _accumulateDepositInterests(msg.sender);
+    _accumulateDepositInterest(msg.sender);
 
     require(_deposited[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
 
@@ -93,7 +93,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
       _deposited[msg.sender] -= amount;
     }
 
-    _accumulateDepositInterests(recipient);
+    _accumulateDepositInterest(recipient);
     _deposited[recipient] += amount;
 
     emit Transfer(msg.sender, recipient, amount);
@@ -106,7 +106,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function approve(address spender, uint256 amount) external override returns (bool) {
-    _accumulateDepositInterests(msg.sender);
+    _accumulateDepositInterest(msg.sender);
 
     require(_deposited[msg.sender] >= amount, "ERC20: approve amount exceeds balance");
     _allowed[msg.sender][spender] = amount;
@@ -121,14 +121,14 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(recipient != address(0), "ERC20: cannot transfer to the zero address");
     require(recipient != address(this), "ERC20: cannot transfer to the pool address");
 
-    _accumulateDepositInterests(msg.sender);
+    _accumulateDepositInterest(msg.sender);
 
     require(amount <= _deposited[sender], "Not enough tokens to transfer required amount.");
 
     _deposited[sender] -= amount;
     _allowed[sender][msg.sender] -= amount;
 
-    _accumulateDepositInterests(recipient);
+    _accumulateDepositInterest(recipient);
     _deposited[recipient] += amount;
 
     emit Transfer(sender, recipient, amount);
@@ -142,7 +142,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * It updates user deposited balance, total deposited and rates
   **/
   function deposit() payable virtual external {
-    _accumulateDepositInterests(msg.sender);
+    _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
     _updateRates();
@@ -155,7 +155,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be withdrawn
   **/
   function withdraw(uint256 _amount) external nonReentrant {
-    _accumulateDepositInterests(msg.sender);
+    _accumulateDepositInterest(msg.sender);
 
     _burn(msg.sender, _amount);
 
@@ -176,7 +176,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     require(address(this).balance >= _amount, "There is not enough funds in the pool to fund the loan.");
     require(totalSupply() - totalBorrowed() >= _amount, "There is no enough deposit in the pool to fund the loan.");
 
-    _accumulateBorrowingInterests(msg.sender);
+    _accumulateBorrowingInterest(msg.sender);
 
     borrowed[msg.sender] += _amount;
     borrowed[address(this)]+= _amount;
@@ -193,7 +193,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * It updates user borrowed balance, total borrowed amount and rates
   **/
   function repay() payable external {
-    _accumulateBorrowingInterests(msg.sender);
+    _accumulateBorrowingInterest(msg.sender);
 
     require(borrowed[msg.sender] >= msg.value, "You are trying to repay more that was borrowed by user.");
 
@@ -298,24 +298,24 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
 
-  function _accumulateDepositInterests(address user) internal {
-    uint256 depositedWithInterests = balanceOf(user);
-    uint256 interests = depositedWithInterests - _deposited[user];
+  function _accumulateDepositInterest(address user) internal {
+    uint256 depositedWithInterest = balanceOf(user);
+    uint256 interest = depositedWithInterest - _deposited[user];
 
-    _mint(user, interests);
+    _mint(user, interest);
 
-    emit InterestsCollected(user, interests, block.timestamp);
+    emit InterestCollected(user, interest, block.timestamp);
 
     depositIndex.updateUser(user);
     depositIndex.updateUser(address(this));
   }
 
 
-  function _accumulateBorrowingInterests(address user) internal {
-    uint256 borrowedWithInterests = getBorrowed(user);
-    uint256 interests = borrowedWithInterests - borrowed[user];
-    borrowed[user] = borrowedWithInterests;
-    borrowed[address(this)] += interests;
+  function _accumulateBorrowingInterest(address user) internal {
+    uint256 borrowedWithInterest = getBorrowed(user);
+    uint256 interest = borrowedWithInterest - borrowed[user];
+    borrowed[user] = borrowedWithInterest;
+    borrowed[address(this)] += interest;
 
     borrowIndex.updateUser(user);
     borrowIndex.updateUser(address(this));
@@ -370,12 +370,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 
   /**
-    * @dev emitted after accumulating deposit interests
+    * @dev emitted after accumulating deposit interest
     * @param user the address that the deposit interest is accumulated
     * @param value the amount accumulated interest
     * @param timestamp of the interest accumulation
   **/
-  event InterestsCollected(address indexed user, uint256 value, uint256 timestamp);
+  event InterestCollected(address indexed user, uint256 value, uint256 timestamp);
 
 
 }

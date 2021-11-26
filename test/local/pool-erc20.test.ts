@@ -2,13 +2,13 @@ import {ethers, waffle} from "hardhat"
 import chai, {expect} from "chai"
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from "../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json";
+import VariableUtilisationRatesCalculatorArtifact from "../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json";
 import PoolArtifact from "../../artifacts/contracts/Pool.sol/Pool.json";
 import OpenBorrowersRegistryArtifact
   from "../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, time, toWei, getFixedGasSigners} from "../_helpers";
-import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../typechain";
+import {VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool} from "../../typechain";
 
 chai.use(solidity);
 
@@ -23,7 +23,8 @@ describe("Pool ERC20 token functions", () => {
     user3: SignerWithAddress,
     user4: SignerWithAddress,
     user5: SignerWithAddress,
-    fixedRatesCalculator: FixedRatesCalculator;
+    user6: SignerWithAddress,
+    VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator;
 
   // shortcut to Pool.balanceOf with conversion to ethers.
   async function balanceOf(user: SignerWithAddress): Promise<number> {
@@ -31,13 +32,13 @@ describe("Pool ERC20 token functions", () => {
   }
 
   beforeEach(async () => {
-    [owner, user1, user2, user3, user4, user5] = await getFixedGasSigners(10000000);
+    [owner, user1, user2, user3, user4, user5, user6] = await getFixedGasSigners(10000000);
     sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
-    let fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+    let VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
     let borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
 
-    await sut.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+    await sut.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
   });
 
   describe("transfer", () => {
@@ -49,39 +50,41 @@ describe("Pool ERC20 token functions", () => {
         .to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
-    it("should accumulate user5 interests prior transferring the funds", async () => {
+    it("should accumulate user1 interest prior to transferring the funds", async () => {
       // given
       await sut.connect(user1).deposit({value: toWei("1.0")});
+      await sut.connect(user1).borrow(toWei("0.7"));
       await time.increase(time.duration.years(1));
 
-      // note: after accumulating interests user5 should be able to transfer
+      // note: after accumulating interest user1 should be able to transfer
       // more funds than originally deposited
       // when
       await sut.connect(user1).transfer(user2.address, toWei("1.04"));
 
       // then
       expect(await balanceOf(user2)).to.be.equal(1.04);
-      expect(await balanceOf(user1)).to.be.closeTo(0.011271, 0.000001);
+      expect(await balanceOf(user1)).to.be.closeTo(0.058340059, 0.000001);
     });
 
-    it("should accumulate user2 interests prior transferring the funds", async () => {
+    it("should accumulate user2 interest prior to transferring the funds", async () => {
       // given
       await sut.connect(user1).deposit({value: toWei("1.0")});
       await sut.connect(user2).deposit({value: toWei("2.0")});
+      await sut.connect(user3).borrow(toWei("2.0"));
       await time.increase(time.duration.years(1));
 
       // when
       await sut.connect(user1).transfer(user2.address, toWei("1.05"));
 
       // then
-      expect(await balanceOf(user1)).to.be.closeTo(0.001271, 0.000001);
-      expect(await balanceOf(user2)).to.be.closeTo(3.152542, 0.000001);
+      expect(await balanceOf(user1)).to.be.closeTo(0.04053311, 0.000001);
+      expect(await balanceOf(user2)).to.be.closeTo(3.2310662, 0.000001);
     });
 
   });
 
   describe("approve", () => {
-    it("should revert if value to approve higher than current balance", async () => {
+    it("should revert if value to approve is higher than current balance", async () => {
       await sut.connect(user1).deposit({value: toWei("1.0")});
 
       await expect(sut.connect(user1).approve(user2.address, toWei("1.01")))
@@ -89,7 +92,7 @@ describe("Pool ERC20 token functions", () => {
 
     });
 
-    it("should revert if value to approve higher than current balance (after accumulating interest)", async () => {
+    it("should revert if value to approve is higher than current balance (after accumulating interest)", async () => {
       await sut.connect(user1).deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(1));
 
@@ -100,11 +103,12 @@ describe("Pool ERC20 token functions", () => {
     it("should properly accumulate interest rate before approving", async () => {
       // given
       await sut.connect(user1).deposit({value: toWei("1.0")});
+      await sut.connect(user1).borrow(toWei("0.5"));
       await time.increase(time.duration.years(1));
 
       // when
       // note: even though only 1.0 was deposited, 1.05 can be approved
-      // thanks to interests being accumulated
+      // thanks to interest being accumulated
       await sut.connect(user1).approve(user2.address, toWei("1.05"));
 
       // then
@@ -158,7 +162,7 @@ describe("Pool ERC20 token functions", () => {
   })
 
   describe("transferFrom", () => {
-    it("should revert if amount higher than user5 balance", async () => {
+    it("should revert if amount is higher than user1 balance", async () => {
       await sut.connect(user1).deposit({value: toWei("2.0")});
       await sut.connect(user1).approve(user2.address, toWei("2.0"));
       await sut.connect(user1).withdraw(toWei("1.0"));
@@ -167,7 +171,7 @@ describe("Pool ERC20 token functions", () => {
         .to.be.revertedWith("Not enough tokens to transfer required amount.");
     });
 
-    it("should revert if caller's allowance for user5's tokens is too low", async () => {
+    it("should revert if caller's allowance for user1's tokens is too low", async () => {
       await sut.connect(user1).deposit({value: toWei("1.0")});
       await sut.connect(user1).approve(user2.address, toWei("0.5"));
 
@@ -184,7 +188,7 @@ describe("Pool ERC20 token functions", () => {
         .to.be.equal(0.1);
     });
 
-    it("should decrease balance of the user5", async () => {
+    it("should decrease balance of the user1 after transfer from user1 to user3", async () => {
       await sut.connect(user1).deposit({value: toWei("2.0")});
       await sut.connect(user1).approve(user5.address, toWei("1.5"));
 
@@ -203,7 +207,7 @@ describe("Pool ERC20 token functions", () => {
       expect(await balanceOf(user5)).to.be.closeTo(5.2, 0.00001);
     });
 
-    it("should increase balance of the user2", async () => {
+    it("should increase balance of the user3 after transfer from user1", async () => {
       await sut.connect(user1).deposit({value: toWei("3.9")});
       await sut.connect(user3).deposit({value: toWei("1.0")});
       await sut.connect(user1).approve(user5.address, toWei("0.9"));
@@ -212,7 +216,7 @@ describe("Pool ERC20 token functions", () => {
       expect(await balanceOf(user3)).to.be.closeTo(1.89, 0.000001);
     });
 
-    it("should accumulate interests of the user5 and user2", async () => {
+    it("should accumulate interest of the user1 and user3", async () => {
       await sut.connect(user1).deposit({value: toWei("3.9")});
       await sut.connect(user3).deposit({value: toWei("1.0")});
       await sut.connect(user1).approve(user5.address, toWei("3.9"));
@@ -220,8 +224,8 @@ describe("Pool ERC20 token functions", () => {
       await time.increase(time.duration.years(5));
       await sut.connect(user5).transferFrom(user1.address, user3.address, toWei("1.0"));
 
-      expect(await balanceOf(user1)).to.be.closeTo(3.723673, 0.000001);
-      expect(await balanceOf(user3)).to.be.closeTo(2.2840254, 0.000001);
+      expect(await balanceOf(user1)).to.be.closeTo(2.9, 0.000001);
+      expect(await balanceOf(user3)).to.be.closeTo(2, 0.000001);
     });
   });
 
@@ -258,12 +262,13 @@ describe("Pool ERC20 token functions", () => {
       expect(fromWei(await sut.totalSupply())).to.be.closeTo(balanceOfUser1 + balanceOfUser2, 0.000001);
     });
 
-    it("should properly sum total tokens supply with accumulated interests - minting", async () => {
+    it("should properly sum total tokens supply with accumulated interest - minting", async () => {
       await sut.connect(user1).deposit({value: toWei("4.06")});
       await sut.connect(user2).deposit({value: toWei("3.1")});
       await sut.connect(user3).deposit({value: toWei("12.14")});
       await sut.connect(user4).deposit({value: toWei("4.354")});
       await sut.connect(user5).deposit({value: toWei("12.64")});
+      await sut.connect(user6).borrow(toWei("20"));
 
       await time.increase(time.duration.years(1));
 
@@ -273,55 +278,56 @@ describe("Pool ERC20 token functions", () => {
       let balanceOfUser4 = await balanceOf(user4);
       let balanceOfUser5 = await balanceOf(user5);
 
-      expect(balanceOfUser1).to.be.closeTo( 4.268160678185977, 0.000001);
-      expect(balanceOfUser2).to.be.closeTo( 3.2589404141375473, 0.000001);
-      expect(balanceOfUser3).to.be.closeTo( 12.762431149968467, 0.000001);
-      expect(balanceOfUser4).to.be.closeTo( 4.577234360696937, 0.000001);
-      expect(balanceOfUser5).to.be.closeTo( 13.288066657666242, 0.000001);
+      expect(balanceOfUser1).to.be.closeTo( 4.3283013, 0.000001);
+      expect(balanceOfUser2).to.be.closeTo( 3.304860634, 0.000001);
+      expect(balanceOfUser3).to.be.closeTo( 12.94226067, 0.000001);
+      expect(balanceOfUser4).to.be.closeTo( 4.64173006, 0.000001);
+      expect(balanceOfUser5).to.be.closeTo( 13.475302716, 0.000001);
 
       let sumOfBalances = balanceOfUser1 + balanceOfUser2 + balanceOfUser3 + balanceOfUser4 + balanceOfUser5;
 
       expect(fromWei(await sut.totalSupply())).to.be.closeTo(sumOfBalances, 0.000001);
     });
 
-    it("should properly sum total tokens supply with accumulated interests - burning", async () => {
+    it("should properly sum total tokens supply with accumulated interest - burning", async () => {
       await sut.connect(user1).deposit({value: toWei("4.06")});
       await sut.connect(user2).deposit({value: toWei("3.1")});
+      await sut.connect(user3).borrow(toWei("2"));
 
       await time.increase(time.duration.years(1));
 
-      expect(await balanceOf(user1)).to.be.closeTo( 4.268160657884604, 0.000001);
-      expect(await balanceOf(user2)).to.be.closeTo( 3.2589403986364993 , 0.000001);
+      expect(await balanceOf(user1)).to.be.closeTo( 4.15583120, 0.000001);
+      expect(await balanceOf(user2)).to.be.closeTo( 3.173171609 , 0.000001);
 
       await sut.connect(user1).withdraw(toWei("2.06"));
       await sut.connect(user2).withdraw(toWei("1.1"));
 
-      expect(await balanceOf(user1)).to.be.closeTo( 2.2081606681527437, 0.000001);
-      expect(await balanceOf(user2)).to.be.closeTo( 2.1589404089705315, 0.000001);
+      expect(await balanceOf(user1)).to.be.closeTo( 2.09583121113, 0.000001);
+      expect(await balanceOf(user2)).to.be.closeTo( 2.073171616, 0.000001);
     });
 
-    it("should properly sum total tokens supply with accumulated interests - minting, burning and borrowing", async () => {
+    it("should properly sum total tokens supply with accumulated interest - minting, burning and borrowing", async () => {
       await sut.connect(user1).deposit({value: toWei("3.06")});
       await sut.connect(user2).deposit({value: toWei("2.1")});
+      await sut.connect(user3).borrow(toWei("1"));
 
       await time.increase(time.duration.years(1));
 
-      expect(await balanceOf(user1)).to.be.closeTo( 3.21688955988347 , 0.000001);
-      expect(await balanceOf(user2)).to.be.closeTo( 2.2076693023021448, 0.000001);
-
+      expect(await balanceOf(user1)).to.be.closeTo( 3.103752238, 0.000001);
+      expect(await balanceOf(user2)).to.be.closeTo( 2.130026046, 0.000001);
       await sut.connect(user1).withdraw(toWei("2.06"));
       await sut.connect(user2).withdraw(toWei("1.1"));
 
-      expect(await balanceOf(user1)).to.be.closeTo( 1.1568895668180512, 0.000001);
-      expect(await balanceOf(user2)).to.be.closeTo( 1.107669309302618, 0.000001);
+      expect(await balanceOf(user1)).to.be.closeTo( 1.0437522411, 0.000001);
+      expect(await balanceOf(user2)).to.be.closeTo( 1.030026049, 0.000001);
 
       await time.increase(time.duration.years(1));
 
       let balanceOfUser1 = await balanceOf(user1);
       let balanceOfUser2 = await balanceOf(user2);
 
-      expect(balanceOfUser1).to.be.closeTo( 1.2162045632465892, 0.000001);
-      expect(balanceOfUser2).to.be.closeTo( 1.1644607291664806, 0.000001);
+      expect(balanceOfUser1).to.be.closeTo( 1.106355702, 0.000001);
+      expect(balanceOfUser2).to.be.closeTo( 1.0918062236, 0.000001);
 
       let sumOfBalances = balanceOfUser1 + balanceOfUser2;
 
@@ -334,8 +340,8 @@ describe("Pool ERC20 token functions", () => {
       balanceOfUser1 = await balanceOf(user1);
       balanceOfUser2 = await balanceOf(user2);
 
-      expect(balanceOfUser1).to.be.closeTo( 1.278560708625376, 0.000001);
-      expect(balanceOfUser2).to.be.closeTo( 1.224163909330047, 0.000001);
+      expect(balanceOfUser1).to.be.closeTo( 1.9107890715, 0.000001);
+      expect(balanceOfUser2).to.be.closeTo( 1.885660606, 0.000001);
 
       sumOfBalances = balanceOfUser1 + balanceOfUser2;
 
@@ -348,8 +354,8 @@ describe("Pool ERC20 token functions", () => {
       balanceOfUser1 = await balanceOf(user1);
       balanceOfUser2 = await balanceOf(user2);
 
-      expect(balanceOfUser1).to.be.closeTo( 1.3441139178866284, 0.000001);
-      expect(balanceOfUser2).to.be.closeTo( 1.2869281370947592, 0.000001);
+      expect(balanceOfUser1).to.be.closeTo( 3.019594815, 0.000001);
+      expect(balanceOfUser2).to.be.closeTo( 2.979884727, 0.000001);
 
       sumOfBalances = balanceOfUser1 + balanceOfUser2;
 

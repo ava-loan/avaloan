@@ -3,7 +3,7 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
-import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import SupportedAssetsArtifact from '../../artifacts/contracts/SupportedAssets.sol/SupportedAssets.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -17,7 +17,7 @@ import {
 } from "../_helpers";
 import {WrapperBuilder} from "redstone-flash-storage";
 import {
-  FixedRatesCalculator,
+  VariableUtilisationRatesCalculator,
   PangolinExchange,
   Pool,
   SupportedAssets,
@@ -64,7 +64,7 @@ describe('Smart loan', () => {
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
-      const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
@@ -91,7 +91,7 @@ describe('Smart loan', () => {
         }
       ]
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
 
@@ -245,7 +245,7 @@ describe('Smart loan', () => {
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
-      const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
@@ -256,7 +256,7 @@ describe('Smart loan', () => {
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
 
       AVAX_PRICE = (await redstone.getPrice('AVAX')).value;
@@ -347,7 +347,7 @@ describe('Smart loan', () => {
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
-      const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
@@ -382,7 +382,7 @@ describe('Smart loan', () => {
         }
       ]
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
 
@@ -512,7 +512,7 @@ describe('Smart loan', () => {
     before("deploy provider, exchange and pool", async () => {
       [owner, depositor] = await getFixedGasSigners(10000000);
 
-      const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
@@ -547,7 +547,7 @@ describe('Smart loan', () => {
         }
       ]
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
 
@@ -668,9 +668,6 @@ describe('Smart loan', () => {
       expect(await loan.getLTV()).to.be.equal(5001);
       expect(await loan.isSolvent()).to.be.false;
     });
-
-
   });
-
 });
 

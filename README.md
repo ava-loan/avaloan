@@ -2,9 +2,9 @@
 
 [LIVE DEMO](https://avaloan.xyz/#/) on the Fuji testnet
 
-Lending is by far the most popular use case in the currently booming Decentralised Finance sector. The second-generation lending protocols like Aave and Compound allows users to deposit and borrow from a lending pool automatically setting the interests rates to balance capital supply and demand. However, both of them suffer from liquidity crunch as borrowers need to provide collateral that significantly exceeds their loan size. It causes the collateral funds to remain idle in the pool. From the macroeconomic perspective, it means that approximately **70% of the funds stay unproductive** and is not used for assets investment, trading or staking activity.
+Lending is by far the most popular use case in the currently booming Decentralised Finance sector. The second-generation lending protocols like Aave and Compound allows users to deposit and borrow from a lending pool automatically setting the interest rates to balance capital supply and demand. However, both of them suffer from liquidity crunch as borrowers need to provide collateral that significantly exceeds their loan size. It causes the collateral funds to remain idle in the pool. From the macroeconomic perspective, it means that approximately **70% of the funds stay unproductive** and is not used for assets investment, trading or staking activity.
 
-Smart Loans is the next generation lending platform on AVA that will allow low-collateral borrowing from pooled deposits. The core innovation is lending funds not to a personal account but a special purpose smart-contract. The contract automatically guards solvency and every activity needs to undergo a series of checks. This mechanism blocks transactions which could cause the smart-loan valuation to drop below a safe threshold. The insolvency risk is further mitigated by a decentralised liquidation mechanism allowing anyone to forcibly repay part of the loan due to assets price movements caused by external factors. Wrapping loans with smart contracts reduces the collateral need, improving the money supply in the entire Avalanche ecosystem. Patient capital holders will earn interests on the funds provided, while borrowers could use extra capital for investment in high-grow assets.
+Smart Loans is the next generation lending platform on AVA that will allow low-collateral borrowing from pooled deposits. The core innovation is lending funds not to a personal account but a special purpose smart-contract. The contract automatically guards solvency and every activity needs to undergo a series of checks. This mechanism blocks transactions which could cause the smart-loan valuation to drop below a safe threshold. The insolvency risk is further mitigated by a decentralised liquidation mechanism allowing anyone to forcibly repay part of the loan due to assets price movements caused by external factors. Wrapping loans with smart contracts reduces the collateral need, improving the money supply in the entire Avalanche ecosystem. Patient capital holders will earn interest on the funds provided, while borrowers could use extra capital for investment in high-grow assets.
 
 # Features
 
@@ -12,18 +12,18 @@ Smart Loans is the next generation lending platform on AVA that will allow low-c
 
 A user deposits funds by calling the [deposit](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L53) method from the Pool contract.
 The deposited amount is taken from the message value and recorded on the user's balance.
-It immediately starts to accumulate interests based on the current rates.
+It immediately starts to accumulate interest based on the current rates.
 
 ## Borrowing
 
 A user borrows funds by calling the [borrow](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L90) method from the Pool contract.
 The borrowed amount is specified as the parameter to the function call and is transferred to the user account provided there are enough funds available in the pool.
 
-## Accumulating interests
+## Accumulating interest
 
-The interests are accumulated every second and compounding on the depositors' account. To save the gas costs the Pool contract uses the [CompoundingIndex](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/CompoundingIndex.sol) helper contract which manages the balances using virtual indices and updates the state only after user interaction.
+The interest are accumulated every second and compounding on the depositors' account. To save the gas costs the Pool contract uses the [CompoundingIndex](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/CompoundingIndex.sol) helper contract which manages the balances using virtual indices and updates the state only after user interaction.
 
-The total amount of interest earned by depositors always equals the total amount of interests owned by borrowers.
+The total amount of interest earned by depositors always equals the total amount of interest owned by borrowers.
 
 ## Insolvency protection
 
@@ -64,8 +64,8 @@ In the top section the dashboard contains 4 widgets showing **global state** of 
 * Borrowing rate - yearly interest rate owned by borrowers
 
 In the middle of the screen, there are two widgets showing data for the connected **user**:
-* Deposits - sum of deposits with earned interests and the history of deposits and withdrawals
-* Loans - sum of loans with paid interests and the history of borrowings and repayments
+* Deposits - sum of deposits with earned interest and the history of deposits and withdrawals
+* Loans - sum of loans with paid interest and the history of borrowings and repayments
 
 ## Smart loan view
 
@@ -91,14 +91,14 @@ The smart contracts could be divided into two main groups:
 
 * **Pool.sol** - a contract that aggregates deposits and borrowings.
 It keeps track of the balance and liabilities of every user.
-It accumulates the interests in the real-time based on the rates model connected by the [setRatesCalculator](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L40).
+It accumulates the interest in the real-time based on the rates model connected by the [setRatesCalculator](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L40).
 The borrowers are verified by the linked [BorrowersRegistry](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/Pool.sol#L53) contract.
 
-* **CompoundingIndex.sol** - a helper contract that facilitates the calculation of deposits and loans interests rates. It uses a global index, that is snapshotted on every user interaction to achieve a O(1) complexity balance updates.
+* **CompoundingIndex.sol** - a helper contract that facilitates the calculation of deposits and loans interest rates. It uses a global index, that is snapshotted on every user interaction to achieve a O(1) complexity balance updates.
 
 * **FixedRatesCalculator.sol** - a basic rates calculation model that returns a rate which could be set up by an admin using off-chain calculations.
 
-* **UtilisationRatesCalculator.sol** - an interest rates calculation model that automatically adjust the rates based on the current pool utilisation defined as a ratio between borrowed and deposited funds. The mechanism helps to balance the capital supply and demand because a higher need for loans means that the users will need to pay higher interests rates which should reduce the borrowers' appetite.
+* **UtilisationRatesCalculator.sol** - an interest rates calculation model that automatically adjust the rates based on the current pool utilisation defined as a ratio between borrowed and deposited funds. The mechanism helps to balance the capital supply and demand because a higher need for loans means that the users will need to pay higher interest rates which should reduce the borrowers' appetite.
 
 * **IBorrowersRegistry.sol** - an interface that keeps track of borrowers and their loans by maintaining a bidirectional mapping. It also answers if an account is allowed to borrow funds by calling the [canBorrow](https://github.com/jakub-wojciechowski/avaloan/blob/master/contracts/IBorrowersRegistry.sol#L11) method.
 

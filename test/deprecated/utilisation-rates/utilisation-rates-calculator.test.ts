@@ -3,10 +3,10 @@ import chai from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import UtilisationRatesCalculatorArtifact
-  from '../../artifacts/contracts/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
-import {UtilisationRatesCalculator} from "../../typechain";
+  from '../../../artifacts/contracts/deprecated/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
+import {UtilisationRatesCalculator} from "../../../typechain";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
+import {fromWei, getFixedGasSigners, toWei} from "../../_helpers";
 
 chai.use(solidity);
 

@@ -10,7 +10,7 @@ export default {
     depositRate: null,
     borrowingRate: null,
     poolHistory: null,
-    depositInterests: null,
+    depositInterest: null,
     userBorrowed: null,
     userDepositBalance: null,
     deploymentBlock: null
@@ -34,8 +34,8 @@ export default {
     setPoolHistory(state, poolHistory) {
       state.poolHistory = poolHistory;
     },
-    setDepositInterests(state, depositInterests) {
-      state.depositInterests = depositInterests;
+    setDepositInterest(state, depositInterest) {
+      state.depositInterest = depositInterest;
     },
     setDeploymentBlock(state, deploymentBlock) {
       state.deploymentBlock = deploymentBlock;
@@ -138,9 +138,9 @@ export default {
 
       commit('setPoolHistory', poolHistory);
 
-      const depositInterests = pool.myDeposits - totalSupply + totalWithdrawn;
+      const depositInterest = pool.myDeposits - totalSupply + totalWithdrawn;
 
-      commit('setDepositInterests', depositInterests);
+      commit('setDepositInterest', depositInterest);
     },
     async updateUserBorrowed({ state, rootState, commit }) {
       const balance = await state.pool.getBorrowed(rootState.network.account);

@@ -2,7 +2,7 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import OpenBorrowersRegistryArtifact from '../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
@@ -15,24 +15,24 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Pool with fixed interests rates', () => {
+describe('Pool with variable utilisation interest rates', () => {
   let sut: Pool,
     owner: SignerWithAddress,
     user: SignerWithAddress,
     user2: SignerWithAddress,
-    mockFixedRatesCalculator;
+    mockVariableUtilisationRatesCalculator;
 
   beforeEach(async () => {
     [owner, user, user2] = await getFixedGasSigners(10000000);
-    mockFixedRatesCalculator = await deployMockContract(owner, FixedRatesCalculatorArtifact.abi);
-    await mockFixedRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
-    await mockFixedRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
+    mockVariableUtilisationRatesCalculator = await deployMockContract(owner, VariableUtilisationRatesCalculatorArtifact.abi);
+    await mockVariableUtilisationRatesCalculator.mock.calculateDepositRate.returns(toWei("0.05"));
+    await mockVariableUtilisationRatesCalculator.mock.calculateBorrowingRate.returns(toWei("0.05"));
 
     sut = (await deployContract(owner, PoolArtifact)) as Pool;
 
     const borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
 
-    await sut.initialize(mockFixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+    await sut.initialize(mockVariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
   });
 
   it("should deposit requested value", async () => {
@@ -183,7 +183,7 @@ describe('Pool with fixed interests rates', () => {
         .to.be.revertedWith("ERC20: burn amount exceeds current pool indexed balance");
     });
 
-    it("should not allow to withdraw more than already on deposit after accumulating interests", async () => {
+    it("should not allow to withdraw more than already on deposit after accumulating interest", async () => {
       await sut.deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(1));
 

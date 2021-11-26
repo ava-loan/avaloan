@@ -2,21 +2,21 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import OpenBorrowersRegistryArtifact
   from '../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {CompoundingIndex, FixedRatesCalculator, OpenBorrowersRegistry, Pool, TransparentUpgradeableProxy} from "../../typechain";
-import {CompoundingIndex__factory, TransparentUpgradeableProxy__factory, Pool__factory, MockUpgradedPool__factory} from "../../typechain";
+import {fromWei, getFixedGasSigners, toWei} from "../_helpers";
+import {CompoundingIndex, VariableUtilisationRatesCalculator, OpenBorrowersRegistry, Pool, TransparentUpgradeableProxy} from "../../typechain";
+import {TransparentUpgradeableProxy__factory, Pool__factory, MockUpgradedPool__factory} from "../../typechain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Upgreadable pool', () => {
+describe('Upgradeable pool', () => {
 
   describe('', () => {
     let pool: Pool,
@@ -25,23 +25,23 @@ describe('Upgreadable pool', () => {
       depositor2: SignerWithAddress,
       borrower: SignerWithAddress,
       admin: SignerWithAddress,
-      fixedRatesCalculator: FixedRatesCalculator,
+      VariableUtilisationRatesCalculator: VariableUtilisationRatesCalculator,
       depositIndex: CompoundingIndex,
       borrowIndex: CompoundingIndex,
       borrowersRegistry: OpenBorrowersRegistry,
       proxy: TransparentUpgradeableProxy;
 
-    it("should depoloy a contract behind a proxy", async () => {
+    it("should deploy a contract behind a proxy", async () => {
       [owner, depositor, borrower, admin, depositor2] = await getFixedGasSigners(10000000);
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
 
       proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(pool.address, admin.address, []));
       pool = await (new Pool__factory(owner).attach(proxy.address));
 
-      fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      VariableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       borrowersRegistry = (await deployContract(owner, OpenBorrowersRegistryArtifact)) as OpenBorrowersRegistry;
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(VariableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
     });
 
 
@@ -78,7 +78,7 @@ describe('Upgreadable pool', () => {
     });
 
     it("should allow owner-only functions after upgrade", async () => {
-      let ratesCalculatorV2 = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      let ratesCalculatorV2 = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
 
       //Should prevent setting new value from non-owner
       await expect(pool.connect(depositor).setRatesCalculator(ratesCalculatorV2.address))

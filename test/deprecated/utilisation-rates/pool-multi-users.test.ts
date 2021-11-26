@@ -3,18 +3,18 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
 import UtilisationRatesCalculatorArtifact
-  from '../../artifacts/contracts/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
-import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+  from '../../../artifacts/contracts/deprecated/UtilisationRatesCalculator.sol/UtilisationRatesCalculator.json';
+import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../typechain";
+import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
+import {OpenBorrowersRegistry__factory, Pool, UtilisationRatesCalculator} from "../../../typechain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Pool with fixed interests rates', () => {
+describe('Pool with utilisation interest rates', () => {
 
   describe('Deposit, borrow, wait & borrow more', () => {
     let pool: Pool,
@@ -58,7 +58,7 @@ describe('Pool with fixed interests rates', () => {
     });
 
 
-    it("should accumulate interests for first year", async () => {
+    it("should accumulate interest for first year", async () => {
       await time.increase(time.duration.years(1));
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("0.5", "ether"));
 
@@ -82,7 +82,7 @@ describe('Pool with fixed interests rates', () => {
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.21873235231136967, 0.000001);
     });
 
-    it("should accumulate interests for second year", async () => {
+    it("should accumulate interest for second year", async () => {
       await time.increase(time.duration.years(1));
       expect(await provider.getBalance(pool.address)).to.be.equal(toWei("1.5", "ether"));
 
@@ -103,7 +103,7 @@ describe('Pool with fixed interests rates', () => {
     });
 
 
-    it("should accumulate interests for another year", async () => {
+    it("should accumulate interest for another year", async () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
@@ -135,7 +135,7 @@ describe('Pool with fixed interests rates', () => {
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.2259440494029352, 0.000001);
     });
 
-    it("should accumulate interests for another year", async () => {
+    it("should accumulate interest for another year", async () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
@@ -181,7 +181,7 @@ describe('Pool with fixed interests rates', () => {
 
     });
 
-    it("should accumulate interests for another year", async () => {
+    it("should accumulate interest for another year", async () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
