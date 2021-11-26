@@ -2,7 +2,7 @@
 pragma solidity ^0.8.2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IRatesCalculator.sol";
+import "../IRatesCalculator.sol";
 
 /**
  * @title FixedRatesCalculator
@@ -23,7 +23,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
 
     /**
      * Sets the new deposit and borrowing rate
-     * Before the new rate is set, the index is updated accumulating interests
+     * Before the new rate is set, the index is updated accumulating interest
      * @dev _depositRate the value of updated deposit rate
      * @dev _borrowingRate the value of updated borrowing rate
     **/

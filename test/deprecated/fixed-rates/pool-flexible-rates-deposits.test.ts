@@ -2,19 +2,19 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
-import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import FixedRatesCalculatorArtifact from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {fromWei, getFixedGasSigners, time, toWei} from "../_helpers";
-import {FixedRatesCalculator, Pool} from "../../typechain";
-import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../../typechain";
+import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
+import {FixedRatesCalculator, Pool} from "../../../typechain";
+import {CompoundingIndex__factory, OpenBorrowersRegistry__factory} from "../../../typechain";
 
 chai.use(solidity);
 
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Pool with variable interests rates', () => {
+describe('Pool with variable interest rates', () => {
 
   describe('Single deposit & rates increase', () => {
     let pool: Pool,

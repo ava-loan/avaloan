@@ -18,7 +18,7 @@ chai.use(solidity);
 const {deployContract, provider} = waffle;
 const ZERO = ethers.constants.AddressZero;
 
-describe('Pool with variable interests rates', () => {
+describe('Pool with variable interest rates', () => {
 
   describe('Deposit, borrow, wait & borrow more', () => {
     let pool: Pool,
@@ -62,7 +62,7 @@ describe('Pool with variable interests rates', () => {
     });
 
 
-    it("should accumulate interests for first year", async () => {
+    it("should accumulate interest for first year", async () => {
       await time.increase(time.duration.years(1));
       expect(fromWei(await provider.getBalance(pool.address))).to.be.equal(0.1);
 
@@ -86,7 +86,7 @@ describe('Pool with variable interests rates', () => {
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.1345196516977068, 0.000001);
     });
 
-    it("should accumulate interests for second year", async () => {
+    it("should accumulate interest for second year", async () => {
       await time.increase(time.duration.years(1));
       expect(fromWei(await provider.getBalance(pool.address))).to.be.equal(1.1);
 
@@ -107,7 +107,7 @@ describe('Pool with variable interests rates', () => {
     });
 
 
-    it("should accumulate interests for another year", async () => {
+    it("should accumulate interest for another year", async () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
@@ -139,7 +139,7 @@ describe('Pool with variable interests rates', () => {
       expect(fromWei(await pool.getBorrowingRate())).to.be.closeTo(0.075177861593, 0.000001);
     });
 
-    it("should accumulate interests for another year", async () => {
+    it("should accumulate interest for another year", async () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));
@@ -182,7 +182,7 @@ describe('Pool with variable interests rates', () => {
       expect(depositUser1 + depositUser3).to.be.below(borrowedUser2 + borrowedUser4 + poolBalance);
     });
 
-    it("should accumulate interests for another year", async () => {
+    it("should accumulate interest for another year", async () => {
       await time.increase(time.duration.years(1));
 
       const poolBalance = fromWei(await provider.getBalance(pool.address));

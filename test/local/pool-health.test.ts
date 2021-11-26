@@ -45,14 +45,14 @@ describe('Safety tests of pool', () => {
       await user1.sendTransaction({to: destructable.address, value: toWei("1.0")})
     });
 
-    it("user2 and user3 make pool related actions, year passes", async () => {
+    it("user2 and user3 make pool related actions", async () => {
       await pool.connect(user2).deposit({value: toWei("1.0")});
       await pool.connect(user3).borrow(toWei("0.7"));
 
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0.3, 0.000001);
     });
 
-    it("user 1 forcefully funds pool contract with 1 ETH", async () => {
+    it("year passes, user 1 forcefully funds pool contract with 1 ETH", async () => {
       await time.increase(time.duration.years(1));
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(1.098340055784504, 0.000001);

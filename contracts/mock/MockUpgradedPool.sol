@@ -15,7 +15,7 @@ contract MockUpgradedPool is Pool {
      * used to test upgrade of contract logic
     **/
     function deposit() payable override external {
-      _accumulateDepositInterests(msg.sender);
+      _accumulateDepositInterest(msg.sender);
 
       _mint(msg.sender, msg.value * 2);
       _updateRates();

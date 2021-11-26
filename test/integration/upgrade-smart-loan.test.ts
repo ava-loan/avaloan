@@ -2,7 +2,7 @@ import {ethers, waffle} from 'hardhat'
 import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 
-import FixedRatesCalculatorArtifact from '../../artifacts/contracts/FixedRatesCalculator.sol/FixedRatesCalculator.json';
+import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
@@ -11,7 +11,7 @@ import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {deployAndInitPangolinExchangeContract, fromWei, time, toBytes32, toWei} from "../_helpers";
 import {
-  FixedRatesCalculator,
+  VariableUtilisationRatesCalculator,
   Pool,
   PangolinExchange,
   SmartLoan,
@@ -74,7 +74,7 @@ describe('Smart loan - upgrading', () => {
     before("should deploy provider, exchange, loansFactory and pool", async () => {
       [owner, oracle, depositor, other] = await getFixedGasSigners(10000000);
 
-      const fixedRatesCalculator = (await deployContract(owner, FixedRatesCalculatorArtifact, [toWei("0.05"), toWei("0.1")])) as FixedRatesCalculator;
+      const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
       await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
@@ -86,7 +86,7 @@ describe('Smart loan - upgrading', () => {
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
 
-      await pool.initialize(fixedRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+      await pool.initialize(variableUtilisationRatesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
 
