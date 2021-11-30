@@ -5,7 +5,6 @@ import redstone from 'redstone-api';
 
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
-import SupportedAssetsArtifact from '../../artifacts/contracts/SupportedAssets.sol/SupportedAssets.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   fromWei,
@@ -20,7 +19,6 @@ import {
   VariableUtilisationRatesCalculator,
   PangolinExchange,
   Pool,
-  SupportedAssets,
   SmartLoan,
   SmartLoan__factory, MockSmartLoan, MockSmartLoan__factory
 } from "../../typechain";
@@ -48,8 +46,7 @@ const erc20ABI = [
 describe('Smart loan', () => {
 
   describe('A loan without debt', () => {
-    let supportedAssets: SupportedAssets,
-      exchange: PangolinExchange,
+    let exchange: PangolinExchange,
       loan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
@@ -68,11 +65,10 @@ describe('Smart loan', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
-      await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
 
+      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
@@ -97,7 +93,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      await loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
+      await loan.initialize(exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -230,8 +226,7 @@ describe('Smart loan', () => {
   });
 
   describe('A loan with debt and repayment', () => {
-    let supportedAssets: SupportedAssets,
-      exchange: PangolinExchange,
+    let exchange: PangolinExchange,
       loan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
@@ -249,10 +244,9 @@ describe('Smart loan', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
-      await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
+      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -274,7 +268,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
+      loan.initialize(exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -328,8 +322,7 @@ describe('Smart loan', () => {
   });
 
   describe('A loan with sellout', () => {
-    let supportedAssets: SupportedAssets,
-      exchange: PangolinExchange,
+    let exchange: PangolinExchange,
       loan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
@@ -352,12 +345,11 @@ describe('Smart loan', () => {
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
-      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
-      await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
-      await supportedAssets.setAsset(toBytes32('LINK'), linkTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
 
+      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
+      await exchange.setAsset(toBytes32('LINK'), linkTokenAddress);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
@@ -388,7 +380,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
+      loan.initialize(exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -493,8 +485,7 @@ describe('Smart loan', () => {
   });
 
   describe('A loan with owner sellout', () => {
-    let supportedAssets: SupportedAssets,
-      exchange: PangolinExchange,
+    let exchange: PangolinExchange,
       loan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
@@ -517,12 +508,11 @@ describe('Smart loan', () => {
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
-      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
-      await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
-      await supportedAssets.setAsset(toBytes32('LINK'), linkTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
 
+      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
+      await exchange.setAsset(toBytes32('LINK'), linkTokenAddress);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
@@ -553,7 +543,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(supportedAssets.address, exchange.address, pool.address, owner.address);
+      loan.initialize(exchange.address, pool.address, owner.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)

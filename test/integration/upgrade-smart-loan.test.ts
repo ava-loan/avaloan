@@ -6,7 +6,6 @@ import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contract
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
 import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
-import SupportedAssetsArtifact from '../../artifacts/contracts/SupportedAssets.sol/SupportedAssets.json';
 import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {deployAndInitPangolinExchangeContract, fromWei, time, toBytes32, toWei} from "../_helpers";
@@ -17,7 +16,6 @@ import {
   SmartLoan,
   UpgradeableBeacon,
   SmartLoansFactory,
-  SupportedAssets
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -57,8 +55,7 @@ describe('Smart loan - upgrading', () => {
   }
 
   describe('Check basic logic before and after upgrade', () => {
-    let supportedAssets: SupportedAssets,
-      exchange: PangolinExchange,
+    let exchange: PangolinExchange,
       loan: SmartLoan,
       wrappedLoan: any,
       smartLoansFactory: SmartLoansFactory,
@@ -76,11 +73,11 @@ describe('Smart loan - upgrading', () => {
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
-      supportedAssets = (await deployContract(owner, SupportedAssetsArtifact)) as SupportedAssets;
-      await supportedAssets.setAsset(toBytes32('USD'), usdTokenAddress);
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, supportedAssets.address);
-      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, supportedAssets.address, exchange.address, PRICE_SIGNER]) as SmartLoansFactory;
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
+      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
+
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, exchange.address, PRICE_SIGNER]) as SmartLoansFactory;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
       const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
       beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);

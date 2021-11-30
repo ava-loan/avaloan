@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IAssetsExchange.sol";
-import "./SupportedAssets.sol";
+import "./Bytes32EnumerableMap.sol";
 
 /**
  * @title PangolinExchange
@@ -16,13 +16,14 @@ import "./SupportedAssets.sol";
 contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeable {
   /* ========= STATE VARIABLES ========= */
   IPangolinRouter pangolinRouter;
-  SupportedAssets supportedAssets;
+
+  using EnumerableMap for EnumerableMap.Bytes32ToAddressMap;
+  EnumerableMap.Bytes32ToAddressMap private map;
 
   /* ========= CONSTRUCTOR ========= */
 
-  constructor (address _pangolinRouter, SupportedAssets _supportedAssets) {
+  constructor (address _pangolinRouter) {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
-    supportedAssets = _supportedAssets;
   }
 
   /* ========= MODIFIERS ========= */
@@ -36,7 +37,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
 
   function refundTokenBalance(bytes32 _asset) private  {
-    address tokenAddress = supportedAssets.getAssetAddress(_asset);
+    address tokenAddress = getAssetAddress(_asset);
     IERC20 token = IERC20(tokenAddress);
     token.transfer(msg.sender, token.balanceOf(address(this)));
   }
@@ -50,7 +51,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   **/
   function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut) payable external override nonReentrant returns(bool){
     require(_exactERC20AmountOut > 0, "Amount of tokens to buy has to be greater than 0");
-    address tokenAddress = supportedAssets.getAssetAddress(_token);
+    address tokenAddress = getAssetAddress(_token);
     uint256 amountIn = getEstimatedAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
     require(msg.value >= amountIn, "Not enough funds provided");
 
@@ -72,7 +73,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   function sellAsset(bytes32 _token, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external override returns(bool){
     require(_exactERC20AmountIn > 0, "Amount of tokens to sell has to be greater than 0");
 
-    address tokenAddress = supportedAssets.getAssetAddress(_token);
+    address tokenAddress = getAssetAddress(_token);
     IERC20 token = IERC20(tokenAddress);
     token.approve(address(pangolinRouter), _exactERC20AmountIn);
 
@@ -89,6 +90,50 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
     return true;
   }
 
+
+  /**
+   * Adds supported asset
+   * @dev _asset asset to be added
+  **/
+  function setAsset(bytes32 _asset, address _address) external override onlyOwner {
+    require(_asset != "", "Cannot set an empty string asset.");
+    require(_address != address(0), "Cannot set an empty address.");
+    EnumerableMap.set(map, _asset, _address);
+
+    emit AssetAdded(_asset);
+  }
+
+
+  /**
+   * Removes supported asset
+   * @dev _asset asset to be removed
+  **/
+  function removeAsset(bytes32 _asset) external override onlyOwner {
+    EnumerableMap.remove(map, _asset);
+
+    emit AssetRemoved(_asset);
+  }
+
+
+  /**
+   * Returns all the supported assets keys
+  **/
+  function getAllAssets() external view override returns(bytes32[] memory result) {
+    return map._inner._keys._inner._values;
+  }
+
+
+  /**
+   * Returns address of an asset
+  **/
+  function getAssetAddress(bytes32 _asset) public view override returns(address) {
+    (, address assetAddress) = EnumerableMap.tryGet(map, _asset);
+    require(assetAddress != address(0), "Asset not supported.");
+
+    return assetAddress;
+  }
+
+
   /* ========== RECEIVE AVAX FUNCTION ========== */
   receive() external payable {  }
 
@@ -101,7 +146,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
     * @dev _user the address of queried user
   **/
   function getBalance(address _user, bytes32 _asset) external override view returns(uint256) {
-    IERC20 token = IERC20(supportedAssets.getAssetAddress(_asset));
+    IERC20 token = IERC20(getAssetAddress(_asset));
     return token.balanceOf(_user);
   }
 
@@ -172,4 +217,18 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   * @param amount the amount of token sold
   **/
   event TokenSell(address indexed seller, uint amount, uint256 timestamp, bool success);
+
+  /* ========== EVENTS ========== */
+
+  /**
+    * @dev emitted after the owner adds asset
+    * @param addedAsset added asset
+  **/
+  event AssetAdded(bytes32 addedAsset);
+
+  /**
+    * @dev emitted after the owner removes asset
+    * @param removedAsset removed asset
+  **/
+  event AssetRemoved(bytes32 removedAsset);
 }

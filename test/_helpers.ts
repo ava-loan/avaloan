@@ -64,9 +64,8 @@ export const getFixedGasSigners = async function (gasLimit: number) {
 
 export const deployAndInitPangolinExchangeContract = async function (
   owner: SignerWithAddress,
-  pangolinRouterAddress: string,
-  supportedAssetsContractAddress: string) {
-  const exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress, supportedAssetsContractAddress]) as PangolinExchange;
+  pangolinRouterAddress: string) {
+  const exchange = await deployContract(owner, PangolinExchangeArtifact, [pangolinRouterAddress]) as PangolinExchange;
 
   return exchange
 };

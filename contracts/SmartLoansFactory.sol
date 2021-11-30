@@ -4,7 +4,6 @@ pragma solidity ^0.8.2;
 import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./IAssetsExchange.sol";
-import "./SupportedAssets.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
@@ -25,7 +24,6 @@ contract SmartLoansFactory is IBorrowersRegistry {
   event SmartLoanCreated(address indexed accountAddress, address indexed creator);
 
   Pool private pool;
-  SupportedAssets private supportedAssets;
   IAssetsExchange assetsExchange;
   UpgradeableBeacon public upgradeableBeacon;
   address trustedPriceSigner;
@@ -39,12 +37,10 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
   constructor(
     Pool _pool,
-    SupportedAssets _supportedAssets,
     IAssetsExchange _assetsExchange,
     address _trustedPriceSigner
   ) {
     pool = _pool;
-    supportedAssets = _supportedAssets;
     assetsExchange = _assetsExchange;
     SmartLoan smartLoanImplementation = new SmartLoan();
     upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
@@ -53,7 +49,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createLoan() external oneLoanPerOwner returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool), upgradeableBeacon.owner()));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), upgradeableBeacon.owner()));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
@@ -65,7 +61,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createAndFundLoan(uint256 _initialDebt) external oneLoanPerOwner payable returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(supportedAssets), address(assetsExchange), address(pool), upgradeableBeacon.owner()));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), upgradeableBeacon.owner()));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
