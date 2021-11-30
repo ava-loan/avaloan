@@ -1,5 +1,5 @@
 <template>
-  <div class="deposit container">
+  <div class="pool container">
     <Bar>
       <Value label="Your deposits"
         :primary="{value: userDepositBalance, type: 'avax', showIcon: true}"
@@ -39,7 +39,7 @@
     </Block>
     <Block class="block" background="rgba(255, 255, 255, 0.3)" v-if="(poolHistory && poolHistory.length > 0)">
       <div class="history-title">Deposits history</div>
-      <div>
+      <div class="chart-wrapper">
         <Chart :dataPoints="chartPoints" :maxY="maximumDeposit" stepped="before" class="deposit-chart"/>
       </div>
       <HistoryList :items="poolHistory" title="Last deposits" class="history-list"/>
@@ -176,13 +176,17 @@
 <style lang="scss">
 @import "~@/styles/variables";
 
-.deposit {
+.pool {
   .currency-input-wrapper {
     width: 100%;
 
     @media screen and (min-width: $md) {
       width: 490px;
     }
+  }
+
+  .chart-wrapper {
+    width: 100%;
   }
 }
 </style>

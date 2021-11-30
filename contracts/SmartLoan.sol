@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./IAssetsExchange.sol";
-import "./SupportedAssets.sol";
 import "./Pool.sol";
 import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 
@@ -28,13 +27,11 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   uint256 public MAX_LTV = 5000;
   uint256 public MIN_SELLOUT_LTV = 4000;
 
-  SupportedAssets supportedAssets;
   IAssetsExchange public exchange;
   Pool pool;
   address private governor;
 
-  function initialize(SupportedAssets _supportedAssets, IAssetsExchange assetsExchange_, Pool pool_, address _governor) external initializer {
-    supportedAssets = _supportedAssets;
+  function initialize(IAssetsExchange assetsExchange_, Pool pool_, address _governor) external initializer {
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
@@ -88,9 +85,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
-      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, supportedAssets.getAssetAddress(asset));
+      uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, exchange.getAssetAddress(asset));
       if (balance < minSaleAmount) {
-        uint256 saleAvaxValue = exchange.getEstimatedAVAXFromERC20Token(balance, supportedAssets.getAssetAddress(asset));
+        uint256 saleAvaxValue = exchange.getEstimatedAVAXFromERC20Token(balance, exchange.getAssetAddress(asset));
         nonSolventAssetSale(asset, balance, saleAvaxValue);
       } else {
         nonSolventAssetSale(asset, minSaleAmount, targetAvaxAmount);
@@ -123,7 +120,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
   function selloutLoan() external onlyOwner successfullSellout {
-    bytes32[] memory assets = supportedAssets.getAllAssets();
+    bytes32[] memory assets = exchange.getAllAssets();
     for (uint i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
       if (balance > 0) {
@@ -163,7 +160,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   **/
   function sellout(uint256 totalRepayAmount) private {
     if (address(this).balance < (totalRepayAmount)) {
-      bytes32[] memory assets = supportedAssets.getAllAssets();
+      bytes32[] memory assets = exchange.getAllAssets();
       for (uint i = 0; i < assets.length; i++) {
         nonSolventPartialOrFullAssetSale(assets[i], totalRepayAmount - address(this).balance);
         if (address(this).balance >= totalRepayAmount) {
@@ -260,7 +257,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   **/
   function getTotalValue() public virtual view returns (uint256) {
     uint256 total = address(this).balance;
-    bytes32[] memory assets = supportedAssets.getAllAssets();
+    bytes32[] memory assets = exchange.getAllAssets();
 
     for (uint i = 0; i < assets.length; i++) {
       total = total + getAssetValue(assets[i]);
@@ -270,7 +267,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
   function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
-    address assetAddress = supportedAssets.getAssetAddress(_asset);
+    address assetAddress = exchange.getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
     return token;
   }
@@ -347,7 +344,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     * It could be used as a helper method for UI
   **/
   function getAllAssetsBalances() public view returns (uint256[] memory) {
-    bytes32[] memory assets = supportedAssets.getAllAssets();
+    bytes32[] memory assets = exchange.getAllAssets();
     uint256[] memory balances = new uint256[] (assets.length);
 
 
@@ -364,7 +361,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     * It could be used as a helper method for UI
   **/
   function getAllAssetsPrices() public view returns (uint256[] memory) {
-    bytes32[] memory assets = supportedAssets.getAllAssets();
+    bytes32[] memory assets = exchange.getAllAssets();
     uint256[] memory prices = new uint256[] (assets.length);
 
 

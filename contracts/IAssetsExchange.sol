@@ -48,5 +48,28 @@ interface IAssetsExchange {
   function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) external returns(uint256);
 
 
+  /**
+     * Adds or updates a supported asset
+  **/
+  function setAsset(bytes32 _asset, address _address) external;
+
+
+  /**
+     * Adds remove supported asset
+     * @dev _asset asset to be added
+  **/
+  function removeAsset(bytes32 _asset) external;
+
+
+  /**
+     * Returns all the supported assets keys
+  **/
+  function getAllAssets() external view returns(bytes32[] memory);
+
+
+  /**
+    * Returns address of an asset
+  **/
+  function getAssetAddress(bytes32 _asset) external view returns(address);
 
 }
