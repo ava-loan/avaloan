@@ -26,7 +26,8 @@ const ERC20Abi = [
 ]
 
 const pangolinRouterAbi = [
-  'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])'
+  'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])',
+  'function getAmountsOut (uint256 amountIn, address[] path) view returns (uint256[])'
 ]
 
 
@@ -88,10 +89,18 @@ describe('PangolinExchange', () => {
 
     it('should keep the same dai balance in case of an insufficient token balance transferred to an exchange', async () => {
       const initialDaiTokenBalance = await daiToken.connect(owner).balanceOf(sut.address);
+      const initialAvaxBalance = await provider.getBalance(owner.address);
 
-      await sut.sellAsset(toBytes32('DAI'), toWei("1"), toWei("0.001"));
+      expect(await provider.getBalance(sut.address)).to.be.equal(0);
+      const estimatedAvaxReceived = (await pangolinRouter.connect(owner).getAmountsOut(toWei("100").toString(), [daiTokenAddress, WAVAXTokenAddress]))[1];
 
-      expect(await daiToken.connect(owner).balanceOf(sut.address)).to.be.equal(initialDaiTokenBalance);
+      await sut.sellAsset(toBytes32('DAI'), toWei("100"), estimatedAvaxReceived);
+
+      let newDaiBalance = await daiToken.connect(owner).balanceOf(sut.address);
+
+      expect(await provider.getBalance(sut.address)).to.be.equal(0);
+      expect(newDaiBalance).to.be.equal(initialDaiTokenBalance);
+      expect(await provider.getBalance(owner.address)).to.be.gt(BigNumber.from(initialAvaxBalance.toString()).sub(BigNumber.from(estimatedAvaxReceived.toString())))
     });
 
 

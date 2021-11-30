@@ -27,7 +27,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
   /* ========= MODIFIERS ========= */
 
-  function refundAvaxBalance() private nonReentrant {
+  function refundAvaxBalance() private {
     if (address(this).balance > 0) {
       (bool refund_success,) = msg.sender.call{value : address(this).balance}("");
       require(refund_success, "Refund failed");
@@ -48,7 +48,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
    * @dev _token ERC20 token's address
    * @dev _exactERC20AmountOut amount of the ERC20 token to be bought
   **/
-  function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut) payable external override returns(bool){
+  function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut) payable external override nonReentrant returns(bool){
     require(_exactERC20AmountOut > 0, "Amount of tokens to buy has to be greater than 0");
     address tokenAddress = supportedAssets.getAssetAddress(_token);
     uint256 amountIn = getEstimatedAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
@@ -58,11 +58,8 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
     (bool success,) = address(pangolinRouter).call{value : msg.value}(abi.encodeWithSignature("swapAVAXForExactTokens(uint256,address[],address,uint256)", _exactERC20AmountOut, path, msg.sender, block.timestamp));
 
     refundAvaxBalance();
-    if (!success) {
-      return false;
-    }
-    emit TokenPurchase(msg.sender, _exactERC20AmountOut, block.timestamp);
-    return true;
+    emit TokenPurchase(msg.sender, _exactERC20AmountOut, block.timestamp, success);
+    return success;
   }
 
 
@@ -88,7 +85,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
       return false;
     }
     refundAvaxBalance();
-    emit TokenSell(msg.sender, _exactERC20AmountIn, block.timestamp);
+    emit TokenSell(msg.sender, _exactERC20AmountIn, block.timestamp, success);
     return true;
   }
 
@@ -167,12 +164,12 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   * @param buyer the address which bought tokens
   * @param amount the amount of token bought
   **/
-  event TokenPurchase(address indexed buyer, uint amount, uint256 timestamp);
+  event TokenPurchase(address indexed buyer, uint amount, uint256 timestamp, bool success);
 
   /**
   * @dev emitted after a tokens were sold
   * @param seller the address which sold tokens
   * @param amount the amount of token sold
   **/
-  event TokenSell(address indexed seller, uint amount, uint256 timestamp);
+  event TokenSell(address indexed seller, uint amount, uint256 timestamp, bool success);
 }

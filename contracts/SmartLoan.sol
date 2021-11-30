@@ -200,7 +200,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds available");
 
     bool success = exchange.buyAsset{value : _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
-    if (success != true) revert('Investment failed.');
+    require(success, 'Investment failed.');
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
@@ -216,7 +216,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     IERC20Metadata token = getERC20TokenInstance(_asset);
     token.transfer(address(exchange), _exactERC20AmountIn);
     bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
-    if (success != true) revert('Redemption failed.');
+    require(success, 'Investment failed.');
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }
