@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.4;
 
 import "@pangolindex/exchange-contracts/contracts/pangolin-periphery/interfaces/IPangolinRouter.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -7,6 +7,17 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IAssetsExchange.sol";
 import "./Bytes32EnumerableMap.sol";
+
+
+/// Amount of tokens to buy has to be greater than 0
+error InvalidTokenPurchaseAmount();
+
+/// Amount of tokens to sell has to be greater than 0
+error InvalidTokenSaleAmount();
+
+/// Not enough funds were provided
+error NotEnoughFunds();
+
 
 /**
  * @title PangolinExchange
@@ -30,13 +41,6 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
   /* ========= MODIFIERS ========= */
 
-  function refundAvaxBalance() private {
-    if (address(this).balance > 0) {
-      (bool refund_success,) = msg.sender.call{value : address(this).balance}("");
-      require(refund_success, "Refund failed");
-    }
-  }
-
 
   function refundTokenBalance(bytes32 _asset) private  {
     address tokenAddress = getAssetAddress(_asset);
@@ -52,15 +56,15 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
    * @dev _exactERC20AmountOut amount of the ERC20 token to be bought
   **/
   function buyAsset(bytes32 _token, uint256 _exactERC20AmountOut) payable external override nonReentrant returns(bool){
-    require(_exactERC20AmountOut > 0, "Amount of tokens to buy has to be greater than 0");
+    if(_exactERC20AmountOut == 0) revert InvalidTokenPurchaseAmount();
     address tokenAddress = getAssetAddress(_token);
     uint256 amountIn = getEstimatedAVAXForERC20Token(_exactERC20AmountOut, tokenAddress);
-    require(msg.value >= amountIn, "Not enough funds provided");
+    if(msg.value < amountIn) revert NotEnoughFunds();
 
     address[] memory path = getPathForAVAXtoToken(tokenAddress);
     (bool success,) = address(pangolinRouter).call{value : msg.value}(abi.encodeWithSignature("swapAVAXForExactTokens(uint256,address[],address,uint256)", _exactERC20AmountOut, path, msg.sender, block.timestamp));
 
-    refundAvaxBalance();
+    payable(msg.sender).transfer(address(this).balance);
     emit TokenPurchase(msg.sender, _exactERC20AmountOut, block.timestamp, success);
     return success;
   }
@@ -73,7 +77,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
    * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
   **/
   function sellAsset(bytes32 _token, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external override returns(bool){
-    require(_exactERC20AmountIn > 0, "Amount of tokens to sell has to be greater than 0");
+    if(_exactERC20AmountIn == 0) revert InvalidTokenSaleAmount();
 
     address tokenAddress = getAssetAddress(_token);
     IERC20 token = IERC20(tokenAddress);
@@ -87,7 +91,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
       refundTokenBalance(_token);
       return false;
     }
-    refundAvaxBalance();
+    payable(msg.sender).transfer(address(this).balance);
     emit TokenSell(msg.sender, _exactERC20AmountIn, block.timestamp, success);
     return true;
   }

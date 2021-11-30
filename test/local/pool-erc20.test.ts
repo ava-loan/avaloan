@@ -47,7 +47,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).deposit({value: toWei("1.0")});
 
       await expect(sut.connect(user1).transfer(user2.address, toWei("1.1")))
-        .to.be.revertedWith("ERC20: transfer amount exceeds balance");
+        .to.be.revertedWith("TransferExceedsBalance()");
     });
 
     it("should accumulate user1 interest prior to transferring the funds", async () => {
@@ -88,7 +88,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).deposit({value: toWei("1.0")});
 
       await expect(sut.connect(user1).approve(user2.address, toWei("1.01")))
-        .to.be.revertedWith("ERC20: approve amount exceeds balance");
+        .to.be.revertedWith("ApproveExceedsBalance()");
 
     });
 
@@ -97,7 +97,7 @@ describe("Pool ERC20 token functions", () => {
       await time.increase(time.duration.years(1));
 
       await expect(sut.connect(user1).approve(user2.address, toWei("1.06")))
-        .to.be.revertedWith("ERC20: approve amount exceeds balance");
+        .to.be.revertedWith("ApproveExceedsBalance()");
     });
 
     it("should properly accumulate interest rate before approving", async () => {
@@ -168,7 +168,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).withdraw(toWei("1.0"));
 
       await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("1.01")))
-        .to.be.revertedWith("Not enough tokens to transfer required amount.");
+        .to.be.revertedWith("TransferExceedsBalance()");
     });
 
     it("should revert if caller's allowance for user1's tokens is too low", async () => {
@@ -176,7 +176,7 @@ describe("Pool ERC20 token functions", () => {
       await sut.connect(user1).approve(user2.address, toWei("0.5"));
 
       await expect(sut.connect(user2).transferFrom(user1.address, user2.address, toWei("0.55")))
-        .to.be.revertedWith("Not enough tokens allowed to transfer required amount.");
+        .to.be.revertedWith("InsufficientAllowance()");
     });
 
     it("should decrease allowance by the transfer amount", async () => {

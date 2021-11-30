@@ -134,8 +134,7 @@ describe('Pool with fixed interest rates', () => {
     });
 
     it("should not be able to borrow above threshold", async () => {
-      await expect(sut.borrow(toWei("0.01"))).to.be.revertedWith("The pool utilisation cannot be greater " +
-        "than 95%.");
+      await expect(sut.borrow(toWei("0.01"))).to.be.revertedWith("PoolUtilisationTooHigh()");
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
       expect(borrowed).to.be.closeTo(0.95, 0.000001);

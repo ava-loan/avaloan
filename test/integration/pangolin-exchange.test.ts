@@ -48,7 +48,7 @@ describe('PangolinExchange', () => {
 
 
     it('should check for the amount of tokens to buy to be greater than 0', async () => {
-      await expect(sut.buyAsset(toBytes32('DAI'), 0)).to.be.revertedWith('Amount of tokens to buy has to be greater than 0');
+      await expect(sut.buyAsset(toBytes32('DAI'), 0)).to.be.revertedWith('InvalidTokenPurchaseAmount()');
     });
 
 
@@ -56,7 +56,7 @@ describe('PangolinExchange', () => {
       const daiTokenPurchaseAmount = 1e20;
       const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
 
-      await expect(sut.buyAsset(toBytes32('DAI'), daiTokenPurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('Not enough funds provided');
+      await expect(sut.buyAsset(toBytes32('DAI'), daiTokenPurchaseAmount.toString(), {value: Math.floor(estimatedAvax*0.9).toString()})).to.be.revertedWith('NotEnoughFunds()');
     });
 
 
@@ -78,7 +78,7 @@ describe('PangolinExchange', () => {
 
 
     it('should check for the amount of tokens to sell to be greater than 0', async () => {
-      await expect(sut.sellAsset(toBytes32('DAI'), toWei("0"), toWei("0.01"))).to.be.revertedWith('Amount of tokens to sell has to be greater than 0');
+      await expect(sut.sellAsset(toBytes32('DAI'), toWei("0"), toWei("0.01"))).to.be.revertedWith('InvalidTokenSaleAmount()');
     });
 
 

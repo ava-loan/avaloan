@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../IRatesCalculator.sol";
+
+/// Borrowing rate cannot be lower than the deposit rate
+error BorrowingRateLTDepositRate();
 
 /**
  * @title FixedRatesCalculator
@@ -28,7 +31,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
      * @dev _borrowingRate the value of updated borrowing rate
     **/
     function setRates(uint256 _depositRate, uint256 _borrowingRate) public onlyOwner {
-        require(_depositRate <= _borrowingRate, "Borrowing rate cannot be lower than the deposit rate");
+        if(_depositRate > _borrowingRate) revert BorrowingRateLTDepositRate();
 
         depositRate = _depositRate;
         borrowingRate = _borrowingRate;
