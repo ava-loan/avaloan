@@ -16,7 +16,7 @@ interface IAssetsExchange {
    * @dev _asset asset code
    * @dev _exactERC20AmountOut exact amount of asset to be bought
   **/
-  function buyAsset(bytes32 _asset, uint256 _exactERC20AmountOut) payable external;
+  function buyAsset(bytes32 _asset, uint256 _exactERC20AmountOut) payable external returns(bool);
 
 
   /**
@@ -25,7 +25,7 @@ interface IAssetsExchange {
    * @dev _exactERC20AmountIn amount to be bought
    * @dev _minAvaxAmountOut minimum amount of the AVAX token to be bought
   **/
-  function sellAsset(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external;
+  function sellAsset(bytes32 _asset, uint256 _exactERC20AmountIn, uint256 _minAvaxAmountOut) external returns(bool);
 
 
   /**
@@ -34,14 +34,6 @@ interface IAssetsExchange {
    * @dev _user the address of queried user
   **/
   function getBalance(address _user, bytes32 _asset) external view returns(uint256);
-
-
-  /**
-   * Transfers the current balance of the _asset held by exchange contract to the msg.sender
-   * This method can be used to obtain tokens already sent to the exchange contract in case selling those tokens failed.
-   * @dev _asset the asset code of an asset
-  **/
-  function transferBack(bytes32 _asset) external;
 
 
   /**

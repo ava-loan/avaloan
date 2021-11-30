@@ -26,7 +26,8 @@ const ERC20Abi = [
 ]
 
 const pangolinRouterAbi = [
-  'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])'
+  'function getAmountsIn (uint256 amountOut, address[] path) view returns (uint256[])',
+  'function getAmountsOut (uint256 amountIn, address[] path) view returns (uint256[])'
 ]
 
 
@@ -69,7 +70,8 @@ describe('PangolinExchange', () => {
       const estimatedAvax = (await pangolinRouter.connect(owner).getAmountsIn(daiTokenPurchaseAmount.toString(), [WAVAXTokenAddress, daiTokenAddress]))[0];
       const initialAvaxBalance = await provider.getBalance(owner.address);
 
-      await sut.buyAsset(toBytes32('DAI'), daiTokenPurchaseAmount.toString(), {value: estimatedAvax.toString()})
+      await sut.buyAsset(toBytes32('DAI'), daiTokenPurchaseAmount.toString(), {value: estimatedAvax.toString()});
+
 
       const currentDaiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
       const currentAvaxBalance = await provider.getBalance(owner.address);
@@ -85,23 +87,20 @@ describe('PangolinExchange', () => {
     });
 
 
-    it('should revert transaction in case of an insufficient token balance transferred to an exchange', async () => {
-      await expect(sut.sellAsset(toBytes32('DAI'), toWei("1"), toWei("0.001"))).to.be.revertedWith('TransferHelper: TRANSFER_FROM_FAILED');
-    });
+    it('should keep the same dai balance in case of an insufficient token balance transferred to an exchange', async () => {
+      const initialDaiTokenBalance = await daiToken.connect(owner).balanceOf(sut.address);
+      const initialAvaxBalance = await provider.getBalance(owner.address);
 
+      expect(await provider.getBalance(sut.address)).to.be.equal(0);
+      const estimatedAvaxReceived = (await pangolinRouter.connect(owner).getAmountsOut(toWei("100").toString(), [daiTokenAddress, WAVAXTokenAddress]))[1];
 
-    it('should transfer back all transferred but not sold tokens', async () => {
-      let daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
-      const initialDAITokenBalance = daiTokenBalance;
-      expect(daiTokenBalance).to.not.be.equal("0");
+      await sut.sellAsset(toBytes32('DAI'), toWei("100"), estimatedAvaxReceived);
 
-      await daiToken.connect(owner).transfer(sut.address, daiTokenBalance.toString());
-      daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
-      expect(daiTokenBalance).to.be.equal("0");
+      let newDaiBalance = await daiToken.connect(owner).balanceOf(sut.address);
 
-      await sut.transferBack(toBytes32("DAI"));
-      daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
-      expect(daiTokenBalance).to.be.equal(initialDAITokenBalance);
+      expect(await provider.getBalance(sut.address)).to.be.equal(0);
+      expect(newDaiBalance).to.be.equal(initialDaiTokenBalance);
+      expect(await provider.getBalance(owner.address)).to.be.gt(BigNumber.from(initialAvaxBalance.toString()).sub(BigNumber.from(estimatedAvaxReceived.toString())))
     });
 
 
