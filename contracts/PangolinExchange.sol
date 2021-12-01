@@ -22,8 +22,10 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
   /* ========= CONSTRUCTOR ========= */
 
-  constructor (address _pangolinRouter) {
+  constructor (address _pangolinRouter, Asset[] memory supportedAssets) {
     pangolinRouter = IPangolinRouter(_pangolinRouter);
+
+    updateAssets(supportedAssets);
   }
 
   /* ========= MODIFIERS ========= */
@@ -92,26 +94,40 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
 
   /**
-   * Adds supported asset
-   * @dev _asset asset to be added
+   * Adds or updates supported assets
+   * @dev _assets assets to be added or updated
   **/
-  function setAsset(bytes32 _asset, address _address) external override onlyOwner {
-    require(_asset != "", "Cannot set an empty string asset.");
-    require(_address != address(0), "Cannot set an empty address.");
-    EnumerableMap.set(map, _asset, _address);
+  function updateAssets(Asset[] memory _assets) internal {
+    for (uint i = 0; i < _assets.length; i++) {
+      require(_assets[i].asset != "", "Cannot set an empty string asset.");
+      require(_assets[i].assetAddress != address(0), "Cannot set an empty address.");
 
-    emit AssetAdded(_asset);
+      EnumerableMap.set(map, _assets[i].asset, _assets[i].assetAddress);
+    }
+
+    emit AssetsAdded(_assets);
   }
 
 
   /**
-   * Removes supported asset
-   * @dev _asset asset to be removed
+   * Adds or updates supported assets
+   * @dev _assets assets to be added/updated
   **/
-  function removeAsset(bytes32 _asset) external override onlyOwner {
-    EnumerableMap.remove(map, _asset);
+  function setAssets(Asset[] memory _assets) external override onlyOwner {
+    updateAssets(_assets);
+  }
 
-    emit AssetRemoved(_asset);
+
+  /**
+   * Removes supported assets
+   * @dev _assets assets to be removed
+  **/
+  function removeAssets(bytes32[] calldata _assets) external override onlyOwner {
+    for (uint i = 0; i < _assets.length; i++) {
+      EnumerableMap.remove(map, _assets[i]);
+    }
+
+    emit AssetsRemoved(_assets);
   }
 
 
@@ -221,14 +237,14 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   /* ========== EVENTS ========== */
 
   /**
-    * @dev emitted after the owner adds asset
-    * @param addedAsset added asset
+    * @dev emitted after the owner adds/updates assets
+    * @param assets added/updated assets
   **/
-  event AssetAdded(bytes32 addedAsset);
+  event AssetsAdded(Asset[] assets);
 
   /**
-    * @dev emitted after the owner removes asset
-    * @param removedAsset removed asset
+    * @dev emitted after the owner removes assets
+    * @param removedAssets removed assets
   **/
-  event AssetRemoved(bytes32 removedAsset);
+  event AssetsRemoved(bytes32[] removedAssets);
 }

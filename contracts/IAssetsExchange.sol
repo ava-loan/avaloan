@@ -12,6 +12,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 interface IAssetsExchange {
 
   /**
+    * For adding supported assets
+  **/
+  struct Asset {
+    bytes32 asset;
+    address assetAddress;
+  }
+
+  /**
    * Buys selected asset with AVAX
    * @dev _asset asset code
    * @dev _exactERC20AmountOut exact amount of asset to be bought
@@ -49,16 +57,17 @@ interface IAssetsExchange {
 
 
   /**
-     * Adds or updates a supported asset
+     * Adds or updates supported assets
+     * @dev _assets assets to be added or updated
   **/
-  function setAsset(bytes32 _asset, address _address) external;
+  function setAssets(Asset[] memory _assets) external;
 
 
   /**
-     * Adds remove supported asset
-     * @dev _asset asset to be added
+     * Removes supported assets
+     * @dev _assets assets to be removed
   **/
-  function removeAsset(bytes32 _asset) external;
+  function removeAssets(bytes32[] calldata _assets) external;
 
 
   /**

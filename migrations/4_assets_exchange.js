@@ -3,16 +3,16 @@ const toBytes32 = require("ethers").utils.formatBytes32String;
 const AssetsExchange = artifacts.require("./PangolinExchange.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(AssetsExchange, "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106")
-    .then(async function(instance) {
-      await Promise.all([
-        instance.setAsset(toBytes32('ETH'), addresses["ETH"]),
-        instance.setAsset(toBytes32('BTC'), addresses["BTC"]),
-        instance.setAsset(toBytes32('USDT'), addresses["USDT"]),
-        instance.setAsset(toBytes32('LINK'), addresses["LINK"]),
-        instance.setAsset(toBytes32('PNG'), addresses["PNG"]),
-        instance.setAsset(toBytes32('XAVA'), addresses["XAVA"]),
-        instance.setAsset(toBytes32('FRAX'), addresses["FRAX"])
-      ]);
-    });
+  deployer.deploy(AssetsExchange,
+    "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106",
+    [
+      { asset: toBytes32('ETH'), assetAddress: addresses["ETH"]},
+      { asset: toBytes32('BTC'), assetAddress: addresses["BTC"]},
+      { asset: toBytes32('USDT'), assetAddress: addresses["USDT"]},
+      { asset: toBytes32('LINK'), assetAddress: addresses["LINK"]},
+      { asset: toBytes32('PNG'), assetAddress: addresses["PNG"]},
+      { asset: toBytes32('XAVA'), assetAddress: addresses["XAVA"]},
+      { asset: toBytes32('FRAX'), assetAddress: addresses["FRAX"]}
+    ]
+  );
 };
