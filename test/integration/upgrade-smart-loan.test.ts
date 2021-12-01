@@ -8,7 +8,7 @@ import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/p
 import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
 import SmartLoanArtifact from '../../artifacts/contracts/SmartLoan.sol/SmartLoan.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {deployAndInitPangolinExchangeContract, fromWei, time, toBytes32, toWei} from "../_helpers";
+import {Asset, deployAndInitPangolinExchangeContract, fromWei, time, toBytes32, toWei} from "../_helpers";
 import {
   VariableUtilisationRatesCalculator,
   Pool,
@@ -74,8 +74,7 @@ describe('Smart loan - upgrading', () => {
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
-      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
       smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, exchange.address, PRICE_SIGNER]) as SmartLoansFactory;
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());

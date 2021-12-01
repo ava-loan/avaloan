@@ -12,7 +12,7 @@ import {
   toBytes32,
   toWei,
   formatUnits,
-  deployAndInitPangolinExchangeContract, getSelloutRepayAmount,
+  deployAndInitPangolinExchangeContract, getSelloutRepayAmount, Asset,
 } from "../_helpers";
 import {WrapperBuilder} from "redstone-flash-storage";
 import {
@@ -65,9 +65,7 @@ describe('Smart loan', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
-
-      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
@@ -244,9 +242,7 @@ describe('Smart loan', () => {
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
-
-      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [new Asset(toBytes32('USD'), usdTokenAddress)]);
 
       usdTokenDecimalPlaces = await usdTokenContract.decimals();
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
@@ -345,10 +341,10 @@ describe('Smart loan', () => {
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
-
-      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
-      await exchange.setAsset(toBytes32('LINK'), linkTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress, [
+          new Asset(toBytes32('USD'), usdTokenAddress),
+          new Asset(toBytes32('LINK'), linkTokenAddress)
+        ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
@@ -508,10 +504,11 @@ describe('Smart loan', () => {
       usdTokenContract = new ethers.Contract(usdTokenAddress, erc20ABI, provider);
       linkTokenContract = new ethers.Contract(linkTokenAddress, erc20ABI, provider);
 
-      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress);
-
-      await exchange.setAsset(toBytes32('USD'), usdTokenAddress);
-      await exchange.setAsset(toBytes32('LINK'), linkTokenAddress);
+      exchange = await deployAndInitPangolinExchangeContract(owner, pangolinRouterAddress,
+[
+        { asset: toBytes32('USD'), assetAddress: usdTokenAddress },
+        { asset: toBytes32('LINK'), assetAddress: linkTokenAddress }
+      ]);
 
       const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
 
