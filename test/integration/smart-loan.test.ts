@@ -431,6 +431,13 @@ describe('Smart loan', () => {
       expect(currentLINKTokenBalance).to.be.equal(toWei("300", linkTokenDecimalPlaces));
     });
 
+    it('should return the balance of a token', async () => {
+      const linkTokenBalance = await linkTokenContract.connect(owner).balanceOf(owner.address);
+      const smartLoanLinkTokenBalance = await wrappedLoan.getBalance(owner.address, toBytes32('LINK'));
+
+      expect(linkTokenBalance).to.be.equal(smartLoanLinkTokenBalance);
+    })
+
     it("should fail a sellout attempt", async () => {
       expect(await wrappedLoan.getLTV()).to.be.lt(5000);
       expect(await wrappedLoan.isSolvent()).to.be.true;

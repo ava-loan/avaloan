@@ -151,17 +151,6 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   /* ========== VIEW FUNCTIONS ========== */
 
   /**
-    * Returns the current balance of the asset held by a given user
-    * @dev _asset the code of an asset
-    * @dev _user the address of queried user
-  **/
-  function getBalance(address _user, bytes32 _asset) external override view returns(uint256) {
-    IERC20 token = IERC20(getAssetAddress(_asset));
-    return token.balanceOf(_user);
-  }
-
-
-  /**
      * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
   **/
   function getMinimumERC20TokenAmountForExactAVAX(uint256 _exactAmountOut, address _token) public view override returns (uint256) {

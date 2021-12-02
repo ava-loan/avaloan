@@ -266,6 +266,17 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
 
+  /**
+  * Returns the current balance of the asset held by a given user
+  * @dev _asset the code of an asset
+  * @dev _user the address of queried user
+  **/
+  function getBalance(address _user, bytes32 _asset) public  view returns(uint256) {
+    IERC20 token = IERC20(exchange.getAssetAddress(_asset));
+    return token.balanceOf(_user);
+  }
+
+
   function getERC20TokenInstance(bytes32 _asset) internal view returns (IERC20Metadata) {
     address assetAddress = exchange.getAssetAddress(_asset);
     IERC20Metadata token = IERC20Metadata(assetAddress);
@@ -330,7 +341,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   **/
   function getAssetValue(bytes32 _asset) public view returns (uint256) {
     IERC20Metadata token = getERC20TokenInstance(_asset);
-    uint256 assetBalance = exchange.getBalance(address(this), _asset);
+    uint256 assetBalance = getBalance(address(this), _asset);
     if (assetBalance > 0) {
       return getAssetPriceInAVAXWei(_asset) * assetBalance / 10 ** token.decimals();
     } else {
@@ -349,7 +360,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
     for (uint i = 0; i < assets.length; i++) {
-      balances[i] = exchange.getBalance(address(this), assets[i]);
+      balances[i] = getBalance(address(this), assets[i]);
     }
 
     return balances;
