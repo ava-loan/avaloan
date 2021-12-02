@@ -1,7 +1,7 @@
 const ethers = require('ethers');
 import LOAN from '@contracts/SmartLoan.json'
 import LOAN_FACTORY from '@contracts/SmartLoansFactory.json'
-import SUPPORTED_ASSETS from '@contracts/SupportedAssets.json'
+import PANGOLIN_EXCHANGE from '@contracts/PangolinExchange.json'
 import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import config from "@/config";
 import {maxAvaxToBeSold, acceptableSlippage, minAvaxToBeBought, parseLogs} from "../utils/calculate";
@@ -66,8 +66,8 @@ export default {
   },
   actions: {
     async initSupportedAssets({ rootState, commit }) {
-      const assetsContract = new ethers.Contract(SUPPORTED_ASSETS.networks[rootState.network.chainId].address, SUPPORTED_ASSETS.abi, provider.getSigner());
-      let supported = (await assetsContract.getAllAssets()).map(
+      const pangolinContract = new ethers.Contract(PANGOLIN_EXCHANGE.networks[rootState.network.chainId].address, PANGOLIN_EXCHANGE.abi, provider.getSigner());
+      let supported = (await pangolinContract.getAllAssets()).map(
         asset => ethers.utils.parseBytes32String(asset)
       );
 

@@ -46,10 +46,10 @@ error RecoverAmountExceedsSurplus();
 error MintZeroAddress();
 
 /// ERC20: burn amount exceeds current pool indexed balance
-error BurnAmountExceedsPoolBalance();
+error BurnAmountExceedsPoolDeposits();
 
 /// ERC20: burn amount exceeds user balance
-error BurnAmountExceedsUserBalance();
+error BurnAmountExceedsUserDeposits();
 
 /// Borrowers registry is not configured
 error BorrowersRegistryNotConfigured();
@@ -211,6 +211,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be withdrawn
   **/
   function withdraw(uint256 _amount) external nonReentrant {
+    if(address(this).balance < _amount) revert InsufficientPoolBalance();
+
     _accumulateDepositInterest(msg.sender);
 
     _burn(msg.sender, _amount);
@@ -336,8 +338,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 
   function _burn(address account, uint256 amount) internal {
-    if (_deposited[address(this)] < amount) revert BurnAmountExceedsPoolBalance();
-    if (_deposited[account] < amount) revert BurnAmountExceedsUserBalance();
+    if (_deposited[account] < amount) revert BurnAmountExceedsUserDeposits();
+    if (_deposited[address(this)] < amount) revert BurnAmountExceedsPoolDeposits();
 
     // verified in "require" above
     unchecked {
