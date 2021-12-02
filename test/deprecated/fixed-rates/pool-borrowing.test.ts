@@ -5,7 +5,7 @@ import {solidity} from "ethereum-waffle";
 import FixedRatesCalculatorArtifact from '../../../artifacts/contracts/deprecated/FixedRatesCalculator.sol/FixedRatesCalculator.json';
 import PoolArtifact from '../../../artifacts/contracts/Pool.sol/Pool.json';
 import OpenBorrowersRegistryArtifact
-  from '../../../artifacts/contracts/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
+  from '../../../artifacts/contracts/mock/OpenBorrowersRegistry.sol/OpenBorrowersRegistry.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {fromWei, getFixedGasSigners, time, toWei} from "../../_helpers";
 import {FixedRatesCalculator, OpenBorrowersRegistry, Pool} from "../../../typechain";
@@ -134,7 +134,7 @@ describe('Pool with fixed interest rates', () => {
     });
 
     it("should not be able to borrow above threshold", async () => {
-      await expect(sut.borrow(toWei("0.01"))).to.be.revertedWith("PoolUtilisationTooHigh()");
+      await expect(sut.borrow(toWei("0.01"))).to.be.revertedWith("PoolUtilisationTooHighForBorrowing()");
 
       let borrowed = fromWei(await sut.getBorrowed(owner.address));
       expect(borrowed).to.be.closeTo(0.95, 0.000001);

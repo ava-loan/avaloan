@@ -81,7 +81,7 @@ export default {
 
       const loanFactory = new ethers.Contract(LOAN_FACTORY.networks[rootState.network.chainId].address, LOAN_FACTORY.abi, provider.getSigner());
 
-      const userLoan = await loanFactory.getAccountForUser(account);
+      const userLoan = await loanFactory.getLoanForOwner(account);
 
       commit('setIsLoanAlreadyCreated', userLoan !== ethers.constants.AddressZero);
 

@@ -61,7 +61,7 @@ error UnauthorizedBorrower();
 error BorrowFromEmptyPool();
 
 /// The pool utilisation cannot be greater than 95%
-error PoolUtilisationTooHigh();
+error PoolUtilisationTooHighForBorrowing();
 
 
 /**
@@ -73,7 +73,7 @@ error PoolUtilisationTooHigh();
  */
 contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
-  uint256 public constant MAX_POOL_UTILISATION = 0.95 ether;
+  uint256 public constant MAX_POOL_UTILISATION_FOR_BORROWING = 0.95 ether;
 
   mapping(address => mapping(address => uint256)) private _allowed;
   mapping(address => uint256) private _deposited;
@@ -197,7 +197,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Deposits the message value
    * It updates user deposited balance, total deposited and rates
   **/
-  function deposit() payable virtual external {
+  function deposit() payable virtual external nonReentrant {
     _accumulateDepositInterest(msg.sender);
 
     _mint(msg.sender, msg.value);
@@ -230,6 +230,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   **/
   function borrow(uint256 _amount) payable external canBorrow nonReentrant {
     require(address(this).balance >= _amount);
+    // Max pool utilisation for borrowing is checked in canBorrow modifier
     if(totalSupply() - totalBorrowed() < _amount) revert InsufficientPoolBalance();
 
     _accumulateBorrowingInterest(msg.sender);
@@ -248,7 +249,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * Repays the message value
    * It updates user borrowed balance, total borrowed amount and rates
   **/
-  function repay() payable external {
+  function repay() payable external nonReentrant {
     _accumulateBorrowingInterest(msg.sender);
 
     if(borrowed[msg.sender] < msg.value) revert RepayAmountExceedsBorrowed();
@@ -385,7 +386,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
     if (!_borrowersRegistry.canBorrow(msg.sender)) revert UnauthorizedBorrower();
     if (totalSupply() == 0) revert BorrowFromEmptyPool();
     _;
-    if (totalBorrowed() * 1 ether / totalSupply() > MAX_POOL_UTILISATION) revert PoolUtilisationTooHigh();
+    if (totalBorrowed() * 1 ether / totalSupply() > MAX_POOL_UTILISATION_FOR_BORROWING) revert PoolUtilisationTooHighForBorrowing();
   }
 
 
