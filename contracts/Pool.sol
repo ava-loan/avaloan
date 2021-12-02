@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -7,6 +7,62 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
 import "./IBorrowersRegistry.sol";
+
+/// The rates calculator cannot set to a null address
+error RatesCalculatorNullAddress();
+
+/// The borrowers registry cannot set to a null address
+error BorrowersRegistryNullAddress();
+
+/// ERC20: cannot transfer to the zero address
+error ZeroAddressTransfer();
+
+/// ERC20: cannot transfer to the pool address
+error PoolAddressTransfer();
+
+/// ERC20: transfer amount exceeds balance
+error TransferExceedsBalance();
+
+/// ERC20: approve amount exceeds balance
+error ApproveExceedsBalance();
+
+/// Not enough tokens allowed to transfer required amount
+error InsufficientAllowance();
+
+/// There is not enough funds in the pool to fund the loan
+error InsufficientPoolBalance();
+
+/// You are trying to repay more that was borrowed by a user
+error RepayAmountExceedsBorrowed();
+
+/// Trying to recover more surplus funds than pool balance
+error RecoverAmountExceedsBalance();
+
+/// Trying to recover more funds than current surplus
+error RecoverAmountExceedsSurplus();
+
+
+/// ERC20: cannot mint to the zero address
+error MintZeroAddress();
+
+/// ERC20: burn amount exceeds current pool indexed balance
+error BurnAmountExceedsPoolBalance();
+
+/// ERC20: burn amount exceeds user balance
+error BurnAmountExceedsUserBalance();
+
+/// Borrowers registry is not configured
+error BorrowersRegistryNotConfigured();
+
+/// Only the accounts authorised by borrowers registry may borrow
+error UnauthorizedBorrower();
+
+/// Cannot borrow from an empty pool
+error BorrowFromEmptyPool();
+
+/// The pool utilisation cannot be greater than 95%
+error PoolUtilisationTooHigh();
+
 
 /**
  * @title Pool
@@ -60,7 +116,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _ratesCalculator the address of rates calculator
   **/
   function setRatesCalculator(IRatesCalculator ratesCalculator_) external onlyOwner {
-    require(address(ratesCalculator_) != address(0), "The rates calculator cannot set to a null address");
+    if(address(ratesCalculator_) == address(0)) revert RatesCalculatorNullAddress();
     _ratesCalculator = ratesCalculator_;
     _updateRates();
   }
@@ -73,7 +129,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _borrowersRegistry the address of borrowers registry
   **/
   function setBorrowersRegistry(IBorrowersRegistry borrowersRegistry_) external onlyOwner {
-    require(address(borrowersRegistry_) != address(0), "The borrowers registry cannot set to a null address");
+    if(address(borrowersRegistry_) == address(0)) revert BorrowersRegistryNullAddress();
 
     _borrowersRegistry = borrowersRegistry_;
   }
@@ -81,12 +137,12 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
   /* ========== MUTATIVE FUNCTIONS ========== */
   function transfer(address recipient, uint256 amount) external override returns (bool) {
-    require(recipient != address(0), "ERC20: cannot transfer to the zero address");
-    require(recipient != address(this), "ERC20: cannot transfer to the pool address");
+    if(recipient == address(0)) revert ZeroAddressTransfer();
+    if(recipient == address(this)) revert PoolAddressTransfer();
 
     _accumulateDepositInterest(msg.sender);
 
-    require(_deposited[msg.sender] >= amount, "ERC20: transfer amount exceeds balance");
+    if(_deposited[msg.sender] < amount) revert TransferExceedsBalance();
 
     // (this is verified in "require" above)
     unchecked {
@@ -108,7 +164,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   function approve(address spender, uint256 amount) external override returns (bool) {
     _accumulateDepositInterest(msg.sender);
 
-    require(_deposited[msg.sender] >= amount, "ERC20: approve amount exceeds balance");
+    if(_deposited[msg.sender] < amount) revert ApproveExceedsBalance();
     _allowed[msg.sender][spender] = amount;
 
     emit Approval(msg.sender, spender, amount);
@@ -117,13 +173,13 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   }
 
   function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-    require(amount <= _allowed[sender][msg.sender], "Not enough tokens allowed to transfer required amount.");
-    require(recipient != address(0), "ERC20: cannot transfer to the zero address");
-    require(recipient != address(this), "ERC20: cannot transfer to the pool address");
+    if(amount > _allowed[sender][msg.sender]) revert InsufficientAllowance();
+    if(recipient == address(0)) revert ZeroAddressTransfer();
+    if(recipient == address(this)) revert PoolAddressTransfer();
 
     _accumulateDepositInterest(msg.sender);
 
-    require(amount <= _deposited[sender], "Not enough tokens to transfer required amount.");
+    if(amount > _deposited[sender]) revert TransferExceedsBalance();
 
     _deposited[sender] -= amount;
     _allowed[sender][msg.sender] -= amount;
@@ -173,8 +229,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
    * @dev _amount the amount to be borrowed
   **/
   function borrow(uint256 _amount) payable external canBorrow nonReentrant {
-    require(address(this).balance >= _amount, "There is not enough funds in the pool to fund the loan.");
-    require(totalSupply() - totalBorrowed() >= _amount, "There is no enough deposit in the pool to fund the loan.");
+    require(address(this).balance >= _amount);
+    if(totalSupply() - totalBorrowed() < _amount) revert InsufficientPoolBalance();
 
     _accumulateBorrowingInterest(msg.sender);
 
@@ -195,7 +251,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   function repay() payable external {
     _accumulateBorrowingInterest(msg.sender);
 
-    require(borrowed[msg.sender] >= msg.value, "You are trying to repay more that was borrowed by user.");
+    if(borrowed[msg.sender] < msg.value) revert RepayAmountExceedsBorrowed();
 
     borrowed[msg.sender] -= msg.value;
     borrowed[address(this)] -= msg.value;
@@ -259,8 +315,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   function recoverSurplus(uint256 amount, address account) public onlyOwner nonReentrant {
     uint256 surplus = address(this).balance + totalBorrowed() - totalSupply();
 
-    require(amount <= address(this).balance, "Trying to recover more surplus funds than pool balance");
-    require(amount <= surplus, "Trying to recover more funds than current surplus");
+    if (amount > address(this).balance) revert RecoverAmountExceedsBalance();
+    if (amount > surplus) revert RecoverAmountExceedsSurplus();
 
     payable(account).transfer(amount);
   }
@@ -269,7 +325,7 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /* ========== INTERNAL FUNCTIONS ========== */
 
   function _mint(address account, uint256 amount) internal {
-    require(account != address(0), "ERC20: cannot mint to the zero address");
+    if (account == address(0)) revert MintZeroAddress();
 
     _deposited[account] += amount;
     _deposited[address(this)] += amount;
@@ -279,8 +335,8 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 
   function _burn(address account, uint256 amount) internal {
-    require(_deposited[address(this)] >= amount, "ERC20: burn amount exceeds current pool indexed balance");
-    require(_deposited[account] >= amount, "ERC20: burn amount exceeds user balance");
+    if (_deposited[address(this)] < amount) revert BurnAmountExceedsPoolBalance();
+    if (_deposited[account] < amount) revert BurnAmountExceedsUserBalance();
 
     // verified in "require" above
     unchecked {
@@ -325,11 +381,11 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   /* ========== MODIFIERS ========== */
 
   modifier canBorrow() {
-    require(address(_borrowersRegistry) != address(0), "Borrowers registry is not configured.");
-    require(_borrowersRegistry.canBorrow(msg.sender), "Only the accounts authorised by borrowers registry may borrow.");
-    require(totalSupply() > 0, "Cannot borrow from an empty pool.");
+    if (address(_borrowersRegistry) == address(0)) revert BorrowersRegistryNotConfigured();
+    if (!_borrowersRegistry.canBorrow(msg.sender)) revert UnauthorizedBorrower();
+    if (totalSupply() == 0) revert BorrowFromEmptyPool();
     _;
-    require(totalBorrowed() * 1 ether / totalSupply() <= MAX_POOL_UTILISATION, "The pool utilisation cannot be greater than 95%.");
+    if (totalBorrowed() * 1 ether / totalSupply() > MAX_POOL_UTILISATION) revert PoolUtilisationTooHigh();
   }
 
 

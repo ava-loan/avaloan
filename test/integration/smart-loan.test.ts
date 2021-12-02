@@ -312,7 +312,7 @@ describe('Smart loan', () => {
 
 
     it("should prevent borrowing too much", async () => {
-      await expect(wrappedLoan.borrow(toWei("500"))).to.be.revertedWith("The action may cause an account to become insolvent");
+      await expect(wrappedLoan.borrow(toWei("500"))).to.be.revertedWith("LoanInsolvent()");
     });
 
   });
@@ -434,15 +434,15 @@ describe('Smart loan', () => {
     it("should fail a sellout attempt", async () => {
       expect(await wrappedLoan.getLTV()).to.be.lt(5000);
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await expect(wrappedLoan.selloutInsolventLoan(toWei("1", 18))).to.be.revertedWith('Cannot sellout a solvent account')
+      await expect(wrappedLoan.selloutInsolventLoan(toWei("1", 18))).to.be.revertedWith("LoanSolvent()");
     });
 
     it("should check if only governor can change the maximal LTV", async () => {
-      await expect(wrappedLoan.connect(depositor).setMaxLTV("6000")).to.be.revertedWith("Only the governor account can change the maximal LTV");
+      await expect(wrappedLoan.connect(depositor).setMaxLTV("6000")).to.be.revertedWith("ChangeMaxLtvAccessDenied()");
     });
 
     it("should check if only governor can change the minimal sellout LTV", async () => {
-      await expect(wrappedLoan.connect(depositor).setMinSelloutLTV("3000")).to.be.revertedWith("Only the governor account can change the minimal sellout ltv");
+      await expect(wrappedLoan.connect(depositor).setMinSelloutLTV("3000")).to.be.revertedWith("ChangeMinSelloutLTVAccessDenied()");
     });
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {

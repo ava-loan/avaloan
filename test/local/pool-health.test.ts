@@ -229,7 +229,7 @@ describe('Safety tests of pool', () => {
 
       expect(fromWei(await provider.getBalance(pool.address))).to.be.closeTo(0, 0.00001);
       expect(receiverBalanceAfterRecover).to.be.closeTo(receiverBalanceBeforeRecover + maxAvailableSurplus, 0.00001);
-      await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("Trying to recover more surplus funds than pool balance");
+      await expect(pool.connect(owner).recoverSurplus(toWei("0.01"), user3.address)).to.be.revertedWith("RecoverAmountExceedsBalance()");
 
       expect(fromWei(await pool.totalSupply())).to.be.closeTo(totalSupply, 0.00001);
       expect(fromWei(await pool.getDepositRate())).to.equal(depositRate);

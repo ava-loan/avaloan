@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.4;
 
 import "./SmartLoan.sol";
 import "./Pool.sol";
 import "./IAssetsExchange.sol";
 import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+
+
+/// Only one loan per owner is allowed
+error TooManyLoans();
+
 
 /**
  * @title SmartLoansFactory
@@ -17,7 +22,7 @@ import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 contract SmartLoansFactory is IBorrowersRegistry {
 
   modifier oneLoanPerOwner {
-    require(ownersToLoans[msg.sender] == address(0), "Only one loan per owner is allowed.");
+    if(ownersToLoans[msg.sender] != address(0)) revert TooManyLoans();
     _;
   }
 

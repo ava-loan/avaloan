@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IRatesCalculator.sol";
 import "./WadRayMath.sol";
+
+
+/// Out of range value when calculating borrowing rate. Consider checking if SLOPE_2 is calculated correctly
+error SlopeCalculationOutOfRange();
+
 
 /**
  * @title VariableUtilisationRatesCalculator
@@ -94,8 +99,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
         .rayMul(poolUtilisation.wadToRay()).rayToWad()
         + MAX_RATE;
 
-      require(value >= SLOPE_2,
-      "Out of range value when calculating borrowing rate. Consider checking if SLOPE_2 is calculated correctly");
+      if(value < SLOPE_2) revert SlopeCalculationOutOfRange();
 
       return value - SLOPE_2;
     }

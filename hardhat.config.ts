@@ -4,7 +4,7 @@ import '@nomiclabs/hardhat-waffle'
 import "hardhat-watcher";
 
 export default {
-  solidity: "0.8.2",
+  solidity: "0.8.4",
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {

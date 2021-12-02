@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.2;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -7,6 +7,43 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "./IAssetsExchange.sol";
 import "./Pool.sol";
 import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
+
+
+/// Only the governor account can change the maximal LTV
+error ChangeMaxLtvAccessDenied();
+
+/// Only the governor account can change the minimal sellout LTV
+error ChangeMinSelloutLTVAccessDenied();
+
+/// Selling out all assets without repaying the whole debt is not allowed
+error DebtNotRepaidAfterLoanSelout();
+
+/// Cannot sellout a solvent account
+error LoanSolvent();
+
+/// There is not enough funds to withdraw
+error InsufficientFundsForWithdrawal();
+
+/// Not enough funds are available to invest in an asset
+error InsufficientFundsForInvestment();
+
+/// There is not enough funds to repay the loan
+error InsufficientFundsToRepayDebt();
+
+/// The action may cause an account to become insolvent
+error LoanInsolvent();
+
+/// This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss
+error PostSelloutLtvTooLow();
+
+/// This operation would not result in bringing the loan back to a solvent state
+error PostSelloutLoanInsolvent();
+
+/// Investment failed
+error InvestmentFailed();
+
+/// Redemption failed
+error RedemptionFailed();
 
 
 /**
@@ -52,13 +89,13 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
   function setMaxLTV(uint256 _newMaxLtv) external {
-    require(msg.sender == governor, "Only the governor account can change the maximal LTV");
+    if (msg.sender != governor) revert ChangeMaxLtvAccessDenied();
     MAX_LTV = _newMaxLtv;
   }
 
 
   function setMinSelloutLTV(uint256 _newMinSelloutLtv) external {
-    require(msg.sender == governor, "Only the governor account can change the minimal sellout ltv");
+    if (msg.sender != governor) revert ChangeMinSelloutLTVAccessDenied();
     MIN_SELLOUT_LTV = _newMinSelloutLtv;
   }
 
@@ -130,7 +167,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     }
 
     uint256 debt = getDebt();
-    require(address(this).balance >= debt, "Selling out all assets without repaying the whole debt is not allowed.");
+    if (address(this).balance < debt) revert DebtNotRepaidAfterLoanSelout();
     repay(debt);
     if (address(this).balance > 0) {
       withdraw(address(this).balance);
@@ -139,7 +176,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
   function selloutInsolventLoan(uint256 repayAmount) external successfullSellout {
-    require(!isSolvent(), "Cannot sellout a solvent account");
+    if(isSolvent()) revert LoanSolvent();
 
     uint256 debt = getDebt();
     if (repayAmount > debt) {
@@ -179,7 +216,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @param _amount to be withdrawn
   **/
   function withdraw(uint256 _amount) public onlyOwner remainsSolvent nonReentrant {
-    require(address(this).balance >= _amount, "There is not enough funds to withdraw");
+    if(address(this).balance < _amount) revert InsufficientFundsForWithdrawal();
 
     payable(msg.sender).transfer(_amount);
 
@@ -194,10 +231,10 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
    * @param _maxAvaxAmountIn maximum amount of AVAX to sell
   **/
   function invest(bytes32 _asset, uint256 _exactERC20AmountOut, uint256 _maxAvaxAmountIn) external onlyOwner remainsSolvent {
-    require(address(this).balance >= _maxAvaxAmountIn, "Not enough funds available");
+    if(address(this).balance < _maxAvaxAmountIn) revert InsufficientFundsForInvestment();
 
     bool success = exchange.buyAsset{value : _maxAvaxAmountIn}(_asset, _exactERC20AmountOut);
-    require(success, 'Investment failed.');
+    if (!success) revert InvestmentFailed();
 
     emit Invested(msg.sender, _asset, _exactERC20AmountOut, block.timestamp);
   }
@@ -213,7 +250,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     IERC20Metadata token = getERC20TokenInstance(_asset);
     token.transfer(address(exchange), _exactERC20AmountIn);
     bool success = exchange.sellAsset(_asset, _exactERC20AmountIn, _minAvaxAmountOut);
-    require(success, 'Investment failed.');
+    if(!success) revert RedemptionFailed();
 
     emit Redeemed(msg.sender, _asset, _exactERC20AmountIn, block.timestamp);
   }
@@ -239,7 +276,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
       require(msg.sender == owner());
     }
 
-    require(address(this).balance >= _amount, "There is not enough funds to repay the loan");
+    if (address(this).balance < _amount) revert InsufficientFundsToRepayDebt();
 
     pool.repay{value : _amount}();
 
@@ -377,7 +414,7 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
   modifier remainsSolvent() {
     _;
-    require(isSolvent(), "The action may cause an account to become insolvent.");
+    if(!isSolvent()) revert LoanInsolvent();
   }
 
   /**
@@ -389,9 +426,9 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
-      require(LTV >= MIN_SELLOUT_LTV, "This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss.");
+      if (LTV < MIN_SELLOUT_LTV) revert PostSelloutLtvTooLow();
     }
-    require(LTV < MAX_LTV, "This operation would not result in bringing the loan back to a solvent state.");
+    if (LTV >= MAX_LTV) revert PostSelloutLoanInsolvent();
   }
 
 
