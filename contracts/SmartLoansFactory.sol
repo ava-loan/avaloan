@@ -95,7 +95,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
     return loansToOwners[_account] != address(0);
   }
 
-  function getAccountForUser(address _user) external view override returns(address) {
+  function getLoanForOwner(address _user) external view override returns(address) {
     return address(ownersToLoans[_user]);
   }
 

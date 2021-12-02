@@ -10,7 +10,7 @@ interface IBorrowersRegistry {
 
   function canBorrow(address _account) external view returns(bool);
 
-  function getAccountForUser(address _user) external view returns(address);
+  function getLoanForOwner(address _owner) external view returns(address);
 
   function getOwnerOfLoan(address _loan) external view returns(address);
 

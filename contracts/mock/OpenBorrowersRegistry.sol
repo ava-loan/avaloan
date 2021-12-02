@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import "./IBorrowersRegistry.sol";
+import "../IBorrowersRegistry.sol";
 
 
 /**
@@ -15,7 +15,7 @@ contract OpenBorrowersRegistry is IBorrowersRegistry {
     return true;
   }
 
-  function getAccountForUser(address _user) external pure override returns(address) {
+  function getLoanForOwner(address _user) external pure override returns(address) {
     return address(0);
   }
 

@@ -86,7 +86,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
 
     uint256 poolUtilisation = getPoolUtilisation(totalLoans, totalDeposits);
 
-    if (poolUtilisation > 1 ether) {
+    if (poolUtilisation >= 1 ether) {
       return MAX_RATE;
     } else if (poolUtilisation <= BREAKPOINT) {
       return poolUtilisation.wadToRay()

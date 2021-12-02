@@ -103,6 +103,9 @@ contract CompoundingIndex is Ownable {
     }
 
 
+    /**
+      * Returns compounded factor in Ray
+    **/
     function getCompoundedFactor(uint256 period) internal view returns(uint256) {
       return ((rate.wadToRay() / SECONDS_IN_YEAR) + WadRayMath.ray()).rayPow(period);
     }
