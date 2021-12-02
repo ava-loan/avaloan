@@ -145,7 +145,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
 
   /* ========== RECEIVE AVAX FUNCTION ========== */
-  receive() external payable {  }
+  receive() external payable {}
 
 
   /* ========== VIEW FUNCTIONS ========== */

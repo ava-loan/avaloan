@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./IAssetsExchange.sol";
 import "./Pool.sol";
@@ -20,25 +21,22 @@ import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable
 contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuardUpgradeable {
 
   uint256 public constant PERCENTAGE_PRECISION = 1000;
-
+  // 10%
   uint256 public constant LIQUIDATION_BONUS = 100;
-  uint256 private constant LIQUIDATION_CAP = 200;
 
-  uint256 public MAX_LTV = 5000;
-  uint256 public MIN_SELLOUT_LTV = 4000;
+  // 500%
+  uint256 public constant MAX_LTV = 5000;
+  // 400%
+  uint256 public constant MIN_SELLOUT_LTV = 4000;
 
   IAssetsExchange public exchange;
   Pool pool;
-  address private governor;
 
-  function initialize(IAssetsExchange assetsExchange_, Pool pool_, address _governor) external initializer {
+  function initialize(IAssetsExchange assetsExchange_, Pool pool_) external initializer {
     exchange = assetsExchange_;
     pool = pool_;
     __Ownable_init();
     __PriceAware_init();
-    governor = _governor;
-    MAX_LTV = 5000;
-    MIN_SELLOUT_LTV = 4000;
   }
 
 
@@ -51,24 +49,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
 
-  function setMaxLTV(uint256 _newMaxLtv) external {
-    if (msg.sender != governor) revert ChangeMaxLtvAccessDenied();
-    MAX_LTV = _newMaxLtv;
-  }
-
-
-  function setMinSelloutLTV(uint256 _newMinSelloutLtv) external {
-    if (msg.sender != governor) revert ChangeMinSelloutLTVAccessDenied();
-    MIN_SELLOUT_LTV = _newMinSelloutLtv;
-  }
-
-
   /**
    * This function allows selling assets without checking if the loan will remain solvent after this operation.
    * It is used as part of the sellout() function which sells part/all of assets in order to bring the loan back to solvency.
    * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
   **/
-  function nonSolventAssetSale(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
+  function sellAsset(bytes32 asset, uint256 _amount, uint256 _minAvaxOut) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
     token.transfer(address(exchange), _amount);
     exchange.sellAsset(asset, _amount, _minAvaxOut);
@@ -81,64 +67,58 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   * is being sold.
   * It is possible that multiple different assets will have to be sold and for that reason we do not use the remainsSolvent modifier.
   **/
-  function nonSolventPartialOrFullAssetSale(bytes32 asset, uint256 targetAvaxAmount) private {
+  function sellAssetForTargetAvax(bytes32 asset, uint256 targetAvaxAmount) private {
     IERC20Metadata token = getERC20TokenInstance(asset);
     uint256 balance = token.balanceOf(address(this));
     if (balance > 0) {
       uint256 minSaleAmount = exchange.getMinimumERC20TokenAmountForExactAVAX(targetAvaxAmount, exchange.getAssetAddress(asset));
       if (balance < minSaleAmount) {
-        uint256 saleAvaxValue = exchange.getEstimatedAVAXFromERC20Token(balance, exchange.getAssetAddress(asset));
-        nonSolventAssetSale(asset, balance, saleAvaxValue);
+        sellAsset(asset, balance, 0);
       } else {
-        nonSolventAssetSale(asset, minSaleAmount, targetAvaxAmount);
+        sellAsset(asset, minSaleAmount, targetAvaxAmount);
       }
     }
   }
 
 
   /**
-  * This function attempts to repay the _repayAmount back to the pool as well as pay a bonus to liquidator.
-  * If there is not enough AVAX balance to repay the _repayAmount then the available AVAX balance will be repaid and no
-  * liquidation bonus will be paid to the liquidator.
+  * This function attempts to repay the _repayAmount back to the pool.
+  * If there is not enough AVAX balance to repay the _repayAmount then the available AVAX balance will be repaid.
   **/
   function attemptRepay(uint256 _repayAmount) internal {
-    if (address(this).balance <= _repayAmount) {
-      repay(address(this).balance);
-    } else {
-      repay(_repayAmount);
-    }
+    repay(Math.min(address(this).balance, _repayAmount));
   }
 
 
   function payBonus(uint256 _bonus) internal {
-    if (_bonus < address(this).balance) {
-      payable(msg.sender).transfer(_bonus);
-    } else if (address(this).balance != 0) {
-      payable(msg.sender).transfer(address(this).balance);
-    }
+    payable(msg.sender).transfer(Math.min(_bonus, address(this).balance));
   }
 
 
-  function selloutLoan() external onlyOwner successfullSellout {
+
+  /**
+  * This function can only be accessed by the owner and allows selling all of the assets.
+  **/
+  function closeLoan() external onlyOwner remainsSolvent {
     bytes32[] memory assets = exchange.getAllAssets();
     for (uint i = 0; i < assets.length; i++) {
       uint256 balance = getERC20TokenInstance(assets[i]).balanceOf(address(this));
       if (balance > 0) {
-        nonSolventAssetSale(assets[i], balance, 0);
+        sellAsset(assets[i], balance, 0);
       }
-
     }
 
     uint256 debt = getDebt();
     if (address(this).balance < debt) revert DebtNotRepaidAfterLoanSelout();
     repay(debt);
+    emit LoanClosed(debt, address(this).balance, block.timestamp);
     if (address(this).balance > 0) {
       withdraw(address(this).balance);
     }
   }
 
 
-  function selloutInsolventLoan(uint256 repayAmount) external successfullSellout {
+  function liquidateLoan(uint256 repayAmount) external successfulSellout {
     if(isSolvent()) revert LoanSolvent();
 
     uint256 debt = getDebt();
@@ -151,24 +131,20 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     sellout(totalRepayAmount);
     attemptRepay(repayAmount);
     payBonus(bonus);
+    emit Liquidated(msg.sender, repayAmount, bonus, getLTV(), block.timestamp);
   }
 
 
   /**
-  * This function role is to sell part/all of the available assets in order to bring the loan back to a solvent state.
+  * This function role is to sell part/all of the available assets in order to receive the targetAvaxAmount.
   *
   **/
-  function sellout(uint256 totalRepayAmount) private {
-    if (address(this).balance < (totalRepayAmount)) {
+  function sellout(uint256 targetAvaxAmount) private {
       bytes32[] memory assets = exchange.getAllAssets();
       for (uint i = 0; i < assets.length; i++) {
-        nonSolventPartialOrFullAssetSale(assets[i], totalRepayAmount - address(this).balance);
-        if (address(this).balance >= totalRepayAmount) {
-          break;
-        }
+        if (address(this).balance >= targetAvaxAmount) break;
+        sellAssetForTargetAvax(assets[i], targetAvaxAmount - address(this).balance);
       }
-    }
-
   }
 
 
@@ -392,17 +368,18 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   }
 
   /**
-  * This modifier checks if the LTV is between MIN_SELLOUT_LTV and MAX_LTV after performing the sellout() operation.
-  * It is possible for the Loan to be above MAX_LTV only if the totalValue is equal to 0 which means that everything
-  * was sold out and repayed.
+  * This modifier checks if the LTV is between MIN_SELLOUT_LTV and MAX_LTV after performing the liquidateLoan() operation.
+  * If the liquidateLoan() was not called by the owner then an additional check of making sure that LTV > MIN_SELLOUT_LTV is applied.
+  * It protects the user from an unnecessarily costly liquidation.
+  * The loan must be solvent after the liquidateLoan() operation.
   **/
-  modifier successfullSellout() {
+  modifier successfulSellout() {
     _;
     uint256 LTV = getLTV();
     if (msg.sender != owner()) {
       if (LTV < MIN_SELLOUT_LTV) revert PostSelloutLtvTooLow();
     }
-    if (LTV >= MAX_LTV) revert PostSelloutLoanInsolvent();
+    if (LTV >= MAX_LTV) revert LoanInsolventAfterClosure();
   }
 
 
@@ -464,6 +441,24 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
   event Repaid(address indexed borrower, uint amount, uint time);
 
 
+  /**
+    * @dev emitted after a successful liquidation operation
+    * @param liquidator the address that initiated the liquidation operation
+    * @param repayAmount requested amount (AVAX) of liquidation
+    * @param bonus an amount of bonus (AVAX) received by the liquidator
+    * @param ltv a new LTV after the liquidation operation
+    * @param time a time of the liquidation
+  **/
+  event Liquidated(address indexed liquidator, uint repayAmount, uint bonus, uint ltv, uint time);
+
+
+  /**
+    * @dev emitted after closing a loan by the owner
+    * @param debtRepaid the amount of a borrowed AVAX that was repaid back to the pool
+    * @param withdrawalAmount the amount of AVAX that was withdrawn by the owner after closing the loan
+    * @param time a time of the loan's closure
+  **/
+  event LoanClosed(uint debtRepaid, uint withdrawalAmount, uint time);
 }
 
 
@@ -495,7 +490,7 @@ error LoanInsolvent();
 error PostSelloutLtvTooLow();
 
 /// This operation would not result in bringing the loan back to a solvent state
-error PostSelloutLoanInsolvent();
+error LoanInsolventAfterClosure();
 
 /// Investment failed
 error InvestmentFailed();
