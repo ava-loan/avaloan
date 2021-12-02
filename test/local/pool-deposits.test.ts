@@ -169,25 +169,29 @@ describe('Pool with variable utilisation interest rates', () => {
   });
 
   describe("withdraw function", () => {
-    it("should not allow to withdraw when no deposit", async () => {
-      await expect(sut.withdraw(toWei("0.5")))
-        .to.be.revertedWith("BurnAmountExceedsPoolBalance()");
-      await expect(sut.withdraw(toWei("0.000000001")))
-        .to.be.revertedWith("BurnAmountExceedsPoolBalance()");
+    it("should not allow to withdraw when user has no deposit", async () => {
+      await sut.connect(user).deposit({value: toWei("0.5")});
+      await expect(sut.connect(user2).withdraw(toWei("0.5")))
+        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
+      await expect(sut.connect(user2).withdraw(toWei("0.000000001")))
+        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
     });
 
     it("should not allow to withdraw more than already on deposit", async () => {
-      await sut.deposit({value: toWei("1.0")});
-      await expect(sut.withdraw(toWei("1.0001")))
-        .to.be.revertedWith("BurnAmountExceedsPoolBalance()");
+      await sut.connect(user).deposit({value: toWei("1.0")});
+      await sut.connect(user2).deposit({value: toWei("1.0")});
+      await expect(sut.connect(user).withdraw(toWei("1.0001")))
+        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
     });
 
     it("should not allow to withdraw more than already on deposit after accumulating interest", async () => {
-      await sut.deposit({value: toWei("1.0")});
+      await sut.connect(user).deposit({value: toWei("1.0")});
+      await sut.connect(user2).deposit({value: toWei("1.0")});
       await time.increase(time.duration.years(1));
 
-      await expect(sut.withdraw(toWei("1.052")))
-        .to.be.revertedWith("BurnAmountExceedsPoolBalance()");
+      expect(fromWei(await sut.connect(user).balanceOf(user.address))).to.be.closeTo(1.05127, 0.00001);
+      await expect(sut.connect(user).withdraw(toWei("1.0513")))
+        .to.be.revertedWith("BurnAmountExceedsUserDeposits()");
     });
 
     it("should allow to withdraw all deposit", async () => {

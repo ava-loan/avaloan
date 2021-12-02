@@ -147,6 +147,73 @@ describe('Safety tests of pool', () => {
     });
   });
 
+  describe('Multiple surplus recover', () => {
+    let pool: Pool,
+      owner: SignerWithAddress,
+      user1: SignerWithAddress,
+      user2: SignerWithAddress,
+      user3: SignerWithAddress,
+      ratesCalculator: VariableUtilisationRatesCalculator;
+
+    before("Deploy Pool contract", async () => {
+      [owner, user1, user2, user3] = await getFixedGasSigners(10000000);
+      ratesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
+      pool = (await deployContract(owner, PoolArtifact)) as Pool;
+      const borrowersRegistry = await (new OpenBorrowersRegistry__factory(owner).deploy());
+
+      await pool.initialize(ratesCalculator.address, borrowersRegistry.address, ZERO, ZERO);
+    });
+
+    it("multiple recovering surplus should not make pool unbalanced", async () => {
+      await pool.connect(user1).deposit({value: toWei("1")});
+      await pool.connect(user2).borrow(toWei("0.5"));
+
+
+
+      await time.increase(time.duration.months(3));
+      await recoverSurplus();
+      await time.increase(time.duration.months(3));
+      await recoverSurplus();
+      await time.increase(time.duration.months(6));
+      await recoverSurplus();
+      await time.increase(time.duration.years(1));
+      await recoverSurplus();
+      await time.increase(time.duration.years(5));
+      await recoverSurplus();
+
+      await pool.connect(user2).borrow(toWei("0.3"));
+
+      await time.increase(time.duration.months(3));
+      await recoverSurplus();
+      await time.increase(time.duration.years(2));
+      await pool.connect(user2).repay({value: toWei("0.4")});
+      await pool.connect(user1).withdraw(toWei("0.2"));
+      await recoverSurplus();
+      await time.increase(time.duration.years(1));
+      await pool.connect(user2).repay({value: toWei("0.4")});
+      await pool.connect(user1).withdraw(toWei("0.2"));
+      await time.increase(time.duration.years(1));
+      await recoverSurplus();
+
+      async function recoverSurplus() {
+        const poolBalance = fromWei(await provider.getBalance(pool.address));
+        const currentSurplus = fromWei(await provider.getBalance(pool.address)) + fromWei(await pool.totalBorrowed()) - fromWei(await pool.totalSupply());
+        const maxAvailableSurplus = Math.min(poolBalance, currentSurplus) - 1e-7; //subtracted 1e-7 because of accuracy issues when calculating surplus
+        await pool.connect(owner).recoverSurplus(toWei((maxAvailableSurplus).toFixed(18)), user3.address);
+
+        await checkPoolBalance()
+      }
+
+      async function checkPoolBalance() {
+        let poolBalance = fromWei(await provider.getBalance(pool.address));
+        let depositUser1 = fromWei(await pool.balanceOf(user1.address));
+        let borrowedUser2 = fromWei(await pool.getBorrowed(user2.address));
+
+        expect(depositUser1).to.be.below(borrowedUser2 + poolBalance);
+      }
+    });
+  });
+
   describe('Pool utilisation greater than 1', () => {
     let pool: Pool,
       owner: SignerWithAddress,

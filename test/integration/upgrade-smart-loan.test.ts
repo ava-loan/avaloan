@@ -89,7 +89,7 @@ describe('Smart loan - upgrading', () => {
     it("should deploy a loan", async () => {
       await smartLoansFactory.connect(owner).createLoan();
 
-      const loan_proxy_address = await smartLoansFactory.getAccountForUser(owner.address);
+      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
       loan = ((await new ethers.Contract(loan_proxy_address, SmartLoanArtifact.abi)) as SmartLoan).connect(owner);
     });
 
@@ -116,7 +116,7 @@ describe('Smart loan - upgrading', () => {
     it("should create and fund a loan", async () => {
       await smartLoansFactory.connect(other).createAndFundLoan(toWei("2"), {value: toWei("10")});
 
-      const loan_proxy_address = await smartLoansFactory.getAccountForUser(other.address);
+      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(other.address);
       const second_loan = ((await new ethers.Contract(loan_proxy_address, SmartLoanArtifact.abi)) as SmartLoan).connect(other);
       expect(fromWei(await second_loan.connect(other).getTotalValue())).to.be.equal(12);
       expect(fromWei(await second_loan.connect(other).getDebt())).to.be.equal(2);
