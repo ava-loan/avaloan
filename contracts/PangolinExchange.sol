@@ -150,6 +150,10 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
   /* ========== VIEW FUNCTIONS ========== */
 
+  // Initial audit comment: Three below functions can in theory fail if there would be no liquidity at DEX but in this case
+  // we can just remove a given asset from supported assets or change all calls to the below functions to an external .call
+  // and handle a failure in our code. It is yet to be decided upon.
+
   /**
      * Returns the minimum token amount that is required to be sold to receive _exactAmountOut of AVAX.
   **/
@@ -168,6 +172,7 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
 
     return pangolinRouter.getAmountsIn(_exactAmountOut, path)[0];
   }
+
 
   /**
    * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
