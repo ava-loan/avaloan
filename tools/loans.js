@@ -3,7 +3,7 @@ const fs = require('fs');
 const ethers = require('ethers');
 const FACTORY = require('../build/contracts/SmartLoansFactory.json');
 const LOAN = require('../build/contracts/SmartLoan.json');
-const {WrapperBuilder} = require("redstone-flash-storage");
+const {WrapperBuilder} = require("redstone-evm-connector");
 
 const mnemonic = fs.readFileSync("./.secret2").toString().trim();
 let privateKeyWallet = new ethers.Wallet(mnemonic);

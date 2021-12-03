@@ -36,7 +36,7 @@
   import {parseLogs} from "../utils/calculate";
   import Block from "@/components/Block.vue";
   import {mapState} from "vuex";
-  import {WrapperBuilder} from "redstone-flash-storage";
+  import {WrapperBuilder} from "redstone-evm-connector";
   import { fromWei } from "@/utils/calculate";
 
   export default {

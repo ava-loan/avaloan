@@ -5,10 +5,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 import "./IAssetsExchange.sol";
 import "./Pool.sol";
-
+import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 
 
 /**
@@ -38,6 +37,14 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     pool = pool_;
     __Ownable_init();
     __PriceAware_init();
+  }
+
+
+  /**
+   * Override trustedSigner getter for safety reasons
+  **/
+  function getTrustedSigner() override virtual public view returns (address) {
+    return 0x3a7d971De367FE15D164CDD952F64205F2D9f10c; //redstone-avalanche;
   }
 
 

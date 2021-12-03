@@ -177,8 +177,6 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
   **/
   function borrow(uint256 _amount) payable external canBorrow nonReentrant {
     require(address(this).balance >= _amount);
-    // Max pool utilisation for borrowing is checked in canBorrow modifier
-    if(totalSupply() - totalBorrowed() < _amount) revert InsufficientPoolBalance();
 
     _accumulateBorrowingInterest(msg.sender);
 

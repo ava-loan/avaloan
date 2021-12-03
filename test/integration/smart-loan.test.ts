@@ -3,8 +3,11 @@ import chai, {expect} from 'chai'
 import {solidity} from "ethereum-waffle";
 import redstone from 'redstone-api';
 
+import MockSmartLoanRedstoneProviderArtifact from '../../artifacts/contracts/mock/MockSmartLoanRedstoneProvider.sol/MockSmartLoanRedstoneProvider.json';
 import VariableUtilisationRatesCalculatorArtifact from '../../artifacts/contracts/VariableUtilisationRatesCalculator.sol/VariableUtilisationRatesCalculator.json';
 import PoolArtifact from '../../artifacts/contracts/Pool.sol/Pool.json';
+import SmartLoansFactoryArtifact from '../../artifacts/contracts/SmartLoansFactory.sol/SmartLoansFactory.json';
+import UpgradeableBeaconArtifact from '../../artifacts/@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol/UpgradeableBeacon.json';
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {
   fromWei,
@@ -12,20 +15,20 @@ import {
   toBytes32,
   toWei,
   formatUnits,
-  deployAndInitPangolinExchangeContract, getSelloutRepayAmount, Asset,
+  deployAndInitPangolinExchangeContract, Asset, getSelloutRepayAmount,
 } from "../_helpers";
-import {WrapperBuilder} from "redstone-flash-storage";
+import {WrapperBuilder} from "redstone-evm-connector";
 import {
   VariableUtilisationRatesCalculator,
   PangolinExchange,
   Pool,
-  SmartLoan,
-  SmartLoan__factory,
   MockSmartLoan,
   MockSmartLoan__factory,
+  MockSmartLoanRedstoneProvider,
+  MockSmartLoanRedstoneProvider__factory,
   TransparentUpgradeableProxy__factory,
   MockUpgradedSmartLoan__factory,
-  TransparentUpgradeableProxy,
+  UpgradeableBeacon, SmartLoansFactory
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -52,7 +55,7 @@ describe('Smart loan', () => {
 
   describe('A loan without debt', () => {
     let exchange: PangolinExchange,
-      loan: SmartLoan,
+      loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
@@ -95,7 +98,7 @@ describe('Smart loan', () => {
     });
 
     it("should deploy a smart loan", async () => {
-      loan = await (new SmartLoan__factory(owner).deploy());
+      loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
       await loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
@@ -108,7 +111,6 @@ describe('Smart loan', () => {
             }
           })
 
-      await wrappedLoan.authorizeProvider();
     });
 
     it("should fund a loan", async () => {
@@ -230,7 +232,7 @@ describe('Smart loan', () => {
 
   describe('A loan with debt and repayment', () => {
     let exchange: PangolinExchange,
-      loan: SmartLoan,
+      loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
@@ -268,8 +270,8 @@ describe('Smart loan', () => {
     });
 
     it("should deploy a smart loan", async () => {
-      loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address);
+      loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
+      await loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -280,8 +282,6 @@ describe('Smart loan', () => {
               timestamp: Date.now()
             }
           })
-
-      await wrappedLoan.authorizeProvider();
     });
 
 
@@ -324,17 +324,18 @@ describe('Smart loan', () => {
 
   describe('A loan with sellout and proxy upgradeability', () => {
     let exchange: PangolinExchange,
-      loan: SmartLoan,
+      loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
       admin: SignerWithAddress,
-      proxy: TransparentUpgradeableProxy,
       usdTokenContract: Contract,
       linkTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
       linkTokenDecimalPlaces: BigNumber,
+      beacon: UpgradeableBeacon,
+      smartLoansFactory: SmartLoansFactory,
       MOCK_PRICES: any,
       AVAX_PRICE: number,
       LINK_PRICE: number,
@@ -382,11 +383,18 @@ describe('Smart loan', () => {
     });
 
     it("should deploy a smart loan behind a proxy", async () => {
-      loan = await (new SmartLoan__factory(owner).deploy());
-      proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(loan.address, admin.address, []));
-      loan = await (new SmartLoan__factory(owner).attach(proxy.address));
+      smartLoansFactory = await deployContract(owner, SmartLoansFactoryArtifact, [pool.address, exchange.address]) as SmartLoansFactory;
 
-      loan.initialize(exchange.address, pool.address);
+      const beaconAddress = await smartLoansFactory.upgradeableBeacon.call(0);
+      beacon = (await new ethers.Contract(beaconAddress, UpgradeableBeaconArtifact.abi) as UpgradeableBeacon).connect(owner);
+      const mockSmartLoan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
+      //we need to use mock smart loan in order for PriceAware to work
+      await beacon.connect(owner).upgradeTo(mockSmartLoan.address);
+
+      await smartLoansFactory.connect(owner).createLoan();
+
+      const loan_proxy_address = await smartLoansFactory.getLoanForOwner(owner.address);
+      loan = ((await new ethers.Contract(loan_proxy_address, MockSmartLoanRedstoneProviderArtifact.abi)) as MockSmartLoanRedstoneProvider).connect(owner);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -398,7 +406,6 @@ describe('Smart loan', () => {
             }
           })
 
-      await wrappedLoan.authorizeProvider();
     });
 
     it("should fund a loan", async () => {
@@ -462,9 +469,8 @@ describe('Smart loan', () => {
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
 
-      // Upgrade to a mock Smart Loan contract
-      let mockUpgradedSmartLoan = await (new MockUpgradedSmartLoan__factory(owner).deploy());
-      await proxy.connect(admin).upgradeTo(mockUpgradedSmartLoan.address);
+      const mockSmartLoan = await (new MockUpgradedSmartLoan__factory(owner).deploy());
+      await beacon.connect(owner).upgradeTo(mockSmartLoan.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
@@ -500,7 +506,7 @@ describe('Smart loan', () => {
 
   describe('A loan with owner sellout', () => {
     let exchange: PangolinExchange,
-      loan: SmartLoan,
+      loan: MockSmartLoanRedstoneProvider,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
@@ -557,7 +563,7 @@ describe('Smart loan', () => {
     });
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
-      loan = await (new SmartLoan__factory(owner).deploy());
+      loan = await (new MockSmartLoanRedstoneProvider__factory(owner).deploy());
       loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
@@ -580,7 +586,7 @@ describe('Smart loan', () => {
       expect(await wrappedLoan.getLTV()).to.be.equal(3000);
 
       const slippageTolerance = 0.03;
-      let investedAmount = 40000;
+      let investedAmount = 30000;
       let requiredAvaxAmount = USD_PRICE * investedAmount * (1 + slippageTolerance) / AVAX_PRICE;
 
       await wrappedLoan.invest(
@@ -591,7 +597,7 @@ describe('Smart loan', () => {
 
       let balances = await wrappedLoan.getAllAssetsBalances();
       const currentUSDTokenBalance = balances[0];
-      expect(currentUSDTokenBalance).to.be.equal(toWei("40000", usdTokenDecimalPlaces));
+      expect(currentUSDTokenBalance).to.be.equal(toWei("30000", usdTokenDecimalPlaces));
     });
 
 

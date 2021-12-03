@@ -5,7 +5,7 @@ import PANGOLIN_EXCHANGE from '@contracts/PangolinExchange.json'
 import { fromWei, toWei, parseUnits, formatUnits } from "@/utils/calculate";
 import config from "@/config";
 import {maxAvaxToBeSold, acceptableSlippage, minAvaxToBeBought, parseLogs} from "../utils/calculate";
-import { WrapperBuilder } from "redstone-flash-storage";
+import { WrapperBuilder } from "redstone-evm-connector";
 
 export default {
   namespaced: true,
