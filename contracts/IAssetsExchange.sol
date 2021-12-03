@@ -37,14 +37,6 @@ interface IAssetsExchange {
 
 
   /**
-   * Returns the current balance of the asset held by given user
-   * @dev _asset the code of an asset
-   * @dev _user the address of queried user
-  **/
-  function getBalance(address _user, bytes32 _asset) external view returns(uint256);
-
-
-  /**
      * Returns the maximum AVAX amount that will be obtained in the event of selling _amountIn of _token ERC20 token.
   **/
   function getEstimatedAVAXFromERC20Token(uint256 _amountIn, address _token) external returns(uint256);

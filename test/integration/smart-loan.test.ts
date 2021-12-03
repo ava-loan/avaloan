@@ -91,7 +91,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      await loan.initialize(exchange.address, pool.address, owner.address);
+      await loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -264,7 +264,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address, owner.address);
+      loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -376,7 +376,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address, owner.address);
+      loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -431,18 +431,17 @@ describe('Smart loan', () => {
       expect(currentLINKTokenBalance).to.be.equal(toWei("300", linkTokenDecimalPlaces));
     });
 
+    it('should return the balance of a token', async () => {
+      const linkTokenBalance = await linkTokenContract.connect(owner).balanceOf(owner.address);
+      const smartLoanLinkTokenBalance = await wrappedLoan.getBalance(owner.address, toBytes32('LINK'));
+
+      expect(linkTokenBalance).to.be.equal(smartLoanLinkTokenBalance);
+    })
+
     it("should fail a sellout attempt", async () => {
       expect(await wrappedLoan.getLTV()).to.be.lt(5000);
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await expect(wrappedLoan.selloutInsolventLoan(toWei("1", 18))).to.be.revertedWith("LoanSolvent()");
-    });
-
-    it("should check if only governor can change the maximal LTV", async () => {
-      await expect(wrappedLoan.connect(depositor).setMaxLTV("6000")).to.be.revertedWith("ChangeMaxLtvAccessDenied()");
-    });
-
-    it("should check if only governor can change the minimal sellout LTV", async () => {
-      await expect(wrappedLoan.connect(depositor).setMinSelloutLTV("3000")).to.be.revertedWith("ChangeMinSelloutLTVAccessDenied()");
+      await expect(wrappedLoan.liquidateLoan(toWei("1", 18))).to.be.revertedWith("LoanSolvent()");
     });
 
     it("should sellout assets partially bringing the loan to a solvent state", async () => {
@@ -463,7 +462,7 @@ describe('Smart loan', () => {
         await wrappedLoan.MAX_LTV()
       )
 
-      await wrappedLoan.selloutInsolventLoan(repayAmount.toString());
+      await wrappedLoan.liquidateLoan(repayAmount.toString());
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect((await provider.getBalance(pool.address)).gt(poolAvaxValue)).to.be.true;
@@ -540,7 +539,7 @@ describe('Smart loan', () => {
 
     it("should deploy a smart loan, fund, borrow and invest", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
-      loan.initialize(exchange.address, pool.address, owner.address);
+      loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
         .mockLite(loan)
@@ -577,13 +576,13 @@ describe('Smart loan', () => {
     });
 
 
-    it("should fail a selloutLoan attempt at the onlyOwner check", async () => {
-      await expect(wrappedLoan.connect(depositor).selloutLoan()).to.be.revertedWith("Ownable: caller is not the owner")
+    it("should fail a closeLoan attempt at the onlyOwner check", async () => {
+      await expect(wrappedLoan.connect(depositor).closeLoan()).to.be.revertedWith("Ownable: caller is not the owner")
     });
 
-    it("should perform an owner's selloutLoan call", async () => {
+    it("should perform an owner's closeLoan call", async () => {
       const ownerInitialAvaxBalance = await provider.getBalance(owner.address);
-      await wrappedLoan.selloutLoan();
+      await wrappedLoan.closeLoan();
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect(await wrappedLoan.getDebt()).to.be.equal(0);
       expect(await provider.getBalance(owner.address)).to.be.gt(ownerInitialAvaxBalance);

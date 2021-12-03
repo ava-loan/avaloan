@@ -114,13 +114,6 @@ describe('PangolinExchange', () => {
       expect(currentDAITokenBalance).to.be.equal(daiTokenExpectedBalance);
       expect(currentAvaxBalance).to.be.gt(initialAvaxBalance);
     });
-
-    it('should return the balance of a token', async () => {
-      const daiTokenBalance = await daiToken.connect(owner).balanceOf(owner.address);
-      const exchangeDAITokenBalance = await sut.getBalance(owner.address, toBytes32('DAI'));
-
-      expect(daiTokenBalance).to.be.equal(exchangeDAITokenBalance);
-    })
   });
 
   describe('Set and read assets', () => {

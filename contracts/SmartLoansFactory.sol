@@ -29,8 +29,6 @@ contract SmartLoansFactory is IBorrowersRegistry {
   UpgradeableBeacon public upgradeableBeacon;
   address trustedPriceSigner;
 
-  uint256 private constant MAX_VAL = 2**256-1 ether;
-
   mapping(address => address) public ownersToLoans;
   mapping(address => address) public loansToOwners;
 
@@ -50,7 +48,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createLoan() external oneLoanPerOwner returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), upgradeableBeacon.owner()));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
@@ -62,7 +60,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
   function createAndFundLoan(uint256 _initialDebt) external oneLoanPerOwner payable returns(SmartLoan) {
-    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool), upgradeableBeacon.owner()));
+    BeaconProxy beaconProxy = new BeaconProxy(payable(address(upgradeableBeacon)), abi.encodeWithSelector(SmartLoan.initialize.selector, address(assetsExchange), address(pool)));
     SmartLoan smartLoan = SmartLoan(payable(address(beaconProxy)));
 
     //Update registry and emit event
@@ -79,12 +77,12 @@ contract SmartLoansFactory is IBorrowersRegistry {
     return smartLoan;
   }
 
-  function updateRegistry(SmartLoan _newAccount) internal {
-    ownersToLoans[msg.sender] = address(_newAccount);
-    loansToOwners[address(_newAccount)] = msg.sender;
-    loans.push(_newAccount);
+  function updateRegistry(SmartLoan loan) internal {
+    ownersToLoans[msg.sender] = address(loan);
+    loansToOwners[address(loan)] = msg.sender;
+    loans.push(loan);
 
-    emit SmartLoanCreated(address(_newAccount), msg.sender);
+    emit SmartLoanCreated(address(loan), msg.sender);
   }
 
   function canBorrow(address _account) external view override returns(bool) {
