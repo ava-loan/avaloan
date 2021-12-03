@@ -27,7 +27,6 @@ contract SmartLoansFactory is IBorrowersRegistry {
   Pool private pool;
   IAssetsExchange assetsExchange;
   UpgradeableBeacon public upgradeableBeacon;
-  address trustedPriceSigner;
 
   mapping(address => address) public ownersToLoans;
   mapping(address => address) public loansToOwners;
@@ -36,15 +35,13 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
   constructor(
     Pool _pool,
-    IAssetsExchange _assetsExchange,
-    address _trustedPriceSigner
+    IAssetsExchange _assetsExchange
   ) {
     pool = _pool;
     assetsExchange = _assetsExchange;
     SmartLoan smartLoanImplementation = new SmartLoan();
     upgradeableBeacon = new UpgradeableBeacon(address(smartLoanImplementation));
     upgradeableBeacon.transferOwnership(msg.sender);
-    trustedPriceSigner = _trustedPriceSigner;
   }
 
   function createLoan() external oneLoanPerOwner returns(SmartLoan) {
@@ -53,7 +50,6 @@ contract SmartLoansFactory is IBorrowersRegistry {
 
     //Update registry and emit event
     updateRegistry(smartLoan);
-    smartLoan.authorizeSigner(trustedPriceSigner);
     smartLoan.transferOwnership(msg.sender);
 
     return smartLoan;
@@ -71,7 +67,6 @@ contract SmartLoansFactory is IBorrowersRegistry {
     smartLoan.borrow(_initialDebt);
     require(smartLoan.isSolvent());
 
-    smartLoan.authorizeSigner(trustedPriceSigner);
     smartLoan.transferOwnership(msg.sender);
 
     return smartLoan;

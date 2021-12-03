@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
+import "redstone-evm-connector/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 import "../IAssetsExchange.sol";
 import "../Pool.sol";
 

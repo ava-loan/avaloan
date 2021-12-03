@@ -5,11 +5,10 @@ const VariableUtilisationRatesCalculator = artifacts.require("./VariableUtilisat
 const Pool = artifacts.require("./Pool.sol");
 const SmartLoansFactory = artifacts.require("./SmartLoansFactory.sol");
 
-const PRICE_SIGNER = "0x3a7d971De367FE15D164CDD952F64205F2D9f10c"; //redstone-avalanche
 
 module.exports = function(deployer) {
   var factory;
-  deployer.deploy(SmartLoansFactory, Pool.address, AssetsExchange.address, PRICE_SIGNER)
+  deployer.deploy(SmartLoansFactory, Pool.address, AssetsExchange.address)
     .then(function(instance) {
       factory = instance;
       console.log("Smart Loan factory deployed: " + factory.address);
