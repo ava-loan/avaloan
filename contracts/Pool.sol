@@ -8,61 +8,6 @@ import "./CompoundingIndex.sol";
 import "./IRatesCalculator.sol";
 import "./IBorrowersRegistry.sol";
 
-/// The rates calculator cannot set to a null address
-error RatesCalculatorNullAddress();
-
-/// The borrowers registry cannot set to a null address
-error BorrowersRegistryNullAddress();
-
-/// ERC20: cannot transfer to the zero address
-error ZeroAddressTransfer();
-
-/// ERC20: cannot transfer to the pool address
-error PoolAddressTransfer();
-
-/// ERC20: transfer amount exceeds balance
-error TransferExceedsBalance();
-
-/// ERC20: approve amount exceeds balance
-error ApproveExceedsBalance();
-
-/// Not enough tokens allowed to transfer required amount
-error InsufficientAllowance();
-
-/// There is not enough funds in the pool to fund the loan
-error InsufficientPoolBalance();
-
-/// You are trying to repay more that was borrowed by a user
-error RepayAmountExceedsBorrowed();
-
-/// Trying to recover more surplus funds than pool balance
-error RecoverAmountExceedsBalance();
-
-/// Trying to recover more funds than current surplus
-error RecoverAmountExceedsSurplus();
-
-
-/// ERC20: cannot mint to the zero address
-error MintZeroAddress();
-
-/// ERC20: burn amount exceeds current pool indexed balance
-error BurnAmountExceedsPoolDeposits();
-
-/// ERC20: burn amount exceeds user balance
-error BurnAmountExceedsUserDeposits();
-
-/// Borrowers registry is not configured
-error BorrowersRegistryNotConfigured();
-
-/// Only the accounts authorised by borrowers registry may borrow
-error UnauthorizedBorrower();
-
-/// Cannot borrow from an empty pool
-error BorrowFromEmptyPool();
-
-/// The pool utilisation cannot be greater than 95%
-error PoolUtilisationTooHighForBorrowing();
-
 
 /**
  * @title Pool
@@ -438,3 +383,59 @@ contract Pool is OwnableUpgradeable, ReentrancyGuardUpgradeable, IERC20 {
 
 
 }
+
+
+/// The rates calculator cannot set to a null address
+error RatesCalculatorNullAddress();
+
+/// The borrowers registry cannot set to a null address
+error BorrowersRegistryNullAddress();
+
+/// ERC20: cannot transfer to the zero address
+error ZeroAddressTransfer();
+
+/// ERC20: cannot transfer to the pool address
+error PoolAddressTransfer();
+
+/// ERC20: transfer amount exceeds balance
+error TransferExceedsBalance();
+
+/// ERC20: approve amount exceeds balance
+error ApproveExceedsBalance();
+
+/// Not enough tokens allowed to transfer required amount
+error InsufficientAllowance();
+
+/// There is not enough funds in the pool to fund the loan
+error InsufficientPoolBalance();
+
+/// You are trying to repay more that was borrowed by a user
+error RepayAmountExceedsBorrowed();
+
+/// Trying to recover more surplus funds than pool balance
+error RecoverAmountExceedsBalance();
+
+/// Trying to recover more funds than current surplus
+error RecoverAmountExceedsSurplus();
+
+
+/// ERC20: cannot mint to the zero address
+error MintZeroAddress();
+
+/// ERC20: burn amount exceeds current pool indexed balance
+error BurnAmountExceedsPoolDeposits();
+
+/// ERC20: burn amount exceeds user balance
+error BurnAmountExceedsUserDeposits();
+
+/// Borrowers registry is not configured
+error BorrowersRegistryNotConfigured();
+
+/// Only the accounts authorised by borrowers registry may borrow
+error UnauthorizedBorrower();
+
+/// Cannot borrow from an empty pool
+error BorrowFromEmptyPool();
+
+/// The pool utilisation cannot be greater than 95%
+error PoolUtilisationTooHighForBorrowing();

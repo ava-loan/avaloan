@@ -9,43 +9,6 @@ import "./Pool.sol";
 import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 
 
-/// Only the governor account can change the maximal LTV
-error ChangeMaxLtvAccessDenied();
-
-/// Only the governor account can change the minimal sellout LTV
-error ChangeMinSelloutLTVAccessDenied();
-
-/// Selling out all assets without repaying the whole debt is not allowed
-error DebtNotRepaidAfterLoanSelout();
-
-/// Cannot sellout a solvent account
-error LoanSolvent();
-
-/// There is not enough funds to withdraw
-error InsufficientFundsForWithdrawal();
-
-/// Not enough funds are available to invest in an asset
-error InsufficientFundsForInvestment();
-
-/// There is not enough funds to repay the loan
-error InsufficientFundsToRepayDebt();
-
-/// The action may cause an account to become insolvent
-error LoanInsolvent();
-
-/// This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss
-error PostSelloutLtvTooLow();
-
-/// This operation would not result in bringing the loan back to a solvent state
-error PostSelloutLoanInsolvent();
-
-/// Investment failed
-error InvestmentFailed();
-
-/// Redemption failed
-error RedemptionFailed();
-
-
 /**
  * @title SmartLoan
  * A contract that is authorised to borrow funds using delegated credit.
@@ -491,3 +454,40 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
 
 
 }
+
+
+/// Only the governor account can change the maximal LTV
+error ChangeMaxLtvAccessDenied();
+
+/// Only the governor account can change the minimal sellout LTV
+error ChangeMinSelloutLTVAccessDenied();
+
+/// Selling out all assets without repaying the whole debt is not allowed
+error DebtNotRepaidAfterLoanSelout();
+
+/// Cannot sellout a solvent account
+error LoanSolvent();
+
+/// There is not enough funds to withdraw
+error InsufficientFundsForWithdrawal();
+
+/// Not enough funds are available to invest in an asset
+error InsufficientFundsForInvestment();
+
+/// There is not enough funds to repay the loan
+error InsufficientFundsToRepayDebt();
+
+/// The action may cause an account to become insolvent
+error LoanInsolvent();
+
+/// This operation would result in a loan with LTV lower than Minimal Sellout LTV which would put loan's owner in a risk of an unnecessarily high loss
+error PostSelloutLtvTooLow();
+
+/// This operation would not result in bringing the loan back to a solvent state
+error PostSelloutLoanInsolvent();
+
+/// Investment failed
+error InvestmentFailed();
+
+/// Redemption failed
+error RedemptionFailed();

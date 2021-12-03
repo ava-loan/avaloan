@@ -9,16 +9,6 @@ import "./IAssetsExchange.sol";
 import "./Bytes32EnumerableMap.sol";
 
 
-/// Amount of tokens to buy has to be greater than 0
-error InvalidTokenPurchaseAmount();
-
-/// Amount of tokens to sell has to be greater than 0
-error InvalidTokenSaleAmount();
-
-/// Not enough funds were provided
-error NotEnoughFunds();
-
-
 /**
  * @title PangolinExchange
  * @dev Contract allows user to invest into an ERC20 token
@@ -252,3 +242,13 @@ contract PangolinExchange is Ownable, IAssetsExchange, ReentrancyGuardUpgradeabl
   **/
   event AssetsRemoved(bytes32[] removedAssets);
 }
+
+
+/// Amount of tokens to buy has to be greater than 0
+error InvalidTokenPurchaseAmount();
+
+/// Amount of tokens to sell has to be greater than 0
+error InvalidTokenSaleAmount();
+
+/// Not enough funds were provided
+error NotEnoughFunds();

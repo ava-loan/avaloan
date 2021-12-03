@@ -6,10 +6,6 @@ import "./IRatesCalculator.sol";
 import "./WadRayMath.sol";
 
 
-/// Out of range value when calculating borrowing rate. Consider checking if SLOPE_2 is calculated correctly
-error SlopeCalculationOutOfRange();
-
-
 /**
  * @title VariableUtilisationRatesCalculator
  * @dev Contract which calculates the interest rates based on pool utilisation.
@@ -105,3 +101,7 @@ contract VariableUtilisationRatesCalculator is IRatesCalculator, Ownable {
     }
   }
 }
+
+
+/// Out of range value when calculating borrowing rate. Consider checking if SLOPE_2 is calculated correctly
+error SlopeCalculationOutOfRange();

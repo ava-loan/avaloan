@@ -8,10 +8,6 @@ import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 
-/// Only one loan per owner is allowed
-error TooManyLoans();
-
-
 /**
  * @title SmartLoansFactory
  * It creates and fund the Smart Loan.
@@ -108,3 +104,7 @@ contract SmartLoansFactory is IBorrowersRegistry {
   }
 
 }
+
+
+/// Only one loan per owner is allowed
+error TooManyLoans();

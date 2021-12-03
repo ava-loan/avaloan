@@ -4,8 +4,6 @@ pragma solidity ^0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../IRatesCalculator.sol";
 
-/// Borrowing rate cannot be lower than the deposit rate
-error BorrowingRateLTDepositRate();
 
 /**
  * @title FixedRatesCalculator
@@ -71,3 +69,7 @@ contract FixedRatesCalculator is IRatesCalculator, Ownable {
     event RatesUpdated(uint256 updatedDepositRate, uint256 updatedBorrowingRate);
 
 }
+
+
+/// Borrowing rate cannot be lower than the deposit rate
+error BorrowingRateLTDepositRate();
