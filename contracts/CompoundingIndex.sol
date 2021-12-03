@@ -77,6 +77,8 @@ contract CompoundingIndex is Ownable {
    /**
      * Gets the user value recalculated to the current index
      * It recalculates the value on-demand without updating the storage
+     * Ray operations round up the result, but it is only an issue for very small values (with an order of magnitude
+     * of 1 Wei)
     **/
     function getIndexedValue(uint256 value, address user) public view returns(uint256) {
         uint256 prevUserIndex = userUpdateTime[user] == 0 ? BASE_RATE : prevIndex[getLastUserUpdateTime(user)];
