@@ -20,7 +20,12 @@ import {
   PangolinExchange,
   Pool,
   SmartLoan,
-  SmartLoan__factory, MockSmartLoan, MockSmartLoan__factory
+  SmartLoan__factory,
+  MockSmartLoan,
+  MockSmartLoan__factory,
+  TransparentUpgradeableProxy__factory,
+  MockUpgradedSmartLoan__factory,
+  TransparentUpgradeableProxy,
 } from "../../typechain";
 
 import {OpenBorrowersRegistry__factory} from "../../typechain";
@@ -317,13 +322,15 @@ describe('Smart loan', () => {
 
   });
 
-  describe('A loan with sellout', () => {
+  describe('A loan with sellout and proxy upgradeability', () => {
     let exchange: PangolinExchange,
       loan: SmartLoan,
       wrappedLoan: any,
       pool: Pool,
       owner: SignerWithAddress,
       depositor: SignerWithAddress,
+      admin: SignerWithAddress,
+      proxy: TransparentUpgradeableProxy,
       usdTokenContract: Contract,
       linkTokenContract: Contract,
       usdTokenDecimalPlaces: BigNumber,
@@ -334,7 +341,7 @@ describe('Smart loan', () => {
       USD_PRICE: number;
 
     before("deploy provider, exchange and pool", async () => {
-      [owner, depositor] = await getFixedGasSigners(10000000);
+      [owner, depositor, admin] = await getFixedGasSigners(10000000);
 
       const variableUtilisationRatesCalculator = (await deployContract(owner, VariableUtilisationRatesCalculatorArtifact)) as VariableUtilisationRatesCalculator;
       pool = (await deployContract(owner, PoolArtifact)) as Pool;
@@ -374,8 +381,11 @@ describe('Smart loan', () => {
       await pool.connect(depositor).deposit({value: toWei("1000")});
     });
 
-    it("should deploy a smart loan", async () => {
+    it("should deploy a smart loan behind a proxy", async () => {
       loan = await (new SmartLoan__factory(owner).deploy());
+      proxy = await (new TransparentUpgradeableProxy__factory(owner).deploy(loan.address, admin.address, []));
+      loan = await (new SmartLoan__factory(owner).attach(proxy.address));
+
       loan.initialize(exchange.address, pool.address);
 
       wrappedLoan = WrapperBuilder
@@ -451,8 +461,11 @@ describe('Smart loan', () => {
       const poolAvaxValue = await provider.getBalance(pool.address);
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
-      await wrappedLoan.setMinSelloutLTV(200);
-      await wrappedLoan.setMaxLTV(400);
+
+      // Upgrade to a mock Smart Loan contract
+      let mockUpgradedSmartLoan = await (new MockUpgradedSmartLoan__factory(owner).deploy());
+      await proxy.connect(admin).upgradeTo(mockUpgradedSmartLoan.address);
+
       expect(await wrappedLoan.isSolvent()).to.be.false;
 
       const repayAmount = await getSelloutRepayAmount(
@@ -462,7 +475,8 @@ describe('Smart loan', () => {
         await wrappedLoan.MAX_LTV()
       )
 
-      await wrappedLoan.liquidateLoan(repayAmount.toString());
+      await wrappedLoan.liquidateLoan(repayAmount.toLocaleString('fullwide', {useGrouping:false}));
+
 
       expect(await wrappedLoan.isSolvent()).to.be.true;
       expect((await provider.getBalance(pool.address)).gt(poolAvaxValue)).to.be.true;
@@ -473,7 +487,12 @@ describe('Smart loan', () => {
       const currentLINKTokenBalance = balances[1];
 
       expect(currentUSDTokenBalance).to.be.lt(initialUSDTokenBalance);
-      expect(currentLINKTokenBalance).to.be.eq(initialLINKTokenBalance);
+      if (currentUSDTokenBalance == 0) {
+        expect(currentLINKTokenBalance).to.be.lt(initialLINKTokenBalance);
+      } else {
+        expect(currentLINKTokenBalance).to.be.eq(initialLINKTokenBalance);
+      }
+
     });
 
 

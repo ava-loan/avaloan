@@ -5,9 +5,10 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
 import "./IAssetsExchange.sol";
 import "./Pool.sol";
-import "redstone-flash-storage/lib/contracts/message-based/PriceAwareUpgradeable.sol";
+
 
 
 /**
@@ -58,6 +59,12 @@ contract SmartLoan is OwnableUpgradeable, PriceAwareUpgradeable, ReentrancyGuard
     IERC20Metadata token = getERC20TokenInstance(asset);
     token.transfer(address(exchange), _amount);
     exchange.sellAsset(asset, _amount, _minAvaxOut);
+  }
+
+
+  function withdrawAsset(bytes32 asset) external onlyOwner remainsSolvent {
+    IERC20Metadata token = getERC20TokenInstance(asset);
+    token.transfer(msg.sender, token.balanceOf(address(this)));
   }
 
 

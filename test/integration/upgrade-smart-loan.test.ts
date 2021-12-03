@@ -16,10 +16,9 @@ import {
   SmartLoan,
   UpgradeableBeacon,
   SmartLoansFactory,
+  OpenBorrowersRegistry__factory, MockUpgradedSmartLoan__factory,
 } from "../../typechain";
 
-import {OpenBorrowersRegistry__factory} from "../../typechain";
-import {MockUpgradedSmartLoan__factory} from "../../typechain";
 import {getFixedGasSigners} from "../_helpers";
 import {BigNumber, Contract} from "ethers";
 import {WrapperBuilder} from "redstone-flash-storage";
